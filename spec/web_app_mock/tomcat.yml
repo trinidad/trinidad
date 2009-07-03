@@ -1,0 +1,3 @@
+---
+  :environment: 'production'
+  :port: 4000

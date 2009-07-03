@@ -1,0 +1,19 @@
+== 0.3.0 (?)
+
+* project renamed due to tomcat legal issues
+
+== 0.2.0 (2009-06-23)
+
+* custom configuration from a yaml file
+* load options from a custom web.xml
+
+== 0.1.2
+
+* Autoload application custom jars and classes.
+* Added some specs.
+* Server refactor.
+
+== 0.1
+
+* Initial release.
+* Running default rails applications.

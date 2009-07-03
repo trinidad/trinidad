@@ -1,0 +1,9 @@
+#!/usr/bin/env jruby
+
+$:.unshift(File.dirname(__FILE__) + '/../lib')
+$:.unshift(File.dirname(__FILE__) + '/../trinidad-libs')
+
+require "trinidad"
+
+opts = Trinidad::CommandLineParser.parse
+Trinidad::Server.new(opts).start

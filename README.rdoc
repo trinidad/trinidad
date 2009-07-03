@@ -1,0 +1,34 @@
+= trinidad
+
+Trinidad allows you to run a rails application within an embedded Apache Tomcat container.
+
+This project was initially called "Tomcat-rails" but due to legal issues with the ASF and the Tomcat trademark it has been renamed.
+
+== INSTALL:
+
+  jgem install trinidad
+  jgem install calavera-trinidad -s http://gems.github.com
+
+== USAGE:
+
+  cd myrailsapp
+  jruby -S trinidad
+  
+== CONFIGURATION:
+
+Trinidad allows you to configure some parameters when the server is started from the command line, the following is a list of the currently supported options:
+
+  * -p, --port PORT         =>    port to bind to.
+  * -e, --env ENVIRONMENT   =>    rails environment.
+  * -c, --context CONTEXT   =>    application context path.
+  * --lib, --jars LIBS_DIR  =>    directory containing jars.
+  * --classes CLASSES_DIR   =>    directory containing classes.    
+
+The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/tomcat.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
+
+  jruby -S trinidad -f
+  jruby -S trinidad --config my_custom_configuration.yml
+
+== Copyright
+
+Copyright (c) 2009 David Calavera<calavera@apache.org>. See LICENSE for details.

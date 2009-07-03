@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+    <filter>
+        <filter-name>RackFilter</filter-name>
+        <filter-class>org.jruby.rack.RackFilter</filter-class>
+    </filter>
+
+    <listener>
+      <listener-class>org.jruby.rack.rails.RailsServletContextListener</listener-class>
+    </listener>
+
+    <context-param>
+      <param-name>jruby.initial.runtimes</param-name>
+      <param-value>1</param-value>
+    </context-param>
+</web-app>
