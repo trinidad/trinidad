@@ -6,7 +6,7 @@ begin
   Jeweler::Tasks.new do |gem|
     gem.name = "trinidad"
     gem.summary = %Q{Simple library to run rails applications into an embedded Tomcat}
-    gem.email = "david.calavera@gmail.com"
+    gem.email = "calavera@apache.org"
     gem.homepage = "http://calavera.github.com/trinidad"
     gem.authors = ["David Calavera"]
     gem.rubyforge_project = 'trinidad'
