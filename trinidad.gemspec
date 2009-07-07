@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.authors = ["David Calavera"]
   s.date = %q{2009-07-07}
   s.default_executable = %q{trinidad}
-  s.email = %q{david.calavera@gmail.com}
+  s.email = %q{calavera@apache.org}
   s.executables = ["trinidad"]
   s.extra_rdoc_files = [
     "LICENSE",
