@@ -68,9 +68,9 @@ module Trinidad
     def create_default_keystore
       keystore_file = java.io.File.new(@config[:ssl_keystore])
       
-      if (!keystore_file.parentFile.exists() &&
-              !keystore_file.parentFile.mkdir())
-          raise "Unable to create keystore folder: " + keystore_file.parentFile.canonicalPath
+      if (!keystore_file.parent_file.exists() &&
+              !keystore_file.parent_file.mkdir())
+          raise "Unable to create keystore folder: " + keystore_file.parent_file.canonical_path
       end
       
       keytool_args = ["-genkey", 
