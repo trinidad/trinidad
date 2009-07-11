@@ -9,7 +9,8 @@ module Trinidad
         :context_path => '/',
         :libs_dir => 'lib',
         :classes_dir => 'classes',
-        :config => 'config/tomcat.yml'
+        :config => 'config/tomcat.yml',
+        :ssl_port => 8443
       }
       
       parser = OptionParser.new do |opts|
@@ -45,6 +46,11 @@ module Trinidad
             "default: #{default_options[:config]}") do |v|
           default_options[:config] = v if v
           default_options.merge! YAML.load_file(default_options[:config])
+        end
+        
+        opts.on('-s', '--ssl [SSL_PORT]', 'Enable secure socket layout',
+            "default port: #{default_options[:ssl_port]}") do |v|
+          default_options[:ssl] = v.nil? ? default_options[:ssl_port] : v.to_i
         end
         
         opts.on('-v', '--version', 'display the current version') do

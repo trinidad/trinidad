@@ -17,6 +17,9 @@ module Trinidad
     include_package 'org.apache.catalina.loader'
     
     include_package 'org.apache.naming.resources'
+    
+    import 'org.apache.catalina.connector.Connector'
+    import 'sun.security.tools.KeyTool'
   end
   
   module Rack

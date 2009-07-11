@@ -29,4 +29,17 @@ describe Trinidad::CommandLineParser do
     options[:environment].should == 'production'
   end
   
+  it "should add default ssl port to options" do
+    ARGV = '--ssl'.split
+    
+    options = Trinidad::CommandLineParser.parse
+    options[:ssl].should == 8443
+  end
+  
+  it "should add custom ssl port to options" do
+    ARGV = '--ssl 8843'.split
+    
+    options = Trinidad::CommandLineParser.parse
+    options[:ssl].should == 8843
+  end
 end
