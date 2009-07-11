@@ -6,9 +6,10 @@ begin
   Jeweler::Tasks.new do |gem|
     gem.name = "trinidad"
     gem.summary = %Q{Simple library to run rails applications into an embedded Tomcat}
-    gem.email = "david.calavera@gmail.com"
+    gem.email = "calavera@apache.org"
     gem.homepage = "http://calavera.github.com/trinidad"
     gem.authors = ["David Calavera"]
+    gem.rubyforge_project = 'trinidad'
 
     gem.files = FileList['bin/*', 'lib/**/*.rb', 'trinidad-libs/*.jar', 'History.txt', 'LICENSE', 'Rakefile', 'README.rdoc', 'VERSION']      
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
@@ -47,5 +48,31 @@ Rake::RDocTask.new do |rdoc|
   rdoc.title = "trinidad #{version}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
+end
+
+begin
+  require 'rake/contrib/sshpublisher'
+  namespace :rubyforge do
+
+    desc "Release gem and RDoc documentation to RubyForge"
+    task :release => ["rubyforge:release:gem"]
+
+    namespace :release do
+      desc "Publish RDoc to RubyForge."
+      task :docs => [:rdoc] do
+        config = YAML.load(
+            File.read(File.expand_path('~/.rubyforge/user-config.yml'))
+        )
+
+        host = "#{config['username']}@rubyforge.org"
+        remote_dir = "/var/www/gforge-projects/trinidad/"
+        local_dir = 'rdoc'
+
+        Rake::SshDirPublisher.new(host, remote_dir, local_dir).upload
+      end
+    end
+  end
+rescue LoadError
+  puts "Rake SshDirPublisher is unavailable or your rubyforge environment is not configured."
 end
 

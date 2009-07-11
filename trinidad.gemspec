@@ -6,9 +6,9 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Calavera"]
-  s.date = %q{2009-07-03}
+  s.date = %q{2009-07-07}
   s.default_executable = %q{trinidad}
-  s.email = %q{david.calavera@gmail.com}
+  s.email = %q{calavera@apache.org}
   s.executables = ["trinidad"]
   s.extra_rdoc_files = [
     "LICENSE",
@@ -42,6 +42,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://calavera.github.com/trinidad}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
+  s.rubyforge_project = %q{trinidad}
   s.rubygems_version = %q{1.3.4}
   s.summary = %q{Simple library to run rails applications into an embedded Tomcat}
   s.test_files = [
