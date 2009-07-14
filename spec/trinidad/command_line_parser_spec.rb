@@ -33,13 +33,35 @@ describe Trinidad::CommandLineParser do
     ARGV = '--ssl'.split
     
     options = Trinidad::CommandLineParser.parse
-    options[:ssl].should == 8443
+    options[:ssl].should == {:port => 8443}
   end
   
   it "should add custom ssl port to options" do
     ARGV = '--ssl 8843'.split
     
     options = Trinidad::CommandLineParser.parse
-    options[:ssl].should == 8843
+    options[:ssl].should == {:port => 8843}
+  end
+  
+  it "should add ajp connection with default port to options" do
+    ARGV = '--ajp'.split
+    
+    options = Trinidad::CommandLineParser.parse
+    options[:ajp].should == {:port => 8009}
+  end
+  
+  it "should add ajp connection with coustom port to options" do
+    ARGV = '--ajp 8099'.split
+    
+    options = Trinidad::CommandLineParser.parse
+    options[:ajp].should == {:port => 8099}
+  end
+  
+  it "should merge ajp options from the config file" do
+    ARGV = "--ajp 8099 -f #{File.join(File.dirname(__FILE__), '..', 'web_app_mock', 'tomcat.yml')}".split
+    
+    options = Trinidad::CommandLineParser.parse
+    options[:ajp][:port].should == 8099
+    options[:ajp][:secure].should == true
   end
 end

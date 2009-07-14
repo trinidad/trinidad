@@ -3,18 +3,22 @@ module Trinidad
     
     attr_reader :tomcat
     
-    @@defaults = {
-      :environment => 'development',
-      :context_path => '/',
-      :libs_dir => 'lib',
-      :classes_dir => 'classes',
-      :default_web_xml => 'config/web.xml',
-      :port => 3000,
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 5,
-      :ssl_keystore => 'ssl/keystore',
-      :ssl_keystore_password => 'waduswadus'
-    }
+    def default_options
+      {
+        :environment => 'development',
+        :context_path => '/',
+        :libs_dir => 'lib',
+        :classes_dir => 'classes',
+        :default_web_xml => 'config/web.xml',
+        :port => 3000,
+        :jruby_min_runtimes => 1,
+        :jruby_max_runtimes => 5,
+        :ssl => {
+          :keystore => 'ssl/keystore',
+          :keystorePass => 'waduswadus'
+        }
+      }
+    end
     
     def initialize(config = {})
       load_config(config)
@@ -23,9 +27,9 @@ module Trinidad
     end
     
     def load_config(config)
-      @config = {:web_app_dir => Dir.pwd}.merge!(@@defaults).merge!(config)
+      @config = {:web_app_dir => Dir.pwd}.merge(default_options).deep_merge(config)
       
-      @config[:ssl_keystore] = File.join(@config[:web_app_dir], @config[:ssl_keystore])
+      @config[:ssl][:keystore] = File.join(@config[:web_app_dir], @config[:ssl][:keystore])
     end
     
     def load_tomcat_server
@@ -33,6 +37,7 @@ module Trinidad
       @tomcat.setPort(@config[:port].to_i)
       
       add_ssl_connector if ssl_enabled?
+      add_ajp_connector if ajp_enabled?
     end
     
     def create_web_app
@@ -47,26 +52,45 @@ module Trinidad
       web_app.add_rack_context_listener
     end
     
+    def add_service_connector(options, protocol = nil)
+      connector = Trinidad::Tomcat::Connector.new(protocol)
+      
+  		connector.scheme = options.delete(:scheme) if options[:scheme]
+  		connector.secure = options.delete(:secure) || false
+  		connector.port = options.delete(:port)
+  		
+  		options.each do |key, value|
+  		  connector.setProperty(key.to_s, value.to_s)
+		  end
+      
+      @tomcat.getService().addConnector(connector)
+    end
+    
+    def add_ajp_connector
+      add_service_connector(@config[:ajp], 'AJP/1.3')
+    end
+    
     def add_ssl_connector
-      ssl_connector = Trinidad::Tomcat::Connector.new
-  		ssl_connector.scheme = "https"
-  		ssl_connector.secure = true
-  		ssl_connector.port = @config[:ssl]
-  		ssl_connector.setProperty("SSLEnabled","true")
-  		ssl_connector.setProperty("keystore", @config[:ssl_keystore])
-  		ssl_connector.setProperty("keystorePass", @config[:ssl_keystore_password])
+  		options = @config[:ssl].merge({
+  		  :scheme => 'https', 
+  		  :secure => true,
+  		  :SSLEnabled => 'true',
+  		})
+  		add_service_connector(options)
   		
-  		@tomcat.getService().addConnector(ssl_connector)
-  		
-  		create_default_keystore unless File.exist?(@config[:ssl_keystore])
+  		create_default_keystore unless File.exist?(@config[:ssl][:keystore])
     end
     
     def ssl_enabled?
-      !@config[:ssl].nil? && @config[:ssl].is_a?(Fixnum)
+      !@config[:ssl].nil? && !@config[:ssl][:port].nil? && @config[:ssl][:port].is_a?(Fixnum)
+    end
+    
+    def ajp_enabled?
+      !@config[:ajp].nil? && !@config[:ajp][:port].nil? && @config[:ajp][:port].is_a?(Fixnum)
     end
     
     def create_default_keystore
-      keystore_file = java.io.File.new(@config[:ssl_keystore])
+      keystore_file = java.io.File.new(@config[:ssl][:keystore])
       
       if (!keystore_file.parent_file.exists() &&
               !keystore_file.parent_file.mkdir())
@@ -79,9 +103,9 @@ module Trinidad
         "-keyalg", "RSA",
         "-validity", "365", 
         "-storepass", "key", 
-        "-keystore", @config[:ssl_keystore], 
-        "-storepass", @config[:ssl_keystore_password],
-        "-keypass", @config[:ssl_keystore_password]]
+        "-keystore", @config[:ssl][:keystore], 
+        "-storepass", @config[:ssl][:keystorePass],
+        "-keypass", @config[:ssl][:keystorePass]]
               
       Trinidad::Tomcat::KeyTool.main(keytool_args.to_java(:string))
     end

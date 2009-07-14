@@ -1,3 +1,5 @@
 ---
   :environment: 'production'
   :port: 4000
+  :ajp:
+    :secure: true
