@@ -22,8 +22,7 @@ describe Trinidad::Server do
   it "should have ajp enabled when config param is a number" do
     server = Trinidad::Server.new({:ajp => {:port => 8009}})
      
-    # wondering why this test doesn't pass 
-    #server.ajp_enabled?.should == true
+    server.ajp_enabled?.should == true
   end
   
   it "should have a connector with https scheme" do

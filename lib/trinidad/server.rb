@@ -54,10 +54,12 @@ module Trinidad
     
     def add_service_connector(options, protocol = nil)
       connector = Trinidad::Tomcat::Connector.new(protocol)
+
+      opts = options.dup
       
-  		connector.scheme = options.delete(:scheme) if options[:scheme]
-  		connector.secure = options.delete(:secure) || false
-  		connector.port = options.delete(:port)
+  		connector.scheme = opts.delete(:scheme) if opts[:scheme]
+  		connector.secure = opts.delete(:secure) || false
+  		connector.port = opts.delete(:port)
   		
   		options.each do |key, value|
   		  connector.setProperty(key.to_s, value.to_s)
