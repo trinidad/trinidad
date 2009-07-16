@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{trinidad}
-  s.version = "0.3.0"
+  s.version = "0.4.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Calavera"]
-  s.date = %q{2009-07-07}
+  s.date = %q{2009-07-16}
   s.default_executable = %q{trinidad}
   s.email = %q{calavera@apache.org}
   s.executables = ["trinidad"]
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
      "bin/trinidad",
      "lib/trinidad.rb",
      "lib/trinidad/command_line_parser.rb",
+     "lib/trinidad/core_ext.rb",
      "lib/trinidad/jars.rb",
      "lib/trinidad/server.rb",
      "lib/trinidad/web_app.rb",
@@ -47,6 +48,7 @@ Gem::Specification.new do |s|
   s.summary = %q{Simple library to run rails applications into an embedded Tomcat}
   s.test_files = [
     "spec/spec_helper.rb",
+     "spec/trinidad/server_spec.rb",
      "spec/trinidad/command_line_parser_spec.rb",
      "spec/trinidad/web_app_spec.rb"
   ]
