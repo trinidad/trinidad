@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{trinidad}
-  s.version = "0.4.0"
+  s.version = "0.4.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Calavera"]
-  s.date = %q{2009-07-16}
+  s.date = %q{2009-07-26}
   s.default_executable = %q{trinidad}
   s.email = %q{calavera@apache.org}
   s.executables = ["trinidad"]
@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
      "trinidad-libs/jasper-jdt.jar",
      "trinidad-libs/jasper.jar",
      "trinidad-libs/jetty-util-6.1.14.jar",
-     "trinidad-libs/jruby-rack-0.9.4.jar",
+     "trinidad-libs/jruby-rack-0.9.5-SNAPSHOT.jar",
      "trinidad-libs/jsp-2.1.jar",
      "trinidad-libs/jsp-api-2.1.jar",
      "trinidad-libs/servlet-api-2.5-6.1.14.jar",
@@ -40,16 +40,17 @@ Gem::Specification.new do |s|
      "trinidad-libs/tomcat-dbcp.jar",
      "trinidad-libs/tomcat-jasper.jar"
   ]
+  s.has_rdoc = true
   s.homepage = %q{http://calavera.github.com/trinidad}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{trinidad}
-  s.rubygems_version = %q{1.3.4}
+  s.rubygems_version = %q{1.3.2}
   s.summary = %q{Simple library to run rails applications into an embedded Tomcat}
   s.test_files = [
     "spec/spec_helper.rb",
-     "spec/trinidad/server_spec.rb",
      "spec/trinidad/command_line_parser_spec.rb",
+     "spec/trinidad/server_spec.rb",
      "spec/trinidad/web_app_spec.rb"
   ]
 
