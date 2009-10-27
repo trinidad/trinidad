@@ -1,3 +1,8 @@
+== 0.5.0 (2009-10-27)
+
+* JRuby-rack updated to version 0.9.5
+* Added Rack dependency to avoid using vendorized version
+
 == 0.4.1 (2009-07-26)
 
 * using jruby-rack development version to solve some bugs related with it.

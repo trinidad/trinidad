@@ -13,6 +13,7 @@ begin
 
     gem.files = FileList['bin/*', 'lib/**/*.rb', 'trinidad-libs/*.jar', 'History.txt', 'LICENSE', 'Rakefile', 'README.rdoc', 'VERSION']      
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+    gem.add_dependency 'rack', '>=1.0'
   end
 
 rescue LoadError
