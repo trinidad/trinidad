@@ -1,6 +1,6 @@
 = trinidad
 
-Trinidad allows you to run a rails application within an embedded Apache Tomcat container.
+Trinidad allows you to run a rails or rackup applications within an embedded Apache Tomcat container.
 
 This project was initially called "Tomcat-rails" but due to legal issues with the ASF and the Tomcat trademark it has been renamed.
 
@@ -23,6 +23,8 @@ Trinidad allows you to configure some parameters when the server is started from
   * -c, --context CONTEXT   =>    application context path.
   * --lib, --jars LIBS_DIR  =>    directory containing jars.
   * --classes CLASSES_DIR   =>    directory containing classes.
+  * --rackup [RACKUP_FILE]  =>    run a provided rackup file instead of a rails application, by default it's config.ru.
+  * --public PUBLIC_DIR     =>    specify the public directory for your application, by default it's 'public'.
 
 The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/tomcat.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 

@@ -64,4 +64,22 @@ describe Trinidad::CommandLineParser do
     options[:ajp][:port].should == 8099
     options[:ajp][:secure].should == true
   end
+  
+  it "uses default rackup file to configure the server" do
+    ARGV = "--rackup".split
+    options = Trinidad::CommandLineParser.parse
+    options[:rackup].should == 'config.ru'
+  end
+
+  it "uses a custom rackup file if it's provided" do
+    ARGV = "--rackup custom_config.ru".split
+    options = Trinidad::CommandLineParser.parse
+    options[:rackup].should == 'custom_config.ru'
+  end
+
+  it "uses a custom public directory" do
+    ARGV = "--public web".split
+    options = Trinidad::CommandLineParser.parse
+    options[:public].should == 'web'
+  end
 end

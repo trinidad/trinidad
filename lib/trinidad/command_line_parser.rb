@@ -60,6 +60,15 @@ module Trinidad
           default_options[:config] = v if v
           default_options.deep_merge! YAML.load_file(default_options[:config])
         end
+
+        opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
+            'default: config.ru') do |v|
+          default_options[:rackup] = v || 'config.ru'  
+        end
+
+        opts.on('--public', '--public DIRECTORY', 'Public directory', 'default: public') do |v|
+          default_options[:public] = v
+        end
         
         opts.on('-v', '--version', 'display the current version') do
           puts File.read(File.join(File.dirname(__FILE__), '..', '..', 'VERSION')).chomp

@@ -1,6 +1,10 @@
 module Trinidad
   class WebApp
     attr_reader :context, :config
+  
+    def self.create(context, config)
+      config.has_key?(:rackup) ? RackupWebApp.new(context, config) : RailsWebApp.new(context, config) 
+    end
     
     def initialize(context, config)
       @context = context
@@ -41,18 +45,16 @@ module Trinidad
       end
       
       @context.addParameter('jruby.initial.runtimes', @config[:jruby_min_runtimes].to_s) unless @context.findParameter('jruby.initial.runtimes')
-      @context.addParameter('rails.env', @config[:environment].to_s) unless @context.findParameter('rails.env')
-      @context.addParameter('rails.root', '/') unless @context.findParameter('rails.root')
-      @context.addParameter('public.root', '/public') unless @context.findParameter('public.root')
+      @context.addParameter('public.root', File.join('/', public_root)) unless @context.findParameter('public.root')
     end
     
     def add_web_dir_resources
-      @context.setDocBase(File.join(@config[:web_app_dir], "public/"))
+      @context.setDocBase(File.join(@config[:web_app_dir], public_root)) if File.exist?(File.join(@config[:web_app_dir], public_root))
     end
     
     def add_rack_context_listener
       unless rack_listener_configured?
-        @context.addApplicationListener('org.jruby.rack.rails.RailsServletContextListener')
+        @context.addApplicationListener(context_listener)
       end
     end
     
@@ -86,7 +88,7 @@ module Trinidad
     def rack_filter_configured?
       return false if @context.getDefaultWebXml().nil?
 
-      web_xml = IO.read(@context.getDefaultWebXml())
+      web_xml = IO.read(@context.getDefaultWebXml()).gsub(/\s+/, '')
 
       return web_xml.include?('<servlet-class>org.jruby.rack.RackServlet') ||
               web_xml.include?('<filter-class>org.jruby.rack.RackFilter')
@@ -95,9 +97,13 @@ module Trinidad
     def rack_listener_configured?
       return false if @context.getDefaultWebXml().nil?
 
-      web_xml = IO.read(@context.getDefaultWebXml())
+      web_xml = IO.read(@context.getDefaultWebXml()).gsub(/\s+/, '')
 
-      return web_xml.include?('<listener-class>org.jruby.rack.rails.RailsServletContextListener')
+      return web_xml.include?("<listener-class>#{context_listener}")
+    end
+
+    def public_root
+      @context.findParameter('public.root') || @config[:public] || 'public'
     end
   end
 end

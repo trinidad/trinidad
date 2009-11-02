@@ -41,7 +41,7 @@ module Trinidad
     end
     
     def create_web_app
-      web_app = WebApp.new(@tomcat.addWebapp(@config[:context_path].to_s, @config[:web_app_dir]), @config)
+      web_app = WebApp.create(@tomcat.addWebapp(@config[:context_path].to_s, @config[:web_app_dir]), @config)
 
       web_app.load_default_web_xml
       web_app.add_rack_filter

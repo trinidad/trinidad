@@ -3,8 +3,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Trinidad::WebApp do
   before do
     @tomcat = Trinidad::Tomcat::Tomcat.new
-    tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
-    config = {
+    @tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
+    @config = {
       :libs_dir => 'lib',
       :classes_dir => 'classes',
       :default_web_xml => 'config/web.xml',
@@ -13,9 +13,17 @@ describe Trinidad::WebApp do
       :jruby_max_runtimes => 6,
       :context_path => '/'
     }
-    @web_app = Trinidad::WebApp.new(tomcat_web_app, config)
+    @web_app = Trinidad::RailsWebApp.new(@tomcat_web_app, @config)
   end
   
+  it "creates a RailsWebApp if rackup option is not present" do
+    Trinidad::WebApp.create(@tomcat_web_app, @config).is_a?(Trinidad::RailsWebApp).should be_true
+  end
+
+  it "creates a RackupWebApp if rackup option is present" do
+    Trinidad::WebApp.create(@tomcat_web_app, @config.merge(:rackup => 'config.ru')).is_a?(Trinidad::RackupWebApp).should be_true
+  end
+
   it "should load custom jars" do 
     class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     @web_app.add_application_libs(class_loader)
