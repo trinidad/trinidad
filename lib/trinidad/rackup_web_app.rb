@@ -11,7 +11,7 @@ module Trinidad
     end
 
     def rackup_script
-      IO.read(File.join(@config[:web_app_dir], @config[:rackup]))
+      IO.read(File.join(@app[:web_app_dir], @app[:rackup]))
     end
   end
 end

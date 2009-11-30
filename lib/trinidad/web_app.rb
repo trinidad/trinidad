@@ -2,13 +2,14 @@ module Trinidad
   class WebApp
     attr_reader :context, :config
   
-    def self.create(context, config)
-      config.has_key?(:rackup) ? RackupWebApp.new(context, config) : RailsWebApp.new(context, config) 
+    def self.create(context, config, app)
+      app.has_key?(:rackup) ? RackupWebApp.new(context, config, app) : RailsWebApp.new(context, config, app)
     end
     
-    def initialize(context, config)
+    def initialize(context, config, app)
       @context = context
       @config = config
+      @app = app
     end
     
     def add_rack_filter
@@ -17,10 +18,10 @@ module Trinidad
         filter_def.setFilterName('RackFilter')
         filter_def.setFilterClass('org.jruby.rack.RackFilter')
 
-        pattern = @config[:context_path][-1..-1] != '/' ? @config[:context_path] : @config[:context_path][0..-2]
+#        pattern = @app[:context_path][-1..-1] != '/' ? @app[:context_path] : @app[:context_path][0..-2]
         filter_map = Trinidad::Tomcat::FilterMap.new
         filter_map.setFilterName('RackFilter')
-        filter_map.addURLPattern("#{pattern}/*")
+        filter_map.addURLPattern(File.join(@app[:context_path], '*'))
 
         @context.addFilterDef(filter_def)
         @context.addFilterMap(filter_map)
@@ -49,7 +50,7 @@ module Trinidad
     end
     
     def add_web_dir_resources
-      @context.setDocBase(File.join(@config[:web_app_dir], public_root)) if File.exist?(File.join(@config[:web_app_dir], public_root))
+      @context.setDocBase(File.join(@app[:web_app_dir], public_root)) if File.exist?(File.join(@app[:web_app_dir], public_root))
     end
     
     def add_rack_context_listener
@@ -59,7 +60,7 @@ module Trinidad
     end
     
     def add_application_libs(class_loader)
-      resources_dir = File.join(@config[:web_app_dir], @config[:libs_dir], '**', '*.jar')
+      resources_dir = File.join(@app[:web_app_dir], libs_dir, '**', '*.jar')
       
       Dir[resources_dir].each do |resource|
         class_loader.addURL(java.io.File.new(resource).to_url)
@@ -67,12 +68,12 @@ module Trinidad
     end
     
     def add_application_classes(class_loader)
-      resources_dir = File.join(@config[:web_app_dir], @config[:classes_dir])
+      resources_dir = File.join(@app[:web_app_dir], classes_dir)
       class_loader.addURL(java.io.File.new(resources_dir).to_url)
     end
 
     def load_default_web_xml
-      default_web_xml = File.expand_path(File.join(@config[:web_app_dir], @config[:default_web_xml]))
+      default_web_xml = File.expand_path(File.join(@app[:web_app_dir], default_web_xml_file))
       
       if File.exist?(default_web_xml)
         @context.setDefaultWebXml(default_web_xml)
@@ -103,7 +104,23 @@ module Trinidad
     end
 
     def public_root
-      @context.findParameter('public.root') || @config[:public] || 'public'
+      @context.findParameter('public.root') || @app[:public]  || @config[:public] || 'public'
+    end
+
+    def libs_dir
+      @app[:libs_dir] || @config[:libs_dir]
+    end
+
+    def classes_dir
+      @app[:classes_dir] || @config[:classes_dir]
+    end
+
+    def default_web_xml_file
+      @app[:default_web_xml] || @config[:default_web_xml]
+    end
+
+    def environment
+      @app[:environment] || @config[:environment]
     end
   end
 end

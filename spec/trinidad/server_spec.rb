@@ -39,4 +39,30 @@ describe Trinidad::Server do
     server.tomcat.service.findConnectors().should have(1).connectors
     server.tomcat.service.findConnectors()[0].protocol.should == 'AJP/1.3'
   end
+
+  it "loads one application for each option present into :web_apps" do
+    server = Trinidad::Server.new({
+      :web_apps => {
+        :mock1 => {
+          :context_path => '/mock1',
+          :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')
+        },
+        :mock2 => {
+          :context_path => '/mock2',
+          :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')
+        }
+      }
+    })
+
+    server.tomcat.host.findChildren().should have(2).web_apps
+    server.tomcat.host.findChildren().each do |child|
+      puts child.getPath()
+    end
+  end
+
+  it "loads the default application from the current directory if :web_apps is not present" do
+    server = Trinidad::Server.new({:web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')})
+
+    server.tomcat.host.findChildren().should have(1).web_apps
+  end
 end

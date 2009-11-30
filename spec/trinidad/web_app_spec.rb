@@ -4,24 +4,31 @@ describe Trinidad::WebApp do
   before do
     @tomcat = Trinidad::Tomcat::Tomcat.new
     @tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
+    @app = {
+      :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock'),
+      :context_path => '/'
+    }
     @config = {
       :libs_dir => 'lib',
       :classes_dir => 'classes',
       :default_web_xml => 'config/web.xml',
-      :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock'),
       :jruby_min_runtimes => 2,
       :jruby_max_runtimes => 6,
-      :context_path => '/'
+      :web_apps => {
+        :default => @app
+      }
     }
-    @web_app = Trinidad::RailsWebApp.new(@tomcat_web_app, @config)
+    @web_app = Trinidad::RailsWebApp.new(@tomcat_web_app, @config, @app)
   end
   
   it "creates a RailsWebApp if rackup option is not present" do
-    Trinidad::WebApp.create(@tomcat_web_app, @config).is_a?(Trinidad::RailsWebApp).should be_true
+    Trinidad::WebApp.create(@tomcat_web_app, @config, @app).is_a?(Trinidad::RailsWebApp).should be_true
   end
 
   it "creates a RackupWebApp if rackup option is present" do
-    Trinidad::WebApp.create(@tomcat_web_app, @config.merge(:rackup => 'config.ru')).is_a?(Trinidad::RackupWebApp).should be_true
+    rackup_app = {:rackup => 'config.ru'}
+    @config.deep_merge({:web_apps => {:default => rackup_app}})
+    Trinidad::WebApp.create(@tomcat_web_app, @config, rackup_app).is_a?(Trinidad::RackupWebApp).should be_true
   end
 
   it "should load custom jars" do 

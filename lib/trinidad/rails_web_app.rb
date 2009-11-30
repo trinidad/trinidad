@@ -3,7 +3,7 @@ module Trinidad
 
     def add_init_params
       super
-      @context.addParameter('rails.env', @config[:environment].to_s) unless @context.findParameter('rails.env')
+      @context.addParameter('rails.env', environment.to_s) unless @context.findParameter('rails.env')
       @context.addParameter('rails.root', '/') unless @context.findParameter('rails.root')
     end
 

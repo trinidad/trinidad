@@ -12,44 +12,52 @@ module Trinidad
         :default_web_xml => 'config/web.xml',
         :port => 3000,
         :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 5,
-        :ssl => {
-          :keystore => 'ssl/keystore',
-          :keystorePass => 'waduswadus'
-        }
+        :jruby_max_runtimes => 5
       }
     end
     
     def initialize(config = {})
       load_config(config)
       load_tomcat_server
-      create_web_app      
+      create_web_apps
     end
     
     def load_config(config)
-      @config = {:web_app_dir => Dir.pwd}.merge(default_options).deep_merge(config)
-      
-      @config[:ssl][:keystore] = File.join(@config[:web_app_dir], @config[:ssl][:keystore])
+      @config = default_options.deep_merge(config)
+      add_default_web_app!(@config)
+
+      configure_ssl!(@config)      
     end
     
     def load_tomcat_server
       @tomcat = Trinidad::Tomcat::Tomcat.new
       @tomcat.setPort(@config[:port].to_i)
+      @tomcat.setBaseDir(Dir.pwd)
       
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
     end
     
-    def create_web_app
-      web_app = WebApp.create(@tomcat.addWebapp(@config[:context_path].to_s, @config[:web_app_dir]), @config)
+    def create_web_apps
+      @config[:web_apps].each do |name, app|
+        unless app[:context_path]
+          app[:context_path] = name.to_s == 'default' ? '/' : "/#{name.to_s}"
+        end
+        app[:web_app_dir] = Dir.pwd unless app.has_key?(:web_app_dir)
 
-      web_app.load_default_web_xml
-      web_app.add_rack_filter
-      web_app.add_context_loader
-      web_app.add_init_params
-      web_app.add_web_dir_resources
+        tomcat_app = @tomcat.addWebapp(app[:context_path].to_s, app[:web_app_dir])
+#        tomcat_app.setDocBase(app[:web_app_dir])        
+
+        web_app = WebApp.create(tomcat_app, @config, app)
+
+        web_app.load_default_web_xml
+        web_app.add_rack_filter
+        web_app.add_context_loader
+        web_app.add_init_params
+        web_app.add_web_dir_resources
       
-      web_app.add_rack_context_listener
+        web_app.add_rack_context_listener
+      end
     end
     
     def add_service_connector(options, protocol = nil)
@@ -59,7 +67,7 @@ module Trinidad
       
   		connector.scheme = opts.delete(:scheme) if opts[:scheme]
   		connector.secure = opts.delete(:secure) || false
-  		connector.port = opts.delete(:port)
+  		connector.port = opts.delete(:port).to_i
   		
   		options.each do |key, value|
   		  connector.setProperty(key.to_s, value.to_s)
@@ -73,26 +81,28 @@ module Trinidad
     end
     
     def add_ssl_connector
-  		options = @config[:ssl].merge({
-  		  :scheme => 'https', 
-  		  :secure => true,
-  		  :SSLEnabled => 'true',
-  		})
-  		add_service_connector(options)
+      @config[:web_apps].each do |name, app|
+  		  options = app[:ssl].merge({
+  		    :scheme => 'https', 
+  		    :secure => true,
+  		    :SSLEnabled => 'true',
+  	  	})
+  		  add_service_connector(options)
   		
-  		create_default_keystore unless File.exist?(@config[:ssl][:keystore])
+  		  create_default_keystore(app) unless File.exist?(app[:ssl][:keystore])
+      end
     end
     
     def ssl_enabled?
-      !@config[:ssl].nil? && !@config[:ssl][:port].nil? && @config[:ssl][:port].is_a?(Fixnum)
+      @config.has_key?(:ssl) || @config[:web_apps].deep_key?(:ssl)
     end
     
     def ajp_enabled?
-      !@config[:ajp].nil? && !@config[:ajp][:port].nil? && @config[:ajp][:port].is_a?(Fixnum)
+      @config.has_key?(:ajp)
     end
     
-    def create_default_keystore
-      keystore_file = java.io.File.new(@config[:ssl][:keystore])
+    def create_default_keystore(config)
+      keystore_file = java.io.File.new(config[:ssl][:keystore])
       
       if (!keystore_file.parent_file.exists() &&
               !keystore_file.parent_file.mkdir())
@@ -105,9 +115,9 @@ module Trinidad
         "-keyalg", "RSA",
         "-validity", "365", 
         "-storepass", "key", 
-        "-keystore", @config[:ssl][:keystore], 
-        "-storepass", @config[:ssl][:keystorePass],
-        "-keypass", @config[:ssl][:keystorePass]]
+        "-keystore", config[:ssl][:keystore], 
+        "-storepass", config[:ssl][:keystorePass],
+        "-keypass", config[:ssl][:keystorePass]]
               
       Trinidad::Tomcat::KeyTool.main(keytool_args.to_java(:string))
     end
@@ -115,6 +125,41 @@ module Trinidad
     def start
       @tomcat.start
       @tomcat.getServer().await
+    end
+
+    private
+
+    def add_default_web_app!(config)
+      if (!config.has_key?(:web_apps))
+        default_app = if (config.has_key?(:rackup))
+          {:rackup => config[:rackup]}
+        else
+          {
+            :context_path => config[:context_path] || '/',
+            :web_app_dir => config[:web_app_dir] || Dir.pwd
+          }
+        end
+
+        config.merge!({
+          :web_apps => {
+            :default => default_app
+          }
+        })
+      end
+    end
+
+    def configure_ssl!(config)
+      if config.has_key?(:ssl) || config[:web_apps].deep_key?(:ssl)
+        if (config.has_key?(:ssl))
+          config[:ssl][:keystore] ||= 'ssl/keystore'
+          config[:ssl][:keystorePass] ||= 'waduswadus'
+        end
+
+        config[:web_apps].each do |name, app|
+          app[:ssl] = config[:ssl] unless app.has_key?(:ssl)
+          app[:ssl][:keystore] = File.join(app[:web_app_dir], app[:ssl][:keystore]) if app.has_key?(:ssl)
+        end
+      end
     end
   end
 end
