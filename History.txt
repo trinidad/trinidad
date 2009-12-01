@@ -1,3 +1,7 @@
+== 0.6.0 (2009-11-02)
+
+* Rackup compatibe frameworks support
+
 == 0.5.0 (2009-10-27)
 
 * JRuby-rack updated to version 0.9.5

@@ -18,10 +18,9 @@ module Trinidad
         filter_def.setFilterName('RackFilter')
         filter_def.setFilterClass('org.jruby.rack.RackFilter')
 
-#        pattern = @app[:context_path][-1..-1] != '/' ? @app[:context_path] : @app[:context_path][0..-2]
         filter_map = Trinidad::Tomcat::FilterMap.new
         filter_map.setFilterName('RackFilter')
-        filter_map.addURLPattern(File.join(@app[:context_path], '*'))
+        filter_map.addURLPattern('/*')
 
         @context.addFilterDef(filter_def)
         @context.addFilterMap(filter_map)
