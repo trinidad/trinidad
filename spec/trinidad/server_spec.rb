@@ -55,9 +55,6 @@ describe Trinidad::Server do
     })
 
     server.tomcat.host.findChildren().should have(2).web_apps
-    server.tomcat.host.findChildren().each do |child|
-      puts child.getPath()
-    end
   end
 
   it "loads the default application from the current directory if :web_apps is not present" do
