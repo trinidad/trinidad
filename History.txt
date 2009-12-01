@@ -1,3 +1,7 @@
+== 0.7.0 (2009-12-01)
+
+* Support to run different applications within the same Tomcat container
+
 == 0.6.0 (2009-11-02)
 
 * Rackup compatibe frameworks support
