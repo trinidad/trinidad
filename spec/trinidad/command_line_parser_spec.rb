@@ -23,7 +23,7 @@ describe Trinidad::CommandLineParser do
   end
   
   it "should override the config file when it's especified" do
-    ARGV = "-f #{File.join(File.dirname(__FILE__), '..', 'web_app_mock', 'tomcat.yml')}".split
+    ARGV = "-f #{File.join(MOCK_WEB_APP_DIR, 'tomcat.yml')}".split
     
     options = Trinidad::CommandLineParser.parse
     options[:environment].should == 'production'
@@ -58,7 +58,7 @@ describe Trinidad::CommandLineParser do
   end
   
   it "should merge ajp options from the config file" do
-    ARGV = "--ajp 8099 -f #{File.join(File.dirname(__FILE__), '..', 'web_app_mock', 'tomcat.yml')}".split
+    ARGV = "--ajp 8099 -f #{File.join(MOCK_WEB_APP_DIR, 'tomcat.yml')}".split
     
     options = Trinidad::CommandLineParser.parse
     options[:ajp][:port].should == 8099

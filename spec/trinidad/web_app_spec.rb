@@ -5,7 +5,7 @@ describe Trinidad::WebApp do
     @tomcat = Trinidad::Tomcat::Tomcat.new
     @tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
     @app = {
-      :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock'),
+      :web_app_dir => MOCK_WEB_APP_DIR,
       :context_path => '/'
     }
     @config = {

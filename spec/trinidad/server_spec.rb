@@ -14,7 +14,7 @@ describe Trinidad::Server do
   
   it "should have ssl enabled when config param is a number" do
     server = Trinidad::Server.new({:ssl => {:port => 8443},
-      :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')})
+      :web_app_dir => MOCK_WEB_APP_DIR})
       
     server.ssl_enabled?.should == true
   end
@@ -27,7 +27,7 @@ describe Trinidad::Server do
   
   it "should have a connector with https scheme" do
     server = Trinidad::Server.new({:ssl => {:port => 8443},
-      :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')})
+      :web_app_dir => MOCK_WEB_APP_DIR})
       
     server.tomcat.service.findConnectors().should have(1).connectors
     server.tomcat.service.findConnectors()[0].scheme.should == 'https'
@@ -45,21 +45,46 @@ describe Trinidad::Server do
       :web_apps => {
         :mock1 => {
           :context_path => '/mock1',
-          :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')
+          :web_app_dir => MOCK_WEB_APP_DIR
         },
         :mock2 => {
-          :context_path => '/mock2',
-          :web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')
+          :web_app_dir => MOCK_WEB_APP_DIR
+        },
+        :default => {
+          :web_app_dir => MOCK_WEB_APP_DIR
         }
       }
     })
 
-    server.tomcat.host.findChildren().should have(2).web_apps
+    context_loaded = server.tomcat.host.findChildren()
+    context_loaded.should have(3).web_apps
+    
+    expected = ['/mock1', '/mock2', '/']
+    context_loaded.each do |context|
+      expected.delete(context.getPath()).should == context.getPath()
+    end
   end
 
   it "loads the default application from the current directory if :web_apps is not present" do
-    server = Trinidad::Server.new({:web_app_dir => File.join(File.dirname(__FILE__), '..', 'web_app_mock')})
+    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
 
-    server.tomcat.host.findChildren().should have(1).web_apps
+    default_context_should_be_loaded(server.tomcat.host.findChildren())
+  end
+  
+  it "loads the default application from the current directory using the rackup file if :web_apps is not present" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :rackup => 'config.ru'
+    })
+
+    context = default_context_should_be_loaded(server.tomcat.host.findChildren())
+    context.findParameter('rackup').gsub(/\s+/, ' ').should == "require 'rubygems' require 'sinatra'"
+  end
+
+  def default_context_should_be_loaded(children)
+    children.should have(1).web_apps
+    children[0].getDocBase().should == MOCK_WEB_APP_DIR
+    children[0].getPath().should == '/'
+    children[0]
   end
 end

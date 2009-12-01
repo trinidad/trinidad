@@ -130,21 +130,14 @@ module Trinidad
     private
 
     def add_default_web_app!(config)
-      if (!config.has_key?(:web_apps))
-        default_app = if (config.has_key?(:rackup))
-          {:rackup => config[:rackup]}
-        else
-          {
-            :context_path => config[:context_path] || '/',
-            :web_app_dir => config[:web_app_dir] || Dir.pwd
-          }
-        end
+      unless (config.has_key?(:web_apps))
+        default_app = {
+          :context_path => config[:context_path] || '/',
+          :web_app_dir => config[:web_app_dir] || Dir.pwd
+        }
+        default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
 
-        config.merge!({
-          :web_apps => {
-            :default => default_app
-          }
-        })
+        config[:web_apps] = { :default => default_app }
       end
     end
 

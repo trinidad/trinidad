@@ -16,3 +16,5 @@ require 'mocha'
 Spec::Runner.configure do |config|
   config.mock_with :mocha
 end
+
+MOCK_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_mock')
