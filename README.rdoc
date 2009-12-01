@@ -33,7 +33,7 @@ The server can also be configured from a yaml file. If a file is not especified,
 
 You can also specify a default web.xml to config your web application. By default the server tries to load the file <em>config/web.xml</em> but you can modify this path adding the option <em>default_web_xml</em> within your configuration file. 
 
-Other <a href="http://wiki.github.com/calavera/trinidad/advanced-configuration">advanced options</a> can be found in the wiki.
+Other advanced options can be found in the wiki: http://wiki.github.com/calavera/trinidad/advanced-configuration
 
 == Copyright
 
