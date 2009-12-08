@@ -41,15 +41,16 @@ module Trinidad
     def add_init_params
       [:jruby_min_runtimes, :jruby_max_runtimes].each do |param|
         param_name = param.to_s.gsub(/_/, '.')
-        @context.addParameter(param_name, @config[param].to_s) unless @context.findParameter(param_name)
+        add_parameter_unless_exist(param_name, @config[param].to_s)
       end
       
-      @context.addParameter('jruby.initial.runtimes', @config[:jruby_min_runtimes].to_s) unless @context.findParameter('jruby.initial.runtimes')
-      @context.addParameter('public.root', File.join('/', public_root)) unless @context.findParameter('public.root')
+      add_parameter_unless_exist('jruby.initial.runtimes', @config[:jruby_min_runtimes].to_s)
+      add_parameter_unless_exist('public.root', File.join('/', public_root))
     end
     
     def add_web_dir_resources
-      @context.setDocBase(File.join(@app[:web_app_dir], public_root)) if File.exist?(File.join(@app[:web_app_dir], public_root))
+      doc_base = File.join(@app[:web_app_dir], public_root)
+      @context.setDocBase(doc_base) if File.exist?(doc_base)
     end
     
     def add_rack_context_listener
@@ -120,6 +121,10 @@ module Trinidad
 
     def environment
       @app[:environment] || @config[:environment]
+    end
+
+    def add_parameter_unless_exist(name, value)
+      @context.addParameter(name, value) unless @context.findParameter(name)
     end
   end
 end

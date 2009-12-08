@@ -38,10 +38,8 @@ module Trinidad
 
     def create_web_apps
       @config[:web_apps].each do |name, app|
-        unless app[:context_path]
-          app[:context_path] = name.to_s == 'default' ? '/' : "/#{name.to_s}"
-        end
-        app[:web_app_dir] = Dir.pwd unless app.has_key?(:web_app_dir)
+        app[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
+        app[:web_app_dir] ||= Dir.pwd
 
         tomcat_app = @tomcat.addWebapp(app[:context_path].to_s, app[:web_app_dir])
 

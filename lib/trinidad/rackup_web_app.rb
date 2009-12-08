@@ -3,7 +3,7 @@ module Trinidad
 
     def add_init_params
       super
-      @context.addParameter('rackup', rackup_script) unless @context.findParameter('rackup')
+      add_parameter_unless_exist('rackup', rackup_script)
     end    
 
     def context_listener

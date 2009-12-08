@@ -3,8 +3,8 @@ module Trinidad
 
     def add_init_params
       super
-      @context.addParameter('rails.env', environment.to_s) unless @context.findParameter('rails.env')
-      @context.addParameter('rails.root', '/') unless @context.findParameter('rails.root')
+      add_parameter_unless_exist('rails.env', environment.to_s)
+      add_parameter_unless_exist('rails.root', '/')
     end
 
     def context_listener
