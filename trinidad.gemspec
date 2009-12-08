@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{trinidad}
-  s.version = "0.7.1"
+  s.version = "0.7.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Calavera"]
-  s.date = %q{2009-12-01}
+  s.date = %q{2009-12-08}
   s.default_executable = %q{trinidad}
   s.email = %q{calavera@apache.org}
   s.executables = ["trinidad"]
@@ -45,12 +45,11 @@ Gem::Specification.new do |s|
      "trinidad-libs/tomcat-dbcp.jar",
      "trinidad-libs/tomcat-jasper.jar"
   ]
-  s.has_rdoc = true
   s.homepage = %q{http://calavera.github.com/trinidad}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{trinidad}
-  s.rubygems_version = %q{1.3.2}
+  s.rubygems_version = %q{1.3.5}
   s.summary = %q{Simple library to run rails applications into an embedded Tomcat}
   s.test_files = [
     "spec/spec_helper.rb",
@@ -65,11 +64,17 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rack>, [">= 1.0"])
+      s.add_development_dependency(%q<rspec>, [">= 0"])
+      s.add_development_dependency(%q<mocha>, [">= 0"])
     else
       s.add_dependency(%q<rack>, [">= 1.0"])
+      s.add_dependency(%q<rspec>, [">= 0"])
+      s.add_dependency(%q<mocha>, [">= 0"])
     end
   else
     s.add_dependency(%q<rack>, [">= 1.0"])
+    s.add_dependency(%q<rspec>, [">= 0"])
+    s.add_dependency(%q<mocha>, [">= 0"])
   end
 end
 
