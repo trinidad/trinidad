@@ -30,18 +30,4 @@ Hash.class_eval do
     end
   end
 
-  def deep_key?(key)
-    exist = false
-
-    keys.each do |k|
-      if self[k].is_a? Hash
-        exist = self[k].deep_key? key
-        break
-      end
-
-      exist = (k == key)
-    end
-    
-    exist
-  end
 end

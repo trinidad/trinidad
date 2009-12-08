@@ -34,7 +34,7 @@ describe Trinidad::WebApp do
   it "should load custom jars" do 
     class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     @web_app.add_application_libs(class_loader)
-    
+
     resource = class_loader.find_class('org.ho.yaml.Yaml')
     resource.should_not == nil
   end
@@ -60,10 +60,10 @@ describe Trinidad::WebApp do
     start_context_with_web_xml
     lambda { @web_app.add_init_params }.should_not raise_error
   end
-  
+
   it "should load init params" do
     @web_app.add_init_params
-    
+
     @web_app.context.findParameter('jruby.min.runtimes').should == '2'
     @web_app.context.findParameter('jruby.max.runtimes').should == '6'
   end
