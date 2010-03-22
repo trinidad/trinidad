@@ -64,7 +64,7 @@ module Trinidad
       connector.secure = opts.delete(:secure) || false
       connector.port = opts.delete(:port).to_i
 
-      options.each do |key, value|
+      opts.each do |key, value|
         connector.setProperty(key.to_s, value.to_s)
       end
 
@@ -97,7 +97,7 @@ module Trinidad
     end
 
     def create_default_keystore(config)
-      keystore_file = java.io.File.new(config[:ssl][:keystore])
+      keystore_file = java.io.File.new(config[:keystore])
 
       if (!keystore_file.parent_file.exists() &&
               !keystore_file.parent_file.mkdir())
@@ -110,9 +110,9 @@ module Trinidad
         "-keyalg", "RSA",
         "-validity", "365", 
         "-storepass", "key", 
-        "-keystore", config[:ssl][:keystore], 
-        "-storepass", config[:ssl][:keystorePass],
-        "-keypass", config[:ssl][:keystorePass]]
+        "-keystore", config[:keystore], 
+        "-storepass", config[:keystorePass],
+        "-keypass", config[:keystorePass]]
 
       Trinidad::Tomcat::KeyTool.main(keytool_args.to_java(:string))
     end
