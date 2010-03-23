@@ -6,7 +6,7 @@ describe Trinidad::Extensions do
 
   before do
     @gem_mock = OpenStruct.new
-    @gem_mock.name = "trinidad-foo-extension"
+    @gem_mock.name = "trinidad_foo_extension"
 
     Gem::GemPathSearcher.any_instance.stubs(:find_all).returns([@gem_mock])
   end

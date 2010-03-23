@@ -39,7 +39,6 @@ module Trinidad
     end
 
     def configure_extension_by_name_and_type(name, type, *args)
-      p extensions.inspect
       raise "unknown Trinidad extension: #{name}" unless extensions[name]
       extensions[name].configure(type, args)
     end
@@ -53,13 +52,14 @@ module Trinidad
       }
 
       def initialize(name)
-        @name = name.gsub(/-/, '_') 
-        @ext_name = @name.gsub(/trinidad_(.+)_extension/, '\1')
+        @name = name 
+        @ext_name = @name.gsub(/trinidad(?:_|-)(.+)(?:_|-)extension/, '\1')
         @addons = {}
       end
 
       def configure(type, *args)
-        @addons[type].configure(args) if @addons[type]
+        addon = load_addon(type)
+        addon.configure(args) if addon
       end
 
       def options_addon
@@ -76,11 +76,12 @@ module Trinidad
 
       private
       def load_addon(type)
-        require @name
-        class_name = "#{@ext_name.camelize}#{TYPES[type]}"
+        @addons[type] ||= begin
+          require @name
+          class_name = "#{@ext_name.camelize}#{TYPES[type]}"
 
-        addon = Trinidad.const_get(class_name) rescue nil
-        @addons[type] ||= addon
+          Trinidad.const_get(class_name) rescue nil
+        end
       end
     end
   end

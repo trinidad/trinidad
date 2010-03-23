@@ -10,12 +10,12 @@ module Trinidad
   end
 
   class FooServerAddon
-    def self.configure(tomcat, config)
+    def self.configure(*args)
     end
   end
 
   class FooWebAppAddon
-    def self.configure(app_context, global_config, app_config)
+    def self.configure(*args)
     end
   end
 end

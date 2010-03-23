@@ -50,6 +50,7 @@ module Trinidad
 
         web_app.load_default_web_xml
         web_app.add_rack_filter
+        web_app.configure_extensions
         web_app.add_context_loader
         web_app.add_init_params
         web_app.add_web_dir_resources

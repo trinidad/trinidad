@@ -13,7 +13,7 @@ module Trinidad
       @config = config
       @app = app
 
-      configure_extensions if load_extensions?
+      @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
 
     def add_rack_filter
@@ -32,11 +32,10 @@ module Trinidad
     end
 
     def add_context_loader
-      class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
-      add_application_libs(class_loader)
-      add_application_classes(class_loader)
+      add_application_libs(@class_loader)
+      add_application_classes(@class_loader)
 
-      loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
+      loader = Trinidad::Tomcat::WebappLoader.new(@class_loader)
 
       loader.container = @context
       @context.loader = loader
@@ -132,12 +131,14 @@ module Trinidad
     end
 
     def load_extensions?
-      @app[:extensions]
+      @app.has_key?(:extensions)
     end
 
     def configure_extensions
+      return unless load_extensions?
+
       @app[:extensions].each do |name, options|
-        configure_extension_by_name_and_type(name, :webapp, options)
+        configure_extension_by_name_and_type(name, :webapp, @context, @class_loader, options)
       end
     end
   end
