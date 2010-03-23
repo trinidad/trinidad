@@ -8,6 +8,7 @@ end
 
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 $:.unshift(File.dirname(__FILE__) + '/../trinidad-libs')
+$:.unshift(File.dirname(__FILE__) + '/fixtures')
 
 require 'java'
 require 'trinidad'

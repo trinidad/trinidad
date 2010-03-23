@@ -6,6 +6,7 @@ require 'rubygems'
 
 require 'trinidad/core_ext'
 
+require 'trinidad/extensions'
 require 'trinidad/command_line_parser'
 require 'trinidad/jars'
 require 'trinidad/server'

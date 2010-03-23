@@ -1,5 +1,6 @@
 module Trinidad
   class Server
+    include Trinidad::Extensions
 
     attr_reader :tomcat
 
@@ -34,6 +35,8 @@ module Trinidad
 
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
+
+      configure_server_extensions(@tomcat, @config)
     end
 
     def create_web_apps
