@@ -40,15 +40,27 @@ module Trinidad
 
       def initialize(name)
         @name = name.gsub(/-/, '_') 
-        require @name
-
-        ext_name = @name.gsub(/trinidad_(.+)_extension/) {
+        @ext_name = @name.gsub(/trinidad_(.+)_extension/) {
           $1.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
         }
+      end
 
-        @options_addon = Trinidad.const_get("#{ext_name}OptionsAddon") rescue nil
-        @server_addon = Trinidad.const_get("#{ext_name}ServerAddon") rescue nil
-        @webapp_addon = Trinidad.const_get("#{ext_name}WebAppAddon") rescue nil
+      def options_addon
+        @options_addon ||= load("#{@ext_name}OptionsAddon")
+      end
+
+      def server_addon
+        @server_addon ||= load("#{@ext_name}ServerAddon")
+      end
+
+      def webapp_addon
+        @webapp_addon ||= load("#{@ext_name}WebAppAddon")
+      end
+
+      private
+      def load(class_name)
+        require @name
+        Trinidad.const_get(class_name) rescue nil
       end
     end
   end

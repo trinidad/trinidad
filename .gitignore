@@ -7,3 +7,4 @@ nbproject
 .idea
 META-INF
 ssl
+*.gemspec

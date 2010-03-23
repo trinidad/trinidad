@@ -1,5 +1,8 @@
+TRINIDAD_LIBS = File.dirname(__FILE__) + "/../../trinidad-libs" unless defined?(TRINIDAD_LIBS)
+$:.unshift(TRINIDAD_LIBS) unless 
+  $:.include?(TRINIDAD_LIBS) || $:.include?(File.expand_path(TRINIDAD_LIBS))
+
 module Trinidad
-  
   require "servlet-api-2.5-6.1.14"
   require "core-3.1.1"
   require "jsp-api-2.1"

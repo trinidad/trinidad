@@ -3,6 +3,7 @@ $:.unshift(File.dirname(__FILE__)) unless
 
 require "java"
 require 'rubygems'
+gem 'trinidad_jars'
 
 require 'trinidad/core_ext'
 
@@ -15,5 +16,4 @@ require 'trinidad/rails_web_app'
 require 'trinidad/rackup_web_app'
 
 module Trinidad
-  TRINIDAD_LIBS = File.dirname(__FILE__) + "/../trinidad-libs" unless defined?(TRINIDAD_LIBS)
 end

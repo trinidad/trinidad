@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'rake'
 
+namespace :trinidad do
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
@@ -11,9 +12,12 @@ begin
     gem.authors = ["David Calavera"]
     gem.rubyforge_project = 'trinidad'
 
-    gem.files = FileList['bin/*', 'lib/**/*.rb', 'trinidad-libs/*.jar', 'History.txt', 'LICENSE', 'Rakefile', 'README.rdoc', 'VERSION']      
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+    lib_files = Dir.glob('lib/trinidad/*.rb').select {|d| !(d =~ /jars.rb$/)}
+
+    gem.files = FileList['bin/*', 'lib/trinidad.rb', 'History.txt', 'LICENSE', 'README.rdoc', 'VERSION', *lib_files]
+
     gem.add_dependency 'rack', '>=1.0'
+    gem.add_dependency 'trinidad_jars'
 
     gem.add_development_dependency 'rspec'
     gem.add_development_dependency 'mocha'
@@ -23,6 +27,31 @@ begin
 rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
 end
+end
+
+namespace :trinidad_jars do
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "trinidad_jars"
+    gem.summary = %Q{Common jars for Trinidad}
+    gem.email = "calavera@apache.org"
+    gem.homepage = "http://calavera.github.com/trinidad"
+    gem.authors = ["David Calavera"]
+    gem.rubyforge_project = 'trinidad_jars'
+
+    gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
+
+    gem.version = '1.0.0'
+  end
+
+  Jeweler::GemcutterTasks.new
+rescue LoadError
+  puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
+end
+end
+
+task :build => ["trinidad_jars:build", "trinidad:build"]
 
 require 'spec/rake/spectask'
 Spec::Rake::SpecTask.new(:spec) do |spec|
