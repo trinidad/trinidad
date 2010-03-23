@@ -23,6 +23,10 @@ describe Trinidad::Extensions do
     server_extensions.should have(1).extension
   end
 
+  it "filters the extensions for web applications" do
+    webapp_extensions.should have(1).extension
+  end
+
   it "gets the class for options addons" do
     extension = extensions.first
 
@@ -43,5 +47,9 @@ describe Trinidad::Extensions do
 
   it "configures the server with new stuff" do
     configure_server_extensions(nil, nil)
+  end
+
+  it "configures the webapp with new stuff" do
+    configure_webapp_extensions(nil, nil, nil)
   end
 end

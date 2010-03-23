@@ -13,4 +13,9 @@ module Trinidad
     def self.configure(tomcat, config)
     end
   end
+
+  class FooWebAppAddon
+    def self.configure(app_context, global_config, app_config)
+    end
+  end
 end
