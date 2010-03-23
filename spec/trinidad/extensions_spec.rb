@@ -28,7 +28,7 @@ describe Trinidad::Extensions do
   end
 
   it "gets the class for options addons" do
-    extension = extensions.first
+    extension = extensions.values.first
 
     extension.options_addon.should_not be_nil
     extension.options_addon.name.should == "Trinidad::FooOptionsAddon"
@@ -46,10 +46,14 @@ describe Trinidad::Extensions do
   end
 
   it "configures the server with new stuff" do
-    configure_server_extensions(nil, nil)
+    lambda {configure_server_extensions(nil, nil)}.should_not raise_error
   end
 
   it "configures the webapp with new stuff" do
-    configure_webapp_extensions(nil, nil, nil)
+    lambda {configure_webapp_extensions(nil, nil, nil)}.should_not raise_error
+  end
+
+  it "can be configured by extension name and type" do
+    lambda {configure_extension_by_name_and_type("foo", :server, nil, nil)}.should_not raise_error
   end
 end

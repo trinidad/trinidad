@@ -1,5 +1,7 @@
 module Trinidad
   class WebApp
+    include Trinidad::Extensions
+
     attr_reader :context, :config
   
     def self.create(context, config, app)
@@ -10,6 +12,8 @@ module Trinidad
       @context = context
       @config = config
       @app = app
+
+      configure_extensions if load_extensions?
     end
 
     def add_rack_filter
@@ -125,6 +129,16 @@ module Trinidad
 
     def add_parameter_unless_exist(name, value)
       @context.addParameter(name, value) unless @context.findParameter(name)
+    end
+
+    def load_extensions?
+      @app[:extensions]
+    end
+
+    def configure_extensions
+      @app[:extensions].each do |name, options|
+        configure_extension_by_name_and_type(name, :webapp, options)
+      end
     end
   end
 end
