@@ -30,8 +30,8 @@ describe Trinidad::Extensions do
   it "gets the class for options addons" do
     extension = extensions.values.first
 
-    extension.options_addon.should_not be_nil
-    extension.options_addon.name.should == "Trinidad::FooOptionsAddon"
+    extension.addon(:options).should_not be_nil
+    extension.addon(:options).name.should == "Trinidad::FooOptionsAddon"
   end
 
   it "adds options to command line parser" do

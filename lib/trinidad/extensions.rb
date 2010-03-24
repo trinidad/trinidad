@@ -1,40 +1,42 @@
 module Trinidad
   module Extensions
     def extensions
-      gems = Gem::GemPathSearcher.new.find_all("trinidad-*-extension").map {|gem| gem.name }
-      extensions = gems.uniq.map {|e| Extension.new(e) }
-      extensions = extensions.map {|e| [e.ext_name, e]}.flatten
+      @extensions ||= begin
+        gems = Gem::GemPathSearcher.new.find_all("trinidad-*-extension").map {|gem| gem.name }
+        extensions = gems.uniq.map {|e| Extension.new(e) }
+        extensions = extensions.map {|e| [e.ext_name, e]}.flatten
 
-      @extensions ||= Hash[*extensions]
+        Hash[*extensions]
+      end
     end
 
     def command_line_parser_extensions
-      @parser_extensions ||= extensions.values.select {|e| !e.options_addon.nil? }
+      @parser_extensions ||= extensions.values.select {|e| e.options_addon? }
     end
 
     def server_extensions
-      @server_extensions ||= extensions.values.select {|e| !e.server_addon.nil? }      
+      @server_extensions ||= extensions.values.select {|e| e.server_addon? }      
     end
 
     def webapp_extensions
-      @webapp_extensions ||= extensions.values.select {|e| !e.webapp_addon.nil? }
+      @webapp_extensions ||= extensions.values.select {|e| e.webapp_addon? }
     end
 
     def configure_parser_extensions(opts_parser, default_options)
       command_line_parser_extensions.each do |extension|
-        extension.options_addon.configure(opts_parser, default_options)
+        extension.configure(:options, opts_parser, default_options)
       end
     end
 
     def configure_server_extensions(tomcat, config)
       server_extensions.each do |extension|
-        extension.server_addon.configure(tomcat, config)
+        extension.configure(:server, tomcat, config)
       end
     end
 
     def configure_webapp_extensions(app_context, global_config, app_config)
       webapp_extensions.each do |extension|
-        extension.webapp_addon.configure(app_context, global_config, app_config)
+        extension.configure(:webapp, app_context, global_config, app_config)
       end
     end
 
@@ -59,19 +61,23 @@ module Trinidad
 
       def configure(type, *args)
         addon = load_addon(type)
-        addon.configure(args) if addon
+        addon.new.configure(args) if addon
       end
 
-      def options_addon
-        load_addon(:options)
+      def addon(type)
+        load_addon(type)
       end
 
-      def server_addon
-        load_addon(:server)
+      def options_addon?
+        !load_addon(:options).nil?
       end
 
-      def webapp_addon
-        load_addon(:webapp)
+      def server_addon?
+        !load_addon(:server).nil?
+      end
+
+      def webapp_addon?
+        !load_addon(:webapp).nil?
       end
 
       private

@@ -1,7 +1,10 @@
 module Trinidad
   class FooOptionsAddon
 
-    def self.configure(opts_parser, default_options)
+    def configure(*args)
+      o = *args
+      opts_parser = o[0]
+      default_options = o[1]
       opts_parser.on('--foo', '--foo') do
         default_options[:foo] = :bar
       end
@@ -10,12 +13,12 @@ module Trinidad
   end
 
   class FooServerAddon
-    def self.configure(*args)
+    def configure(*args)
     end
   end
 
   class FooWebAppAddon
-    def self.configure(*args)
+    def configure(*args)
     end
   end
 end
