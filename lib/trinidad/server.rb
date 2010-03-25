@@ -32,11 +32,34 @@ module Trinidad
       @tomcat = Trinidad::Tomcat::Tomcat.new
       @tomcat.setPort(@config[:port].to_i)
       @tomcat.setBaseDir(Dir.pwd)
+      enable_naming
 
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
 
       configure_server_extensions(@tomcat, @config)
+    end
+
+    def enable_naming
+      @tomcat.getServer().addLifecycleListener(Trinidad::Tomcat::NamingContextListener.new)
+
+      java.lang.System.setProperty("catalina.useNaming", "true")
+
+      value = "org.apache.naming"
+      oldValue = java.lang.System.getProperty(javax.naming.Context.URL_PKG_PREFIXES);
+      if oldValue
+          if (oldValue.include?(value))
+            value = oldValue
+          else 
+            value = value + ":" + oldValue
+          end
+      end
+      java.lang.System.setProperty(javax.naming.Context.URL_PKG_PREFIXES, value)
+
+      value = java.lang.System.getProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY)
+      unless value
+        java.lang.System.setProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
+      end
     end
 
     def create_web_apps
@@ -50,7 +73,7 @@ module Trinidad
 
         web_app.load_default_web_xml
         web_app.add_rack_filter
-        web_app.configure_extensions
+        web_app.configure_extensions(@tomcat)
         web_app.add_context_loader
         web_app.add_init_params
         web_app.add_web_dir_resources
@@ -139,6 +162,5 @@ module Trinidad
         config[:web_apps] = { :default => default_app }
       end
     end
-
   end
 end

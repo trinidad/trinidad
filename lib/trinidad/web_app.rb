@@ -134,12 +134,12 @@ module Trinidad
       @app.has_key?(:extensions)
     end
 
-    def configure_extensions
+    def configure_extensions(tomcat)
       return unless load_extensions?
 
       @app[:extensions].each do |name, options|
-        configure_extension_by_name_and_type(name, :webapp, @context, @class_loader, options)
+        configure_extension_by_name_and_type(name, :webapp, tomcat, @context, @class_loader, options)
       end
-    end
+    end 
   end
 end
