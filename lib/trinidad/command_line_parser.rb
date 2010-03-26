@@ -2,7 +2,6 @@ module Trinidad
   require 'optparse'
 
   class CommandLineParser
-    extend Trinidad::Extensions
 
     def self.parse
       default_options = {
@@ -81,8 +80,6 @@ module Trinidad
           puts opts
           exit
         end
-
-        configure_parser_extensions(opts, default_options)
 
         opts.parse!(ARGV)
       end

@@ -137,9 +137,7 @@ module Trinidad
     def configure_extensions(tomcat)
       return unless load_extensions?
 
-      @app[:extensions].each do |name, options|
-        configure_extension_by_name_and_type(name, :webapp, tomcat, @context, @class_loader, options)
-      end
+      Trinidad::Extensions.configure_webapp_extensions(@app[:extensions], tomcat, @context)
     end 
   end
 end

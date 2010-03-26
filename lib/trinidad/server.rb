@@ -37,7 +37,7 @@ module Trinidad
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
 
-      configure_server_extensions(@tomcat, @config)
+      Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
     end
 
     def enable_naming

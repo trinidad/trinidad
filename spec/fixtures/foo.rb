@@ -1,24 +1,15 @@
 module Trinidad
-  class FooOptionsAddon
-
-    def configure(*args)
-      o = *args
-      opts_parser = o[0]
-      default_options = o[1]
-      opts_parser.on('--foo', '--foo') do
-        default_options[:foo] = :bar
-      end
-    end
-
-  end
-
-  class FooServerAddon
-    def configure(*args)
+  module Extensions
+  class FooWebAppExtension < WebAppExtension
+    def configure(tomcat, app_context)
+      @options
     end
   end
 
-  class FooWebAppAddon
-    def configure(*args)
+  class FooServerExtension < ServerExtension
+    def configure(tomcat)
+      @options
     end
+  end
   end
 end
