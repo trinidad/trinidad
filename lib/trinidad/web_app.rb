@@ -1,9 +1,7 @@
 module Trinidad
   class WebApp
-    include Trinidad::Extensions
-
     attr_reader :context, :config
-  
+
     def self.create(context, config, app)
       app.has_key?(:rackup) ? RackupWebApp.new(context, config, app) : RailsWebApp.new(context, config, app)
     end

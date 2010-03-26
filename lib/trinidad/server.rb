@@ -1,7 +1,5 @@
 module Trinidad
   class Server
-    include Trinidad::Extensions
-
     attr_reader :tomcat
 
     def default_options
