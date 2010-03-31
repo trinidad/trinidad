@@ -21,6 +21,7 @@ begin
 
     gem.add_development_dependency 'rspec'
     gem.add_development_dependency 'mocha'
+    gem.has_rdoc = false
   end
 
   Jeweler::GemcutterTasks.new
@@ -41,7 +42,7 @@ begin
     gem.rubyforge_project = 'trinidad_jars'
 
     gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
-
+    gem.has_rdoc = false
     gem.version = '1.0.0'
   end
 
