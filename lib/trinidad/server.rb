@@ -1,4 +1,7 @@
 module Trinidad
+  JSystem = java.lang.System
+  JContext = javax.naming.Context
+
   class Server
     attr_reader :tomcat
 
@@ -36,28 +39,6 @@ module Trinidad
       add_ajp_connector if ajp_enabled?
 
       Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
-    end
-
-    def enable_naming
-      @tomcat.getServer().addLifecycleListener(Trinidad::Tomcat::NamingContextListener.new)
-
-      java.lang.System.setProperty("catalina.useNaming", "true")
-
-      value = "org.apache.naming"
-      oldValue = java.lang.System.getProperty(javax.naming.Context.URL_PKG_PREFIXES);
-      if oldValue
-          if (oldValue.include?(value))
-            value = oldValue
-          else 
-            value = value + ":" + oldValue
-          end
-      end
-      java.lang.System.setProperty(javax.naming.Context.URL_PKG_PREFIXES, value)
-
-      value = java.lang.System.getProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY)
-      unless value
-        java.lang.System.setProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
-      end
     end
 
     def create_web_apps
@@ -158,6 +139,23 @@ module Trinidad
         default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
 
         config[:web_apps] = { :default => default_app }
+      end
+    end
+
+    def enable_naming
+      @tomcat.getServer().addLifecycleListener(Trinidad::Tomcat::NamingContextListener.new)
+
+      JSystem.setProperty("catalina.useNaming", "true")
+
+      value = "org.apache.naming"
+      old_value = JSystem.getProperty(JContext.URL_PKG_PREFIXES) || value
+
+      value = value + ":" + old_value unless old_value.include?(value)
+      JSystem.setProperty(JContext.URL_PKG_PREFIXES, value)
+
+      value = JSystem.getProperty(JContext.INITIAL_CONTEXT_FACTORY)
+      unless value
+        JSystem.setProperty(JContext.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
       end
     end
   end

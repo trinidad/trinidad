@@ -1,6 +1,16 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
+JSystem = java.lang.System
+JContext = javax.naming.Context
+
 describe Trinidad::Server do
+
+  it "enables catalina naming" do
+    Trinidad::Server.new
+    JSystem.getProperty(JContext.URL_PKG_PREFIXES).should  include("org.apache.naming")
+    JSystem.getProperty(JContext.INITIAL_CONTEXT_FACTORY).should == "org.apache.naming.java.javaURLContextFactory"
+    JSystem.getProperty("catalina.useNaming").should == "true"
+  end
 
   it "should have ssl disabled when config param is nil" do
     server = Trinidad::Server.new
