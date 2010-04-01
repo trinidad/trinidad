@@ -33,8 +33,7 @@ Hash.class_eval do
   def symbolize!
     keys.each do |key|
       self[key].symbolize! if self[key].is_a?(Hash)
-      self[key.to_sym] = self[key]
-      self.delete(key)
+      self[key.to_sym] = self.delete(key)
     end
     self
   end
