@@ -1,3 +1,8 @@
+== 0.8.0 (??)
+
+* Support for extensions (database connection pooling is the first one using it)
+* Splitting the gem in two, the core gem and the jars gem
+
 == 0.7.0 (2009-12-01)
 
 * Support to run different applications within the same Tomcat container
