@@ -29,6 +29,15 @@ Hash.class_eval do
       end
     end
   end
+
+  def symbolize!
+    keys.each do |key|
+      self[key].symbolize! if self[key].is_a?(Hash)
+      self[key.to_sym] = self[key]
+      self.delete(key)
+    end
+    self
+  end
 end
 
 class String
