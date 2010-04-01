@@ -4,7 +4,7 @@ require 'optparse'
 describe Trinidad::Extensions do
 
   before(:each) do
-    @extensions = {'foo' => {:bar => :bazz}}
+    @extensions = {:foo => {:bar => :bazz}}
   end
 
   it "configures the server with new stuff" do

@@ -17,7 +17,7 @@ module Trinidad
     end
 
     def self.extension(name, type)
-      class_name = (name.camelize << type).to_sym
+      class_name = (name.to_s.camelize << type).to_sym
       load_extension(name) unless const_defined?(class_name)
       const_get(class_name)
     end
