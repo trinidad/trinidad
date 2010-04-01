@@ -5,6 +5,11 @@ JContext = javax.naming.Context
 
 describe Trinidad::Server do
 
+  it "always uses symbols as configuration keys" do
+    server = Trinidad::Server.new({'port' => 4000})
+    server.config[:port].should == 4000
+  end
+
   it "enables catalina naming" do
     Trinidad::Server.new
     JSystem.getProperty(JContext.URL_PKG_PREFIXES).should  include("org.apache.naming")

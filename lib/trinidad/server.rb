@@ -3,7 +3,7 @@ module Trinidad
   JContext = javax.naming.Context
 
   class Server
-    attr_reader :tomcat
+    attr_reader :tomcat, :config
 
     def default_options
       {
