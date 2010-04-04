@@ -52,7 +52,13 @@ rescue LoadError
 end
 end
 
-task :build => ["trinidad_jars:build", "trinidad:build"]
+{
+  :build => 'Build all Trinidad gems',
+  :release => 'Release all Trinidad gems'
+}.each do |t, d|
+  desc d
+  task t => ["trinidad_jars:#{t}", "trinidad:#{t}"]
+end
 
 require 'spec/rake/spectask'
 Spec::Rake::SpecTask.new(:spec) do |spec|
