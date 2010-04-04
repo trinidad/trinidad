@@ -1,4 +1,4 @@
-== 0.8.0 (??)
+== 0.8.0 (2010-04-04)
 
 * Support for extensions (database connection pooling is the first one using it)
 * Splitting the gem in two, the core gem and the jars gem
