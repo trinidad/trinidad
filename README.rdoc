@@ -35,6 +35,14 @@ You can also specify a default web.xml to config your web application. By defaul
 
 Other advanced options can be found in the wiki: http://wiki.github.com/calavera/trinidad/advanced-configuration
 
+== EXTENSIONS:
+
+From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
+
+* Database connection pooling: http://github.com/calavera/trinidad-dbpool
+
+You can find further information on how to write your onw extension in the wiki: http://wiki.github.com/calavera/trinidad/extensions
+
 == Copyright
 
-Copyright (c) 2009 David Calavera<calavera@apache.org>. See LICENSE for details.
+Copyright (c) 2010 David Calavera<calavera@apache.org>. See LICENSE for details.
