@@ -3,13 +3,13 @@ $:.unshift(TRINIDAD_LIBS) unless
   $:.include?(TRINIDAD_LIBS) || $:.include?(File.expand_path(TRINIDAD_LIBS))
 
 module Trinidad
-  require "servlet-api-2.5-6.1.14"
-  require "jsp-api-2.1"
-  require "jsp-2.1"
+  require 'servlet-api-2.5-6.1.14'
+  require 'jsp-api-2.1'
+  require 'jsp-2.1'
   require 'tomcat-core'
   require 'jetty-util-6.1.14'
 
-  require "jruby-rack-0.9.5"
+  require 'jruby-rack-0.9.7-SNAPSHOT'
 
   module Tomcat
     include_package 'org.apache.catalina'
@@ -25,7 +25,7 @@ module Trinidad
   end
 
   module Rack
-    include_package "org.jruby.rack"
-    include_package "org.jruby.rack.rails"
+    include_package 'org.jruby.rack'
+    include_package 'org.jruby.rack.rails'
   end
 end
