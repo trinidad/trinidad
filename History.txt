@@ -1,3 +1,7 @@
+== 0.8.1 (2010-04-06)
+
+* Uses JRuby-Rack gem
+
 == 0.8.0 (2010-04-04)
 
 * Support for extensions (database connection pooling is the first one using it)
