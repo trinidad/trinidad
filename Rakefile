@@ -17,6 +17,7 @@ begin
     gem.files = FileList['bin/*', 'lib/trinidad.rb', 'History.txt', 'LICENSE', 'README.rdoc', 'VERSION', *lib_files]
 
     gem.add_dependency 'rack', '>=1.0'
+    gem.add_dependency 'jruby-rack'
     gem.add_dependency 'trinidad_jars'
 
     gem.add_development_dependency 'rspec'
@@ -43,7 +44,7 @@ begin
 
     gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
     gem.has_rdoc = false
-    gem.version = '0.1.0'
+    gem.version = '0.1.1'
   end
 
   Jeweler::GemcutterTasks.new

@@ -9,9 +9,10 @@ module Trinidad
   require 'tomcat-core'
   require 'jetty-util-6.1.14'
 
-  require 'jruby-rack-0.9.7-SNAPSHOT'
-
-  module Tomcat
+  require 'jruby-rack'
+  require JRubyJars.jruby_rack_jar_path
+  
+module Tomcat
     include_package 'org.apache.catalina'
     include_package 'org.apache.catalina.startup'
     include_package 'org.apache.catalina.core'
