@@ -1,6 +1,7 @@
 module Trinidad
   require 'optparse'
-
+  require 'yaml'
+  
   class CommandLineParser
 
     def self.parse
