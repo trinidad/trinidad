@@ -1,3 +1,7 @@
+== 0.8.2 (2010-04-09)
+
+* Fixes yaml parser error. Thank to @elskwid
+
 == 0.8.1 (2010-04-06)
 
 * Uses JRuby-Rack gem
