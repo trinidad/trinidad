@@ -82,4 +82,11 @@ describe Trinidad::CommandLineParser do
     options = Trinidad::CommandLineParser.parse
     options[:public].should == 'web'
   end
+
+  it "works on threadsafe mode using the shortcut" do
+    ARGV = '--threadsafe'.split
+    options = Trinidad::CommandLineParser.parse
+    options[:jruby_min_runtimes].should == 1
+    options[:jruby_max_runtimes].should == 1
+  end
 end

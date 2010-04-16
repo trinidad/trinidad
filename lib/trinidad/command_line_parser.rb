@@ -72,6 +72,11 @@ module Trinidad
           default_options[:public] = v
         end
 
+        opts.on('-t', '--threadsafe', 'Threadsafe mode') do
+          default_options[:jruby_min_runtimes] = 1
+          default_options[:jruby_max_runtimes] = 1
+        end
+
         opts.on('-v', '--version', 'display the current version') do
           puts File.read(File.join(File.dirname(__FILE__), '..', '..', 'VERSION')).chomp
           exit
