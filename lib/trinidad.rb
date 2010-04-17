@@ -16,4 +16,5 @@ require 'trinidad/rails_web_app'
 require 'trinidad/rackup_web_app'
 
 module Trinidad
+  VERSION = File.read(File.expand_path('../../VERSION', __FILE__))
 end
