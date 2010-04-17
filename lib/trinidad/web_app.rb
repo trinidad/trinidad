@@ -40,12 +40,9 @@ module Trinidad
     end
 
     def add_init_params
-      [:jruby_min_runtimes, :jruby_max_runtimes].each do |param|
-        param_name = param.to_s.gsub(/_/, '.')
-        add_parameter_unless_exist(param_name, @config[param].to_s)
-      end
-
-      add_parameter_unless_exist('jruby.initial.runtimes', @config[:jruby_min_runtimes].to_s)
+      add_parameter_unless_exist('jruby.min.runtimes', jruby_min_runtimes.to_s)
+      add_parameter_unless_exist('jruby.max.runtimes', jruby_max_runtimes.to_s)
+      add_parameter_unless_exist('jruby.initial.runtimes', jruby_min_runtimes.to_s)
       add_parameter_unless_exist('public.root', File.join('/', public_root))
     end
 
@@ -74,14 +71,14 @@ module Trinidad
     end
 
     def load_default_web_xml
-      default_web_xml = File.expand_path(File.join(@app[:web_app_dir], default_web_xml_file))
+      file = File.expand_path(File.join(@app[:web_app_dir], default_web_xml))
 
-      if File.exist?(default_web_xml)
-        @context.setDefaultWebXml(default_web_xml)
-        @context.setDefaultContextXml(default_web_xml)
+      if File.exist?(file)
+        @context.setDefaultWebXml(file)
+        @context.setDefaultContextXml(file)
 
         context_config = Trinidad::Tomcat::ContextConfig.new
-        context_config.setDefaultWebXml(default_web_xml)
+        context_config.setDefaultWebXml(file)
 
         @context.addLifecycleListener(context_config)
       end
@@ -108,20 +105,11 @@ module Trinidad
       @context.findParameter('public.root') || @app[:public]  || @config[:public] || 'public'
     end
 
-    def libs_dir
-      @app[:libs_dir] || @config[:libs_dir]
-    end
-
-    def classes_dir
-      @app[:classes_dir] || @config[:classes_dir]
-    end
-
-    def default_web_xml_file
-      @app[:default_web_xml] || @config[:default_web_xml]
-    end
-
-    def environment
-      @app[:environment] || @config[:environment]
+    %w{libs_dir classes_dir default_web_xml environment jruby_min_runtimes jruby_max_runtimes}.each do |method_name|
+      define_method method_name do
+        sym = method_name.to_sym
+        @app[sym] || @config[sym]
+      end
     end
 
     def add_parameter_unless_exist(name, value)

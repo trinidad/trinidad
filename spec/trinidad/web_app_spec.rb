@@ -20,7 +20,7 @@ describe Trinidad::WebApp do
     }
     @web_app = Trinidad::RailsWebApp.new(@tomcat_web_app, @config, @app)
   end
-  
+
   it "creates a RailsWebApp if rackup option is not present" do
     Trinidad::WebApp.create(@tomcat_web_app, @config, @app).is_a?(Trinidad::RailsWebApp).should be_true
   end
@@ -42,7 +42,7 @@ describe Trinidad::WebApp do
   it "should load custom classes" do
     class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     @web_app.add_application_classes(class_loader)
-    
+
     resource = class_loader.find_class('HelloTomcat')
     resource.should_not == nil    
   end
@@ -61,11 +61,23 @@ describe Trinidad::WebApp do
     lambda { @web_app.add_init_params }.should_not raise_error
   end
 
-  it "should load init params" do
+  it "loads init params from configuration root" do
     @web_app.add_init_params
 
     @web_app.context.findParameter('jruby.min.runtimes').should == '2'
     @web_app.context.findParameter('jruby.max.runtimes').should == '6'
+  end
+
+  it 'loads init params from application node' do
+    @app[:jruby_min_runtimes] = 4
+    @app[:jruby_max_runtimes] = 8
+    @config[:web_apps][:default] = @app
+
+    web_app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    web_app.add_init_params
+
+    web_app.context.findParameter('jruby.min.runtimes').should == '4'
+    web_app.context.findParameter('jruby.max.runtimes').should == '8'
   end
 
   it "should configure rack filter" do
