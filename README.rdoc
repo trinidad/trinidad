@@ -41,7 +41,8 @@ Other advanced options can be found in the wiki: http://wiki.github.com/calavera
 
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
 
-* Database connection pooling: http://github.com/calavera/trinidad-dbpool
+  * Database connection pooling: http://github.com/calavera/trinidad-dbpool
+  * Daemon, runs Trinidad as a daemon: * http://github.com/calavera/trinidad_daemon_extension
 
 You can find further information on how to write your onw extension in the wiki: http://wiki.github.com/calavera/trinidad/extensions
 
