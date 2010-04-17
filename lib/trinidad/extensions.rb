@@ -11,9 +11,12 @@ module Trinidad
     def self.configure_server_extensions(extensions, tomcat)
       if extensions
         extensions.each do |name, options|
-          extension(name, 'ServerExtension', options).configure(tomcat)
+          extension = extension(name, 'ServerExtension', options)
+          configured_tomcat = extension.configure(tomcat)
+          tomcat = configured_tomcat if extension.override_tomcat?
         end
       end
+      tomcat
     end
 
     def self.configure_options_extensions(extensions, parser, default_options)
@@ -50,6 +53,8 @@ module Trinidad
       def configure(tomcat)
         raise NotImplementedError, "#{self.class}#configure not implemented"
       end
+
+      def override_tomcat?; false; end # hack to allow override the tomcat's instance, it should be a better way
     end
 
     class OptionsExtension < Extension

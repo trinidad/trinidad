@@ -38,7 +38,7 @@ module Trinidad
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
 
-      Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
+      @tomcat = Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
     end
 
     def create_web_apps

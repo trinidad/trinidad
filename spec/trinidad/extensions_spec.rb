@@ -29,4 +29,12 @@ describe Trinidad::Extensions do
       options.has_key?(:bar).should be_true
     }.should_not raise_error
   end
+
+  it "allows to override the tomcat's instance" do
+    extensions = {:override_tomcat => {}}
+    tomcat = Trinidad::Tomcat::Tomcat.new
+
+    extended = Trinidad::Extensions.configure_server_extensions(extensions, tomcat)
+    extended.should_not equal(tomcat)
+  end
 end
