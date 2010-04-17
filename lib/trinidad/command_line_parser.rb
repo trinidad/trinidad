@@ -82,6 +82,10 @@ module Trinidad
           exit
         end
 
+        opts.on('-l', '--load EXTENSION_NAME', 'load options for a given extension') do |name|
+          Trinidad::Extensions.configure_options_extensions({name => {}}, opts, default_options)
+        end
+
         opts.on('-h', '--help', 'display the help') do
           puts opts
           exit

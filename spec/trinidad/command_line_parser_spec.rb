@@ -89,4 +89,11 @@ describe Trinidad::CommandLineParser do
     options[:jruby_min_runtimes].should == 1
     options[:jruby_max_runtimes].should == 1
   end
+
+  it "loads a given extension to add its options to the parser" do
+    ARGV = "--load foo --foo".split
+    options = Trinidad::CommandLineParser.parse
+    options.has_key?(:bar).should be_true
+
+  end
 end

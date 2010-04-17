@@ -3,7 +3,7 @@ module Trinidad
     def self.configure_webapp_extensions(extensions, tomcat, app_context)
       if extensions
         extensions.each do |name, options|
-          extension(name, 'WebAppExtension').new(options).configure(tomcat, app_context)
+          extension(name, 'WebAppExtension', options).configure(tomcat, app_context)
         end
       end
     end
@@ -11,15 +11,23 @@ module Trinidad
     def self.configure_server_extensions(extensions, tomcat)
       if extensions
         extensions.each do |name, options|
-          extension(name, 'ServerExtension').new(options).configure(tomcat)
+          extension(name, 'ServerExtension', options).configure(tomcat)
         end
       end
     end
 
-    def self.extension(name, type)
+    def self.configure_options_extensions(extensions, parser, default_options)
+      if extensions
+        extensions.each do |name, options|
+          extension(name, 'OptionsExtension', options).configure(parser, default_options)
+        end
+      end
+    end
+
+    def self.extension(name, type, options)
       class_name = (name.to_s.camelize << type).to_sym
       load_extension(name) unless const_defined?(class_name)
-      const_get(class_name)
+      const_get(class_name).new(options)
     end
 
     def self.load_extension(name)
@@ -27,7 +35,7 @@ module Trinidad
     end
 
     class Extension
-      def initialize(options)
+      def initialize(options = {})
         @options = options.dup
       end
     end
@@ -40,6 +48,12 @@ module Trinidad
 
     class ServerExtension < Extension
       def configure(tomcat)
+        raise NotImplementedError, "#{self.class}#configure not implemented"
+      end
+    end
+
+    class OptionsExtension < Extension
+      def configure(parser, default_options)
         raise NotImplementedError, "#{self.class}#configure not implemented"
       end
     end
