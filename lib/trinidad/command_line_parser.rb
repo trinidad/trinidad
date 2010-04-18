@@ -4,7 +4,7 @@ module Trinidad
   
   class CommandLineParser
 
-    def self.parse
+    def self.parse(argv)
       default_options = {
         :port => 3000,
         :environment => 'development',
@@ -91,7 +91,7 @@ module Trinidad
           exit
         end
 
-        opts.parse!(ARGV)
+        opts.parse!(argv)
       end
 
       default_options

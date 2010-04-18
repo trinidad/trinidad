@@ -5,5 +5,5 @@ $:.unshift(File.dirname(__FILE__) + '/../trinidad-libs')
 
 require "trinidad"
 
-opts = Trinidad::CommandLineParser.parse
+opts = Trinidad::CommandLineParser.parse(ARGV)
 Trinidad::Server.new(opts).start
