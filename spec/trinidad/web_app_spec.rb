@@ -3,7 +3,9 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Trinidad::WebApp do
   before do
     @tomcat = Trinidad::Tomcat::Tomcat.new
+    @tomcat.host.app_base = Dir.pwd
     @tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
+
     @app = {
       :web_app_dir => MOCK_WEB_APP_DIR,
       :context_path => '/'
