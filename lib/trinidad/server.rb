@@ -31,8 +31,9 @@ module Trinidad
 
     def load_tomcat_server
       @tomcat = Trinidad::Tomcat::Tomcat.new
-      @tomcat.setPort(@config[:port].to_i)
-      @tomcat.setBaseDir(Dir.pwd)
+      @tomcat.port = @config[:port].to_i
+      @tomcat.base_dir = Dir.pwd
+      @tomcat.host.app_base = Dir.pwd
       enable_naming
 
       add_ssl_connector if ssl_enabled?

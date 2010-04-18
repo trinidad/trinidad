@@ -3,11 +3,7 @@ $:.unshift(TRINIDAD_LIBS) unless
   $:.include?(TRINIDAD_LIBS) || $:.include?(File.expand_path(TRINIDAD_LIBS))
 
 module Trinidad
-  require 'servlet-api-2.5-6.1.14'
-  require 'jsp-api-2.1'
-  require 'jsp-2.1'
   require 'tomcat-core'
-  require 'jetty-util-6.1.14'
 
   require 'jruby-rack'
   require JRubyJars.jruby_rack_jar_path
