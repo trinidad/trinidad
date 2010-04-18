@@ -24,13 +24,15 @@ describe Trinidad::WebApp do
   end
 
   it "creates a RailsWebApp if rackup option is not present" do
-    Trinidad::WebApp.create(@tomcat_web_app, @config, @app).is_a?(Trinidad::RailsWebApp).should be_true
+    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    app.should be_an_instance_of(Trinidad::RailsWebApp)
   end
 
   it "creates a RackupWebApp if rackup option is present" do
     rackup_app = {:rackup => 'config.ru'}
     @config.deep_merge({:web_apps => {:default => rackup_app}})
-    Trinidad::WebApp.create(@tomcat_web_app, @config, rackup_app).is_a?(Trinidad::RackupWebApp).should be_true
+    app = Trinidad::WebApp.create(@tomcat_web_app, @config, rackup_app)
+    app.should be_an_instance_of(Trinidad::RackupWebApp)
   end
 
   it "should load custom jars" do 
@@ -38,7 +40,7 @@ describe Trinidad::WebApp do
     @web_app.add_application_libs(class_loader)
 
     resource = class_loader.find_class('org.ho.yaml.Yaml')
-    resource.should_not == nil
+    resource.should_not be_nil
   end
 
   it "should load custom classes" do
@@ -46,7 +48,7 @@ describe Trinidad::WebApp do
     @web_app.add_application_classes(class_loader)
 
     resource = class_loader.find_class('HelloTomcat')
-    resource.should_not == nil    
+    resource.should_not be_nil
   end
 
   it "should start application context without errors" do
@@ -94,7 +96,7 @@ describe Trinidad::WebApp do
 
   it "should have rack filter already configured" do
     @web_app.load_default_web_xml
-    @web_app.rack_filter_configured?().should == true
+    @web_app.rack_filter_configured?().should  be_true
 
     @web_app.add_rack_filter
     @web_app.context.findFilterDefs().should have(0).filters
@@ -102,7 +104,7 @@ describe Trinidad::WebApp do
 
   it "should have rack listener already configured" do
     @web_app.load_default_web_xml
-    @web_app.rack_listener_configured?().should == true
+    @web_app.rack_listener_configured?().should be_true
 
     @web_app.add_rack_context_listener
     @web_app.context.findApplicationListeners().should have(0).listeners
@@ -122,5 +124,4 @@ describe Trinidad::WebApp do
     @web_app.config[:libs_dir] = File.join(File.dirname(__FILE__), '..', '..', 'tomcat-libs')
     @web_app.add_context_loader
   end
-  
 end

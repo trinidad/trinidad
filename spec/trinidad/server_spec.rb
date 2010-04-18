@@ -19,25 +19,25 @@ describe Trinidad::Server do
 
   it "should have ssl disabled when config param is nil" do
     server = Trinidad::Server.new
-    server.ssl_enabled?.should == false
+    server.ssl_enabled?.should be_false
   end
 
   it "should have ajp disabled when config param is nil" do
     server = Trinidad::Server.new
-    server.ajp_enabled?.should == false
+    server.ajp_enabled?.should be_false
   end
 
   it "should have ssl enabled when config param is a number" do
     server = Trinidad::Server.new({:ssl => {:port => 8443},
       :web_app_dir => MOCK_WEB_APP_DIR})
 
-    server.ssl_enabled?.should == true
+    server.ssl_enabled?.should be_true
   end
 
   it "should have ajp enabled when config param is a number" do
     server = Trinidad::Server.new({:ajp => {:port => 8009}})
 
-    server.ajp_enabled?.should == true
+    server.ajp_enabled?.should be_true
   end
 
   it "should have a connector with https scheme" do
