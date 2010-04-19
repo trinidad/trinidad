@@ -25,6 +25,19 @@ describe Trinidad::CommandLineParser do
     options[:libs_dir].should == 'my_jars'
   end
 
+  it "symbolozes configuration keys before merge with the default options" do
+    FakeFS.activate!
+    begin
+      File.open('config/trinidad.yml', 'w') {|io| io.write("---\n  port: 8080") }
+      options = subject.parse(['-f'])
+
+      options[:config].should == 'config/trinidad.yml'
+      options[:port].should == 8080
+    ensure
+      FakeFS.deactivate!
+    end
+  end
+
   it "uses config/trinidad.yml as the default configuration file name" do
     FakeFS.activate!
     begin

@@ -66,7 +66,8 @@ module Trinidad
             puts "\tYou still can use tomcat.yml passing it as the file name to this option: -f config/tomcat.yml"
             default_options[:config] = 'config/tomcat.yml'
           end
-          default_options.deep_merge! YAML.load_file(default_options[:config])
+          config_options = YAML.load_file(default_options[:config])
+          default_options.deep_merge!(config_options.symbolize!)
         end
 
         opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
