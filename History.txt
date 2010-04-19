@@ -1,3 +1,10 @@
+== 0.9.0 (??)
+
+* Tomcat updated to version 6.0.26, added constant to get its version.
+* Jars cleaned, 300kb less to load :)
+* Default configuration file name moved from tomcat.yml to trinidad.yml
+* Fixes bug merging configuration files
+
 == 0.8.3 (2010-04-17)
 
 * Extensions improvements:
