@@ -38,8 +38,16 @@ namespace :tomcat do
       end
 
       # build the jar again
+      puts "building the tomcat's core jar"
       %x{jar -cvf #{TOMCAT_CORE_PATH} META-INF javax org}
     end
+
+    puts "updating tomcat's version number"
+    path = File.expand_path('../../lib/trinidad.rb', __FILE__)
+    file = File.read(path)
+    file.gsub!(/TOMCAT_VERSION = '(.+)'/, "TOMCAT_VERSION = '#{tomcat_version.first}'")
+    File.open(path, 'w') { |io| io.write(file) }
+
     puts "DONE - the Tomcat's version has been updated succesfully, please build Trinidad again."
   end
 end
