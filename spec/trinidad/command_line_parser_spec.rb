@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'fakefs/safe'
 
 describe Trinidad::CommandLineParser do
   subject { Trinidad::CommandLineParser }
@@ -22,6 +23,19 @@ describe Trinidad::CommandLineParser do
 
     options = subject.parse(args)
     options[:libs_dir].should == 'my_jars'
+  end
+
+  it "uses config/trinidad.yml as the default configuration file name" do
+    FakeFS.activate!
+    begin
+      File.open('config/trinidad.yml', 'w') {|io| io.write("---\n  :port: 8080") }
+      options = subject.parse(['-f'])
+
+      options[:config].should == 'config/trinidad.yml'
+      options[:port].should == 8080
+    ensure
+      FakeFS.deactivate!
+    end
   end
 
   it "overrides the config file when it's especified" do
