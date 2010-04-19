@@ -22,6 +22,7 @@ begin
 
     gem.add_development_dependency 'rspec'
     gem.add_development_dependency 'mocha'
+    gem.add_development_dependency 'fakefs'
     gem.has_rdoc = false
   end
 

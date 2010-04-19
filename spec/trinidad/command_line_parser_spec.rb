@@ -1,5 +1,7 @@
 require File.dirname(__FILE__) + '/../spec_helper'
-require 'fakefs/safe'
+require File.dirname(__FILE__) + '/fakeapp'
+
+include FakeApp
 
 describe Trinidad::CommandLineParser do
   subject { Trinidad::CommandLineParser }
@@ -25,37 +27,24 @@ describe Trinidad::CommandLineParser do
     options[:libs_dir].should == 'my_jars'
   end
 
-  it "symbolozes configuration keys before merge with the default options" do
-    FakeFS.activate!
-    begin
-      File.open('config/trinidad.yml', 'w') {|io| io.write("---\n  port: 8080") }
-      options = subject.parse(['-f'])
-
-      options[:config].should == 'config/trinidad.yml'
-      options[:port].should == 8080
-    ensure
-      FakeFS.deactivate!
-    end
-  end
-
   it "uses config/trinidad.yml as the default configuration file name" do
-    FakeFS.activate!
-    begin
-      File.open('config/trinidad.yml', 'w') {|io| io.write("---\n  :port: 8080") }
+    FakeFS do
+      create_default_config_file
       options = subject.parse(['-f'])
 
       options[:config].should == 'config/trinidad.yml'
       options[:port].should == 8080
-    ensure
-      FakeFS.deactivate!
     end
   end
 
   it "overrides the config file when it's especified" do
-    args = "-f #{File.join(MOCK_WEB_APP_DIR, 'tomcat.yml')}".split
+    FakeFS do
+      create_custom_config_file
+      args = "-f config/tomcat.yml".split
 
-    options = subject.parse(args)
-    options[:environment].should == 'production'
+      options = subject.parse(args)
+      options[:environment].should == 'production'
+    end
   end
 
   it "adds default ssl port to options" do
@@ -87,11 +76,14 @@ describe Trinidad::CommandLineParser do
   end
 
   it "merges ajp options from the config file" do
-    args = "--ajp 8099 -f #{File.join(MOCK_WEB_APP_DIR, 'tomcat.yml')}".split
+    FakeFS do
+      create_custom_config_file
+      args = "--ajp 8099 -f config/tomcat.yml".split
 
-    options = subject.parse(args)
-    options[:ajp][:port].should == 8099
-    options[:ajp][:secure].should == true
+      options = subject.parse(args)
+      options[:ajp][:port].should == 8099
+      options[:ajp][:secure].should == true
+    end
   end
 
   it "uses default rackup file to configure the server" do
@@ -123,6 +115,5 @@ describe Trinidad::CommandLineParser do
     args = "--load foo --foo".split
     options = subject.parse(args)
     options.has_key?(:bar).should be_true
-
   end
 end
