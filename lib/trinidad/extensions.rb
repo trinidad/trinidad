@@ -39,7 +39,7 @@ module Trinidad
 
     class Extension
       def initialize(options = {})
-        @options = options.dup
+        @options = options ? options.dup : {}
       end
     end
 
