@@ -47,7 +47,7 @@ module Trinidad
         app[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
         app[:web_app_dir] ||= Dir.pwd
 
-        tomcat_app = @tomcat.addWebapp(app[:context_path].to_s, app[:web_app_dir])
+        tomcat_app = @tomcat.addWebapp(app[:context_path], app[:web_app_dir])
 
         web_app = WebApp.create(tomcat_app, @config, app)
 
@@ -56,7 +56,6 @@ module Trinidad
         web_app.configure_extensions(@tomcat)
         web_app.add_context_loader
         web_app.add_init_params
-        web_app.add_web_dir_resources
 
         web_app.add_rack_context_listener
       end

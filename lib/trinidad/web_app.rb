@@ -46,11 +46,6 @@ module Trinidad
       add_parameter_unless_exist('public.root', File.join('/', public_root))
     end
 
-    def add_web_dir_resources
-      doc_base = File.join(@app[:web_app_dir], public_root)
-      @context.setDocBase(doc_base) if File.exist?(doc_base)
-    end
-
     def add_rack_context_listener
       unless rack_listener_configured?
         @context.addApplicationListener(context_listener)

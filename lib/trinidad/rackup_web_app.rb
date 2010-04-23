@@ -4,7 +4,7 @@ module Trinidad
     def add_init_params
       super
       add_parameter_unless_exist('rackup', rackup_script)
-    end    
+    end
 
     def context_listener
       'org.jruby.rack.RackServletContextListener'
