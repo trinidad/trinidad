@@ -1,22 +1,44 @@
 module Trinidad
   require 'optparse'
   require 'yaml'
-  
+
   class CommandLineParser
+    attr_reader :default_options
 
     def self.parse(argv)
-      default_options = {
+      CommandLineParser.new.parse!(argv)
+    end
+
+    def initialize
+      @default_options = {
         :port => 3000,
         :environment => 'development',
         :context_path => '/',
         :libs_dir => 'lib',
         :classes_dir => 'classes',
-        :config => 'config/trinidad.yml',
         :ssl_port => 8443,
         :ajp_port => 8009
       }
- 
-      parser = OptionParser.new do |opts|
+    end
+
+    def parse!(argv)
+      begin
+        options_parser.parse!(argv)
+      rescue OptionParser::InvalidOption => e
+        p e, options_parser
+        exit(1)
+      end
+
+      if default_options.has_key?(:config)
+        config_options = YAML.load_file(default_options[:config])
+        default_options.deep_merge!(config_options.symbolize!)
+      end
+
+      default_options
+    end
+
+    def options_parser
+      @parser ||= OptionParser.new do |opts|
         opts.banner = 'Trinidad server default options:'
         opts.separator ''
 
@@ -59,6 +81,8 @@ module Trinidad
 
         opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',
             "default: #{default_options[:config]}") do |file|
+          default_options[:config] = 'config/trinidad.yml'
+
           if file
             default_options[:config] = file
           elsif File.exist?('config/tomcat.yml') && !File.exist?(default_options[:config])
@@ -66,8 +90,6 @@ module Trinidad
             puts "\tYou still can use tomcat.yml passing it as the file name to this option: -f config/tomcat.yml"
             default_options[:config] = 'config/tomcat.yml'
           end
-          config_options = YAML.load_file(default_options[:config])
-          default_options.deep_merge!(config_options.symbolize!)
         end
 
         opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
@@ -97,11 +119,7 @@ module Trinidad
           puts opts
           exit
         end
-
-        opts.parse!(argv)
       end
-
-      default_options
     end
   end
 end
