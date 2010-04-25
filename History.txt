@@ -4,6 +4,7 @@
 * Jars cleaned, 300kb less to load :)
 * Default configuration file name moved from tomcat.yml to trinidad.yml
 * Fixes bug merging configuration files
+* Configuring application through web.xml to avoid weird lifecycle problems
 
 == 0.8.3 (2010-04-17)
 
