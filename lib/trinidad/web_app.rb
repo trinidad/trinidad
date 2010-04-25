@@ -14,18 +14,14 @@ module Trinidad
       @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
 
-    def add_rack_filter
-      unless rack_filter_configured?
-        filter_def = Trinidad::Tomcat::FilterDef.new
-        filter_def.setFilterName('RackFilter')
-        filter_def.setFilterClass('org.jruby.rack.RackFilter')
+    def configure_rack(servlet_class = 'org.jruby.rack.RackServlet', servlet_name = 'RackServlet')
+      unless rack_configured?
+        wrapper = @context.createWrapper()
+        wrapper.setServletClass(servlet_class)
+        wrapper.setName(servlet_name)
 
-        filter_map = Trinidad::Tomcat::FilterMap.new
-        filter_map.setFilterName('RackFilter')
-        filter_map.addURLPattern('/*')
-
-        @context.addFilterDef(filter_def)
-        @context.addFilterMap(filter_map)
+        @context.addChild(wrapper)
+        @context.addServletMapping('/*', servlet_name)
       end
     end
 
@@ -67,19 +63,17 @@ module Trinidad
 
     def load_default_web_xml
       file = File.expand_path(File.join(@app[:web_app_dir], default_web_xml))
+      file = File.expand_path('../web.xml', __FILE__) unless File.exist?(file)
 
-      if File.exist?(file)
-        @context.setDefaultWebXml(file)
-        @context.setDefaultContextXml(file)
+      @context.setDefaultWebXml(file)
 
-        context_config = Trinidad::Tomcat::ContextConfig.new
-        context_config.setDefaultWebXml(file)
+      context_config = Trinidad::Tomcat::ContextConfig.new
+      context_config.setDefaultWebXml(file)
 
-        @context.addLifecycleListener(context_config)
-      end
+      @context.addLifecycleListener(context_config)
     end
 
-    def rack_filter_configured?
+    def rack_configured?
       return false if @context.getDefaultWebXml().nil?
 
       web_xml = IO.read(@context.getDefaultWebXml()).gsub(/\s+/, '')

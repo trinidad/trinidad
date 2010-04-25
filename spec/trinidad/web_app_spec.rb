@@ -84,25 +84,25 @@ describe Trinidad::WebApp do
     web_app.context.findParameter('jruby.max.runtimes').should == '8'
   end
 
-  it "should configure rack filter" do
-    @web_app.add_rack_filter
-    @web_app.context.findFilterDefs().should have(1).filters
+  it "configures rack handler" do
+    @web_app.configure_rack
+    @web_app.context.findChild('RackServlet').should_not be_nil
   end
 
-  it "should configure rack listener" do
+  it "configures rack listener" do
     @web_app.add_rack_context_listener
     @web_app.context.findApplicationListeners().should have(1).listeners
   end
 
-  it "should have rack filter already configured" do
+  it "has rack handler already configured when web.xml includes it" do
     @web_app.load_default_web_xml
-    @web_app.rack_filter_configured?().should  be_true
+    @web_app.rack_configured?().should  be_true
 
-    @web_app.add_rack_filter
-    @web_app.context.findFilterDefs().should have(0).filters
+    @web_app.configure_rack
+    @web_app.context.findChild('RackServlet').should be_nil
   end
 
-  it "should have rack listener already configured" do
+  it "has rack listener already configured when web.xml includes it" do
     @web_app.load_default_web_xml
     @web_app.rack_listener_configured?().should be_true
 

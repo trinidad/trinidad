@@ -12,7 +12,7 @@ begin
     gem.authors = ["David Calavera"]
     gem.rubyforge_project = 'trinidad'
 
-    lib_files = Dir.glob('lib/trinidad/*.rb').select {|d| !(d =~ /jars.rb$/)}
+    lib_files = Dir.glob('lib/trinidad/*').select {|d| !(d =~ /jars.rb$/)}
 
     gem.files = FileList['bin/*', 'lib/trinidad.rb', 'History.txt', 'LICENSE', 'README.rdoc', 'VERSION', *lib_files]
 

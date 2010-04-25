@@ -52,7 +52,7 @@ module Trinidad
         web_app = WebApp.create(tomcat_app, @config, app)
 
         web_app.load_default_web_xml
-        web_app.add_rack_filter
+        web_app.configure_rack
         web_app.configure_extensions(@tomcat)
         web_app.add_context_loader
         web_app.add_init_params

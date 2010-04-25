@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+    <servlet>
+        <servlet-name>RackServlet</servlet-name>
+        <servlet-class>org.jruby.rack.RackServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>RackServlet</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <listener>
+      <listener-class>org.jruby.rack.rails.RailsServletContextListener</listener-class>
+    </listener>
+
+</web-app>
