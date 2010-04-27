@@ -110,6 +110,23 @@ describe Trinidad::WebApp do
     @web_app.context.findApplicationListeners().should have(0).listeners
   end
 
+  it "loads the provided web.xml for rails applications" do
+    @config[:default_web_xml] = 'config/foo.xml'
+    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+
+    app.load_default_web_xml
+    app.context.default_web_xml.should =~ /rails_web.xml$/
+  end
+
+  it "loads the provided web.xml for rack applications" do
+    @config[:default_web_xml] = 'config/foo.xml'
+    @app[:rackup] = 'config.ru'
+
+    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    app.load_default_web_xml
+    app.context.default_web_xml.should =~ /rackup_web.xml$/
+  end
+
   def start_context_with_web_xml
     @web_app.load_default_web_xml
     start_context

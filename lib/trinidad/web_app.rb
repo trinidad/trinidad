@@ -63,7 +63,7 @@ module Trinidad
 
     def load_default_web_xml
       file = File.expand_path(File.join(@app[:web_app_dir], default_web_xml))
-      file = File.expand_path('../web.xml', __FILE__) unless File.exist?(file)
+      file = File.expand_path("../#{provided_web_xml}", __FILE__) unless File.exist?(file)
 
       @context.setDefaultWebXml(file)
 

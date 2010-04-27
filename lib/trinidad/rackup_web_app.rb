@@ -13,5 +13,7 @@ module Trinidad
     def rackup_script
       IO.read(File.join(@app[:web_app_dir], @app[:rackup]))
     end
+
+    def provided_web_xml; 'rackup_web.xml'; end
   end
 end
