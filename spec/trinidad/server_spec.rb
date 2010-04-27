@@ -96,6 +96,14 @@ describe Trinidad::Server do
     context.findParameter('rackup').gsub(/\s+/, ' ').should == "require 'rubygems' require 'sinatra'"
   end
 
+  it "removes default servlets from the application" do
+    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    app = server.tomcat.host.find_child('/')
+
+    app.find_child('default').should be_nil
+    app.find_child('jsp').should be_nil
+  end
+
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
     children[0].getDocBase().should == MOCK_WEB_APP_DIR

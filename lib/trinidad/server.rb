@@ -43,13 +43,14 @@ module Trinidad
     end
 
     def create_web_apps
-      @config[:web_apps].each do |name, app|
-        app[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
-        app[:web_app_dir] ||= Dir.pwd
+      @config[:web_apps].each do |name, app_config|
+        app_config[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
+        app_config[:web_app_dir] ||= Dir.pwd
 
-        tomcat_app = @tomcat.addWebapp(app[:context_path], app[:web_app_dir])
+        app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
+        remove_defaults(app_context)
 
-        web_app = WebApp.create(tomcat_app, @config, app)
+        web_app = WebApp.create(app_context, @config, app_config)
 
         web_app.load_default_web_xml
         web_app.configure_rack
@@ -157,6 +158,14 @@ module Trinidad
       unless value
         JSystem.setProperty(JContext.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
       end
+    end
+
+    def remove_defaults(app_context)
+      default_servlet = app_context.find_child('default')
+      app_context.remove_child(default_servlet) if default_servlet
+
+      jsp_servlet = app_context.find_child('jsp')
+      app_context.remove_child(jsp_servlet) if jsp_servlet
     end
   end
 end
