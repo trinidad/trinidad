@@ -18,7 +18,7 @@ begin
 
     gem.add_dependency 'rack', '>=1.0'
     gem.add_dependency 'jruby-rack'
-    gem.add_dependency 'trinidad_jars', '>=0.1.1'
+    gem.add_dependency 'trinidad_jars', '>=0.2.0'
 
     gem.add_development_dependency 'rspec'
     gem.add_development_dependency 'mocha'
@@ -45,7 +45,7 @@ begin
 
     gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
     gem.has_rdoc = false
-    gem.version = '0.1.1'
+    gem.version = '0.2.0'
   end
 
   Jeweler::GemcutterTasks.new
