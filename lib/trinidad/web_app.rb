@@ -2,14 +2,14 @@ module Trinidad
   class WebApp
     attr_reader :context, :config
 
-    def self.create(context, config, app)
-      app.has_key?(:rackup) ? RackupWebApp.new(context, config, app) : RailsWebApp.new(context, config, app)
+    def self.create(context, config, app_config)
+      app_config.has_key?(:rackup) ? RackupWebApp.new(context, config, app_config) : RailsWebApp.new(context, config, app_config)
     end
 
-    def initialize(context, config, app)
+    def initialize(context, config, app_config)
       @context = context
       @config = config
-      @app = app
+      @app_config = app_config
 
       @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
@@ -49,7 +49,7 @@ module Trinidad
     end
 
     def add_application_libs(class_loader)
-      resources_dir = File.join(@app[:web_app_dir], libs_dir, '**', '*.jar')
+      resources_dir = File.join(@app_config[:web_app_dir], libs_dir, '**', '*.jar')
 
       Dir[resources_dir].each do |resource|
         class_loader.addURL(java.io.File.new(resource).to_url)
@@ -57,12 +57,12 @@ module Trinidad
     end
 
     def add_application_classes(class_loader)
-      resources_dir = File.join(@app[:web_app_dir], classes_dir)
+      resources_dir = File.join(@app_config[:web_app_dir], classes_dir)
       class_loader.addURL(java.io.File.new(resources_dir).to_url)
     end
 
     def load_default_web_xml
-      file = File.expand_path(File.join(@app[:web_app_dir], default_web_xml))
+      file = File.expand_path(File.join(@app_config[:web_app_dir], default_web_xml))
       file = File.expand_path("../#{provided_web_xml}", __FILE__) unless File.exist?(file)
 
       @context.setDefaultWebXml(file)
@@ -91,13 +91,13 @@ module Trinidad
     end
 
     def public_root
-      @context.findParameter('public.root') || @app[:public]  || @config[:public] || 'public'
+      @context.findParameter('public.root') || @app_config[:public]  || @config[:public] || 'public'
     end
 
     %w{libs_dir classes_dir default_web_xml environment jruby_min_runtimes jruby_max_runtimes}.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
-        @app[sym] || @config[sym]
+        @app_config[sym] || @config[sym]
       end
     end
 
@@ -106,13 +106,16 @@ module Trinidad
     end
 
     def load_extensions?
-      @app.has_key?(:extensions)
+      @app_config.has_key?(:extensions) || @config.has_key?(:extensions)
     end
 
     def configure_extensions(tomcat)
       return unless load_extensions?
 
-      Trinidad::Extensions.configure_webapp_extensions(@app[:extensions], tomcat, @context)
-    end 
+      extensions = @app_config[:extensions] || {}
+      extensions.merge!(@config[:extensions]) if @config[:extensions]
+
+      Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, @context)
+    end
   end
 end

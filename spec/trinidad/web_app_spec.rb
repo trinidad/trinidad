@@ -4,9 +4,9 @@ describe Trinidad::WebApp do
   before do
     @tomcat = Trinidad::Tomcat::Tomcat.new
     @tomcat.host.app_base = Dir.pwd
-    @tomcat_web_app = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
+    @app_context = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
 
-    @app = {
+    @app_config = {
       :web_app_dir => MOCK_WEB_APP_DIR,
       :context_path => '/'
     }
@@ -20,18 +20,18 @@ describe Trinidad::WebApp do
         :default => @app
       }
     }
-    @web_app = Trinidad::RailsWebApp.new(@tomcat_web_app, @config, @app)
+    @web_app = Trinidad::RailsWebApp.new(@app_context, @config, @app_config)
   end
 
   it "creates a RailsWebApp if rackup option is not present" do
-    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
     app.should be_an_instance_of(Trinidad::RailsWebApp)
   end
 
   it "creates a RackupWebApp if rackup option is present" do
     rackup_app = {:rackup => 'config.ru'}
     @config.deep_merge({:web_apps => {:default => rackup_app}})
-    app = Trinidad::WebApp.create(@tomcat_web_app, @config, rackup_app)
+    app = Trinidad::WebApp.create(@app_context, @config, rackup_app)
     app.should be_an_instance_of(Trinidad::RackupWebApp)
   end
 
@@ -73,11 +73,11 @@ describe Trinidad::WebApp do
   end
 
   it 'loads init params from application node' do
-    @app[:jruby_min_runtimes] = 4
-    @app[:jruby_max_runtimes] = 8
-    @config[:web_apps][:default] = @app
+    @app_config[:jruby_min_runtimes] = 4
+    @app_config[:jruby_max_runtimes] = 8
+    @config[:web_apps][:default] = @app_config
 
-    web_app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    web_app = Trinidad::WebApp.create(@app_context, @config, @app_config)
     web_app.add_init_params
 
     web_app.context.findParameter('jruby.min.runtimes').should == '4'
@@ -112,7 +112,7 @@ describe Trinidad::WebApp do
 
   it "loads the provided web.xml for rails applications" do
     @config[:default_web_xml] = 'config/foo.xml'
-    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
 
     app.load_default_web_xml
     app.context.default_web_xml.should =~ /rails_web.xml$/
@@ -120,12 +120,22 @@ describe Trinidad::WebApp do
 
   it "loads the provided web.xml for rack applications" do
     @config[:default_web_xml] = 'config/foo.xml'
-    @app[:rackup] = 'config.ru'
+    @app_config[:rackup] = 'config.ru'
 
-    app = Trinidad::WebApp.create(@tomcat_web_app, @config, @app)
+    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
     app.load_default_web_xml
     app.context.default_web_xml.should =~ /rackup_web.xml$/
   end
+
+  it "loads application extensions from the root of the configuration" do
+    @config[:extensions] = {}
+    @config[:extensions][:foo] = {}
+    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
+
+    @app_context.doc_base.should_not == 'foo_app_extension'
+    app.configure_extensions(@tomcat)
+    @app_context.doc_base.should == 'foo_app_extension'
+  end  
 
   def start_context_with_web_xml
     @web_app.load_default_web_xml

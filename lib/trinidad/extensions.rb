@@ -3,7 +3,9 @@ module Trinidad
     def self.configure_webapp_extensions(extensions, tomcat, app_context)
       if extensions
         extensions.each do |name, options|
-          extension(name, 'WebAppExtension', options).configure(tomcat, app_context)
+          if extension = extension(name, 'WebAppExtension', options)
+            extension.configure(tomcat, app_context)
+          end
         end
       end
     end
@@ -11,9 +13,10 @@ module Trinidad
     def self.configure_server_extensions(extensions, tomcat)
       if extensions
         extensions.each do |name, options|
-          extension = extension(name, 'ServerExtension', options)
-          configured_tomcat = extension.configure(tomcat)
-          tomcat = configured_tomcat if extension.override_tomcat?
+          if extension = extension(name, 'ServerExtension', options)
+            configured_tomcat = extension.configure(tomcat)
+            tomcat = configured_tomcat if extension.override_tomcat?
+          end
         end
       end
       tomcat
@@ -22,7 +25,9 @@ module Trinidad
     def self.configure_options_extensions(extensions, parser, default_options)
       if extensions
         extensions.each do |name, options|
-          extension(name, 'OptionsExtension', options).configure(parser, default_options)
+          if extension = extension(name, 'OptionsExtension', options)
+            extension.configure(parser, default_options)
+          end
         end
       end
     end
@@ -30,7 +35,8 @@ module Trinidad
     def self.extension(name, type, options)
       class_name = (name.to_s.camelize << type).to_sym
       load_extension(name) unless const_defined?(class_name)
-      const_get(class_name).new(options)
+      clazz = const_get(class_name) rescue nil
+      clazz.new(options) if clazz
     end
 
     def self.load_extension(name)

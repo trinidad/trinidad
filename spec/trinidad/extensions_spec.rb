@@ -37,4 +37,22 @@ describe Trinidad::Extensions do
     extended = Trinidad::Extensions.configure_server_extensions(extensions, tomcat)
     extended.should_not equal(tomcat)
   end
+
+  it "ignores extensions that don't exist for that scope" do
+    extensions = {:override_tomcat => {}}
+    tomcat = Trinidad::Tomcat::Tomcat.new
+
+    lambda {
+      Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, nil)
+    }.should_not raise_error
+  end
+
+  it "raises an error when the extension doesn't exist" do
+    extensions = {:foo_bar => {}}
+    tomcat = Trinidad::Tomcat::Tomcat.new
+
+    lambda {
+      Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, nil)
+    }.should raise_error
+  end
 end
