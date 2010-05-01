@@ -50,15 +50,10 @@ module Trinidad
         app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
         remove_defaults(app_context)
 
-        web_app = WebApp.create(app_context, @config, app_config)
+        web_app = WebApp.create(@config, app_config)
 
-        web_app.load_default_web_xml
-        web_app.configure_rack
-        web_app.configure_extensions(@tomcat)
-        web_app.add_context_loader
-        web_app.add_init_params
-
-        web_app.add_rack_context_listener
+        Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
+        app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app).to_java)
       end
     end
 
@@ -166,6 +161,12 @@ module Trinidad
 
       jsp_servlet = app_context.find_child('jsp')
       app_context.remove_child(jsp_servlet) if jsp_servlet
+
+      app_context.remove_servlet_mapping('/')
+      app_context.remove_servlet_mapping('*.jspx')
+      app_context.remove_servlet_mapping('*.jsp')
+
+      app_context.process_tlds = false
     end
   end
 end

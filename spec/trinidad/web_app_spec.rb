@@ -1,154 +1,133 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require File.dirname(__FILE__) + '/fakeapp'
+
+include FakeApp
 
 describe Trinidad::WebApp do
-  before do
-    @tomcat = Trinidad::Tomcat::Tomcat.new
-    @tomcat.host.app_base = Dir.pwd
-    @app_context = @tomcat.addWebapp('/', File.dirname(__FILE__) + '/../../')
-
-    @app_config = {
-      :web_app_dir => MOCK_WEB_APP_DIR,
-      :context_path => '/'
-    }
-    @config = {
-      :libs_dir => 'lib',
-      :classes_dir => 'classes',
-      :default_web_xml => 'config/web.xml',
-      :jruby_min_runtimes => 2,
-      :jruby_max_runtimes => 6,
-      :web_apps => {
-        :default => @app
-      }
-    }
-    @web_app = Trinidad::RailsWebApp.new(@app_context, @config, @app_config)
-  end
-
   it "creates a RailsWebApp if rackup option is not present" do
-    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
+    app = Trinidad::WebApp.create({}, {})
     app.should be_an_instance_of(Trinidad::RailsWebApp)
   end
 
   it "creates a RackupWebApp if rackup option is present" do
-    rackup_app = {:rackup => 'config.ru'}
-    @config.deep_merge({:web_apps => {:default => rackup_app}})
-    app = Trinidad::WebApp.create(@app_context, @config, rackup_app)
+    app = Trinidad::WebApp.create({}, {:rackup => 'config.ru'})
     app.should be_an_instance_of(Trinidad::RackupWebApp)
   end
 
-  it "should load custom jars" do 
-    class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
-    @web_app.add_application_libs(class_loader)
+  it "ignores rack_servlet when a deployment descriptor already provides it" do
+    FakeFS do
+      create_rails_web_xml
 
-    resource = class_loader.find_class('org.ho.yaml.Yaml')
-    resource.should_not be_nil
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.servlet.should be_nil
+    end
   end
 
-  it "should load custom classes" do
-    class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
-    @web_app.add_application_classes(class_loader)
+  it "ignores rack_listener when a deployment descriptor already provides it" do
+    FakeFS do
+      create_rails_web_xml
 
-    resource = class_loader.find_class('HelloTomcat')
-    resource.should_not be_nil
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.rack_listener.should be_nil
+    end
   end
 
-  it "should start application context without errors" do
-    start_context
+  it "uses rack_servlet as the default servlet when a deployment descriptor is not provided" do
+    app = Trinidad::WebApp.create({}, {})
+    app.servlet.should_not be_nil
+    app.servlet[:name].should == 'RackServlet'
+    app.servlet[:class].should == 'org.jruby.rack.RackServlet'
   end
 
-  it "should add a filter from the default web.xml" do
-    start_context_with_web_xml
-    @web_app.context.findFilterDefs().should have(1).filters
+  it "uses rack_listener as the default listener when a deployment descriptor is not provided" do
+    app = Trinidad::WebApp.create({}, {})
+    app.rack_listener.should == 'org.jruby.rack.rails.RailsServletContextListener'
   end
 
-  it "shouldn't duplicate init params" do
-    start_context_with_web_xml
-    lambda { @web_app.add_init_params }.should_not raise_error
+  it "loads the context parameters from the configuration when a deployment descriptor is not provided" do
+    app = Trinidad::WebApp.create({}, {
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 1,
+      :public => 'foo',
+      :environment => :production
+    })
+    parameters = app.init_params
+    parameters['jruby.min.runtimes'].should == '1'
+    parameters['jruby.initial.runtimes'].should == '1'
+    parameters['jruby.max.runtimes'].should == '1'
+    parameters['public.root'].should == '/foo'
+    parameters['rails.env'].should == 'production'
+    parameters['rails.root'].should == '/'
   end
 
-  it "loads init params from configuration root" do
-    @web_app.add_init_params
+  it "adds the rackup script as a context parameter when it's provided" do
+    FakeFS do
+      create_rackup_file
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :rackup => 'config/config.ru'
+      })
 
-    @web_app.context.findParameter('jruby.min.runtimes').should == '2'
-    @web_app.context.findParameter('jruby.max.runtimes').should == '6'
+      parameters = app.init_params
+      parameters['rackup'].should =~ /run App/
+    end
   end
 
-  it 'loads init params from application node' do
-    @app_config[:jruby_min_runtimes] = 4
-    @app_config[:jruby_max_runtimes] = 8
-    @config[:web_apps][:default] = @app_config
+  it "ignores parameters from configuration when the deployment descriptor already contains them" do
+    FakeFS do
+      create_rackup_web_xml
 
-    web_app = Trinidad::WebApp.create(@app_context, @config, @app_config)
-    web_app.add_init_params
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml',
+        :jruby_min_runtimes => 2,
+        :jruby_max_runtimes => 5
+      })
+      parameters = app.init_params
 
-    web_app.context.findParameter('jruby.min.runtimes').should == '4'
-    web_app.context.findParameter('jruby.max.runtimes').should == '8'
+      parameters['jruby.min.runtimes'].should be_nil
+      parameters['jruby.max.runtimes'].should be_nil
+    end
   end
 
-  it "configures rack handler" do
-    @web_app.configure_rack
-    @web_app.context.findChild('RackServlet').should_not be_nil
+  it "ignores the deployment descriptor when it doesn't exist" do
+    app = Trinidad::WebApp.create({}, {
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.default_deployment_descriptor.should be_nil
   end
 
-  it "configures rack listener" do
-    @web_app.add_rack_context_listener
-    @web_app.context.findApplicationListeners().should have(1).listeners
+  it "doesn't load any web.xml when the deployment descriptor doesn't exist" do
+    app = Trinidad::WebApp.create({}, {
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.rack_servlet_configured?.should be_false
+    app.rack_listener_configured?.should be_false
   end
 
-  it "has rack handler already configured when web.xml includes it" do
-    @web_app.load_default_web_xml
-    @web_app.rack_configured?().should  be_true
-
-    @web_app.configure_rack
-    @web_app.context.findChild('RackServlet').should be_nil
+  it "uses `public` as default public root directory" do
+    app = Trinidad::WebApp.create({}, {})
+    app.public_root.should == 'public'
   end
 
-  it "has rack listener already configured when web.xml includes it" do
-    @web_app.load_default_web_xml
-    @web_app.rack_listener_configured?().should be_true
-
-    @web_app.add_rack_context_listener
-    @web_app.context.findApplicationListeners().should have(0).listeners
+  it "uses extensions from the global configuration" do
+    config = { :extensions => {:hotdeploy => {}} }
+    app = Trinidad::WebApp.create(config, {})
+    app.extensions.should include(:hotdeploy)
   end
 
-  it "loads the provided web.xml for rails applications" do
-    @config[:default_web_xml] = 'config/foo.xml'
-    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
-
-    app.load_default_web_xml
-    app.context.default_web_xml.should =~ /rails_web.xml$/
-  end
-
-  it "loads the provided web.xml for rack applications" do
-    @config[:default_web_xml] = 'config/foo.xml'
-    @app_config[:rackup] = 'config.ru'
-
-    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
-    app.load_default_web_xml
-    app.context.default_web_xml.should =~ /rackup_web.xml$/
-  end
-
-  it "loads application extensions from the root of the configuration" do
-    @config[:extensions] = {}
-    @config[:extensions][:foo] = {}
-    app = Trinidad::WebApp.create(@app_context, @config, @app_config)
-
-    @app_context.doc_base.should_not == 'foo_app_extension'
-    app.configure_extensions(@tomcat)
-    @app_context.doc_base.should == 'foo_app_extension'
-  end  
-
-  def start_context_with_web_xml
-    @web_app.load_default_web_xml
-    start_context
-  end
-
-  def start_context
-    load_tomcat_libs
-    lambda { @web_app.context.start }.should_not raise_error
-  end
-
-  def load_tomcat_libs
-    @web_app.config[:libs_dir] = File.join(File.dirname(__FILE__), '..', '..', 'tomcat-libs')
-    @web_app.add_context_loader
+  it "overrides global extensions with application extensions" do
+    config = { :extensions => {:hotdeploy => {}} }
+    app_config = { :extensions => {:hotdeploy => {:delay => 30000}} }
+    app = Trinidad::WebApp.create(config, app_config)
+    app.extensions[:hotdeploy].should include(:delay)
   end
 end

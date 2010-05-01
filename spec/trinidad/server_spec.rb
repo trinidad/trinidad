@@ -86,22 +86,17 @@ describe Trinidad::Server do
     default_context_should_be_loaded(server.tomcat.host.findChildren())
   end
 
-  it "loads the default application from the current directory using the rackup file if :web_apps is not present" do
-    server = Trinidad::Server.new({
-      :web_app_dir => MOCK_WEB_APP_DIR,
-      :rackup => 'config.ru'
-    })
-
-    context = default_context_should_be_loaded(server.tomcat.host.findChildren())
-    context.findParameter('rackup').gsub(/\s+/, ' ').should == "require 'rubygems' require 'sinatra'"
-  end
-
   it "removes default servlets from the application" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
     app = server.tomcat.host.find_child('/')
 
     app.find_child('default').should be_nil
     app.find_child('jsp').should be_nil
+
+    app.find_servlet_mapping('*.jsp').should be_nil
+    app.find_servlet_mapping('*.jspx').should be_nil
+
+    app.process_tlds.should be_false
   end
 
   def default_context_should_be_loaded(children)
