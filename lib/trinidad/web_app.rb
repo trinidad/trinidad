@@ -29,7 +29,7 @@ module Trinidad
 
     def default_deployment_descriptor
       @deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(@app_config[:web_app_dir], default_web_xml))
+        file = File.expand_path(File.join(web_app_dir, default_web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -47,7 +47,7 @@ module Trinidad
       @app_config[:public]  || @config[:public] || 'public'
     end
 
-    %w{web_app_dir libs_dir classes_dir default_web_xml environment jruby_min_runtimes jruby_max_runtimes}.each do |method_name|
+    %w{web_app_dir libs_dir classes_dir default_web_xml environment jruby_min_runtimes jruby_max_runtimes rackup}.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
         @app_config[sym] || @config[sym]

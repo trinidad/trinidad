@@ -164,4 +164,16 @@ describe Trinidad::WebAppLifecycleListener do
 
     loader.should be_instance_of(Java::OrgApacheCatalinaLoader::WebappLoader)
   end
+
+  it "loads the default application from the current directory using the rackup file if :web_apps is not present" do
+    web_app = Trinidad::RackupWebApp.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :rackup => 'config.ru'
+    }, {})
+    listener = Trinidad::WebAppLifecycleListener.new(web_app)
+    listener.context = Trinidad::Tomcat::StandardContext.new
+    listener.configure_init_params
+
+    listener.context.find_parameter('rackup').should == "require 'rubygems'\nrequire 'sinatra'"
+  end
 end
