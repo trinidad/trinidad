@@ -36,6 +36,7 @@ module Trinidad
       @tomcat.host.app_base = Dir.pwd
       enable_naming
 
+      add_http_connector if http_configured?
       add_ssl_connector if ssl_enabled?
       add_ajp_connector if ajp_enabled?
 
@@ -66,11 +67,14 @@ module Trinidad
       connector.secure = opts.delete(:secure) || false
       connector.port = opts.delete(:port).to_i
 
+      connector.protocol_handler_class_name = opts.delete(:protocol_handler) if opts[:protocol_handler]
+
       opts.each do |key, value|
         connector.setProperty(key.to_s, value.to_s)
       end
 
       @tomcat.getService().addConnector(connector)
+      connector
     end
 
     def add_ajp_connector
@@ -90,12 +94,25 @@ module Trinidad
       create_default_keystore(options) unless File.exist?(options[:keystore])
     end
 
+    def add_http_connector
+      options = @config[:http]
+      options[:port] = @config[:port]
+      options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
+
+      connector = add_service_connector(options)
+      @tomcat.connector = connector
+    end
+
     def ssl_enabled?
       @config.has_key?(:ssl)
     end
 
     def ajp_enabled?
       @config.has_key?(:ajp)
+    end
+
+    def http_configured?
+      @config.has_key?(:http)
     end
 
     def create_default_keystore(config)

@@ -17,30 +17,30 @@ describe Trinidad::Server do
     JSystem.getProperty("catalina.useNaming").should == "true"
   end
 
-  it "should have ssl disabled when config param is nil" do
+  it "disables ssl when config param is nil" do
     server = Trinidad::Server.new
     server.ssl_enabled?.should be_false
   end
 
-  it "should have ajp disabled when config param is nil" do
+  it "disables ajp when config param is nil" do
     server = Trinidad::Server.new
     server.ajp_enabled?.should be_false
   end
 
-  it "should have ssl enabled when config param is a number" do
+  it "enables ssl when config param is a number" do
     server = Trinidad::Server.new({:ssl => {:port => 8443},
       :web_app_dir => MOCK_WEB_APP_DIR})
 
     server.ssl_enabled?.should be_true
   end
 
-  it "should have ajp enabled when config param is a number" do
+  it "enables ajp when config param is a number" do
     server = Trinidad::Server.new({:ajp => {:port => 8009}})
 
     server.ajp_enabled?.should be_true
   end
 
-  it "should have a connector with https scheme" do
+  it "includes a connector with https scheme when ssl is enabled" do
     server = Trinidad::Server.new({:ssl => {:port => 8443},
       :web_app_dir => MOCK_WEB_APP_DIR})
 
@@ -48,7 +48,7 @@ describe Trinidad::Server do
     server.tomcat.service.findConnectors()[0].scheme.should == 'https'
   end
 
-  it "should have an ajp connector enabled" do
+  it "includes a connector with protocol AJP when ajp is enabled" do
     server = Trinidad::Server.new({:ajp => {:port => 8009}})
 
     server.tomcat.service.findConnectors().should have(1).connectors
@@ -97,6 +97,36 @@ describe Trinidad::Server do
     app.find_servlet_mapping('*.jspx').should be_nil
 
     app.process_tlds.should be_false
+  end
+
+  it "uses the default HttpConnector when http is not configured" do
+    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    server.http_configured?.should be_false
+
+    server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11Protocol'
+  end
+
+  it "uses the NioConnector when the http configuration sets nio to true" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :http => {:nio => true}
+    })
+    server.http_configured?.should be_true
+
+    server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11NioProtocol'
+  end
+
+  it "configures NioConnector with http option values" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :http => {
+        :nio => true,
+        'maxKeepAliveRequests' => 4,
+        'socket.bufferPool' => 1000
+      }
+    })
+    server.tomcat.connector.get_property('maxKeepAliveRequests').should == 4
+    server.tomcat.connector.get_property('socket.bufferPool').should == '1000'
   end
 
   def default_context_should_be_loaded(children)
