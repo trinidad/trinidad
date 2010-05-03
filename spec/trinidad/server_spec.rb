@@ -128,6 +128,13 @@ describe Trinidad::Server do
     server.tomcat.connector.get_property('maxKeepAliveRequests').should == 4
     server.tomcat.connector.get_property('socket.bufferPool').should == '1000'
   end
+  
+  it "adds the WebAppLifecycleListener to each webapp" do
+    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    app_context = default_context_should_be_loaded(server.tomcat.host.findChildren())
+    
+    app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::WebAppLifecycleListener')
+  end
 
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps

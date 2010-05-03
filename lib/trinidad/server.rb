@@ -54,7 +54,7 @@ module Trinidad
         web_app = WebApp.create(@config, app_config)
 
         Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
-        app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app).to_java)
+        app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
       end
     end
 
