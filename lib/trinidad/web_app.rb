@@ -35,12 +35,12 @@ module Trinidad
     end
 
     def rack_servlet_configured?
-      web_xml && (web_xml.include?('<servlet-class>org.jruby.rack.RackServlet') ||
-        web_xml.include?('<filter-class>org.jruby.rack.RackFilter'))
+      !!(web_xml && (web_xml.include?('<servlet-class>org.jruby.rack.RackServlet') ||
+        web_xml.include?('<filter-class>org.jruby.rack.RackFilter')))
     end
 
     def rack_listener_configured?
-      web_xml && web_xml.include?("<listener-class>#{context_listener}")
+      !!(web_xml && web_xml.include?("<listener-class>#{context_listener}"))
     end
 
     def public_root
