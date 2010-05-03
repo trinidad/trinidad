@@ -110,7 +110,7 @@ describe Trinidad::WebAppLifecycleListener do
     listener.add_application_jars(web_app.class_loader)
 
     lambda {
-      web_app.class_loader.find_class('org.ho.yaml.Yaml').should_not be_nil
+      web_app.class_loader.find_class('org.ho.yaml.Yaml')
     }.should raise_error
   end
 
@@ -135,7 +135,7 @@ describe Trinidad::WebAppLifecycleListener do
     listener.add_application_java_classes(web_app.class_loader)
 
     lambda {
-      web_app.class_loader.find_class('HelloTomcat').should_not be_nil
+      web_app.class_loader.find_class('HelloTomcat')
     }.should raise_error
   end
 
