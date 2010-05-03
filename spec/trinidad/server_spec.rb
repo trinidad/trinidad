@@ -135,6 +135,16 @@ describe Trinidad::Server do
     
     app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::WebAppLifecycleListener')
   end
+  
+  it "loads application extensions from the root of the configuration" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :extensions => { :foo => {} }
+    })
+    
+    app_context = server.tomcat.host.find_child('/')
+    app_context.doc_base.should == 'foo_app_extension'
+  end
 
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
