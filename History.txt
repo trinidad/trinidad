@@ -5,6 +5,7 @@
     - Avoids workarounds in the hotdeploy extension.
 * Disable more Tomcat's default behaviours. Process Tlds is also disabled.
 * Allow to specify webapp extensions in the extensions root section.
+* Allow to configure the Http connector.
 
 == 0.9.0 (2010-04-28)
 
