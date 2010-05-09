@@ -1,3 +1,11 @@
+== 0.9.1 (2010-05-09)
+
+* Move all configuration logic to a Lifecycle listener:
+    - Keeps the initial configuration so the provided web xml files are no more needed.
+    - Avoids workarounds in the hotdeploy extension.
+* Disable more Tomcat's default behaviours. Process Tlds is also disabled.
+* Allow to specify webapp extensions in the extensions root section.
+
 == 0.9.0 (2010-04-28)
 
 * Tomcat updated to version 6.0.26, added constant to get its version.
