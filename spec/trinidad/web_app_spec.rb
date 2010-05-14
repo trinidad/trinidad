@@ -130,4 +130,22 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create(config, app_config)
     app.extensions[:hotdeploy].should include(:delay)
   end
+
+  it "creates a rackup application when the rackup file is under WEB-INF directory" do
+    FakeFS do
+      create_rackup_file('WEB-INF')
+      app = Trinidad::WebApp.create({}, {})
+
+      app.should be_an_instance_of(Trinidad::RackupWebApp)
+    end
+  end
+
+  it "doesn't add the rackup init parameter when the rackup file is under WEB-INF directory" do
+    FakeFS do
+      create_rackup_file('WEB-INF')
+      app = Trinidad::WebApp.create({}, {})
+
+      app.init_params.should_not include('rackup')
+    end
+  end
 end

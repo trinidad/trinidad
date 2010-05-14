@@ -71,8 +71,8 @@ EOF
 EOF
   end
 
-  def create_rackup_file
-    @rackup ||= config_file 'config/config.ru', <<-EOF
+  def create_rackup_file(path = 'config')
+    @rackup ||= config_file File.join(path, 'config.ru'), <<-EOF
 require 'rubygems'
 require 'sinatra'
 

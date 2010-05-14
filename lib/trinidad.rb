@@ -3,6 +3,10 @@ $:.unshift(File.dirname(__FILE__)) unless
 
 require "java"
 require 'rubygems'
+
+require 'jruby-rack'
+require JRubyJars.jruby_rack_jar_path
+
 gem 'trinidad_jars'
 
 require 'trinidad/core_ext'

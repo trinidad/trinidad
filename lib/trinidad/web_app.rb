@@ -3,7 +3,7 @@ module Trinidad
     attr_reader :config, :app_config, :class_loader, :servlet
 
     def self.create(config, app_config)
-      app_config.has_key?(:rackup) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
+      rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
     end
 
     def initialize(config, app_config, servlet_class = 'org.jruby.rack.RackServlet', servlet_name = 'RackServlet')
@@ -76,6 +76,10 @@ module Trinidad
       if web_xml =~ /<context-param><param-name>#{param}<\/param-name><param-value>(.+)<\/param-value>/
         return $1
       end
+    end
+
+    def self.rackup?(app_config)
+      app_config.has_key?(:rackup) || !Dir['WEB-INF/**/config.ru'].empty?
     end
   end
 end

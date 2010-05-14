@@ -3,7 +3,7 @@ module Trinidad
 
     def init_params
       super
-      add_parameter_unless_exist 'rackup', rackup_script
+      add_parameter_unless_exist('rackup', rackup_script) if rackup
       @params
     end
 

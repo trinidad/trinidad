@@ -5,9 +5,6 @@ $:.unshift(TRINIDAD_LIBS) unless
 module Trinidad
   require 'tomcat-core'
 
-  require 'jruby-rack'
-  require JRubyJars.jruby_rack_jar_path
-
   module Tomcat
     include_package 'org.apache.catalina'
     include_package 'org.apache.catalina.startup'
