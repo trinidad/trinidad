@@ -1,3 +1,7 @@
+== 0.9.2 (2010-05-14)
+
+* Autoload the rackup file when it's under the directory WEB-INF
+
 == 0.9.1 (2010-05-09)
 
 * Move all configuration logic to a Lifecycle listener:

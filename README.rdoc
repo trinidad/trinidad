@@ -11,22 +11,42 @@ This project was initially called "Tomcat-rails" but due to legal issues with th
 
 == USAGE:
 
-  cd myrailsapp
-  jruby -S trinidad
-  
+Rails applications:
+
+    $ cd myrailsapp
+    $ jruby -S trinidad
+
+Rack applications:
+
+    $ cd myrackapplication
+
+    $ jruby -S trinidad -r path_to_rackup/rackup_file
+
+    or if the name of the file is config.ru
+
+    $ jruby -S trinidad -r path_to_rackup
+
+    or if config.ru is in the base directory
+
+    $ jruby -S trinidad -r
+
+    or if config.ru is under the directory WEB-INF
+
+    $ jruby -S trinidad
+
 == CONFIGURATION:
 
 Trinidad allows you to configure some parameters when the server is started from the command line, the following is a list of the currently supported options:
 
-  * -p, --port PORT         =>    port to bind to.
-  * -e, --env ENVIRONMENT   =>    rails environment.
-  * -c, --context CONTEXT   =>    application context path.
-  * --lib, --jars LIBS_DIR  =>    directory containing jars.
-  * --classes CLASSES_DIR   =>    directory containing classes.
-  * --rackup [RACKUP_FILE]  =>    run a provided rackup file instead of a rails application, by default it's config.ru.
-  * --public PUBLIC_DIR     =>    specify the public directory for your application, by default it's 'public'.
-  * -t, --threadsafe        =>    shortcut to work in threadsafe mode. Setting jruby_min_runtimes and jruby_max_runtimes to 1 in the configuration file the server behaves as the same way.
-  * -l, --load EXTENSION_NAME => loads an extension to use its command line options.
+  * -p, --port PORT             =>  port to bind to.
+  * -e, --env ENVIRONMENT       =>  rails environment.
+  * -c, --context CONTEXT       =>  application context path.
+  * --lib, --jars LIBS_DIR      =>  directory containing jars.
+  * --classes CLASSES_DIR       =>  directory containing classes.
+  * -r, --rackup [RACKUP_FILE]  =>  run a provided rackup file instead of a rails application, by default it's config.ru.
+  * --public PUBLIC_DIR         =>  specify the public directory for your application, by default it's 'public'.
+  * -t, --threadsafe            =>  shortcut to work in threadsafe mode. Setting jruby_min_runtimes and jruby_max_runtimes to 1 in the configuration file the server behaves as the same way.
+  * -l, --load EXTENSION_NAME   =>  loads an extension to use its command line options.
 
 The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/tomcat.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 
