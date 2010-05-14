@@ -75,7 +75,7 @@ describe Trinidad::WebApp do
       })
 
       parameters = app.init_params
-      parameters['rackup'].should =~ /run App/
+      parameters['rackup.path'].should == 'config/config.ru'
     end
   end
 
@@ -145,7 +145,7 @@ describe Trinidad::WebApp do
       create_rackup_file('WEB-INF')
       app = Trinidad::WebApp.create({}, {})
 
-      app.init_params.should_not include('rackup')
+      app.init_params.should_not include('rackup.path')
     end
   end
 
@@ -156,7 +156,8 @@ describe Trinidad::WebApp do
         :web_app_dir => Dir.pwd,
         :rackup => 'rack'
       })
-      app.init_params.should include('rackup')
+      app.init_params.should include('rackup.path')
+      app.init_params['rackup.path'].should == 'rack/config.ru'
     end
   end
 end

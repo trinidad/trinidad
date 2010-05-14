@@ -3,15 +3,13 @@ module Trinidad
 
     def init_params
       super
-      add_parameter_unless_exist('rackup', rackup_script) if rackup
+      if rackup_path = rackup
+        rackup_path = File.join(rackup_path, 'config.ru') if File.directory?(rackup_path)
+        add_parameter_unless_exist('rackup.path', rackup_path)
+      end
       @params
     end
 
     def context_listener; 'org.jruby.rack.RackServletContextListener'; end
-
-    def rackup_script
-      script = File.directory?(rackup) ? File.join(rackup, 'config.ru') : rackup
-      File.read(File.join(web_app_dir, script))
-    end
   end
 end

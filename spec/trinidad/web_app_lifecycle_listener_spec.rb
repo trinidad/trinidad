@@ -174,6 +174,6 @@ describe Trinidad::WebAppLifecycleListener do
     listener.context = Trinidad::Tomcat::StandardContext.new
     listener.configure_init_params
 
-    listener.context.find_parameter('rackup').should == "require 'rubygems'\nrequire 'sinatra'"
+    listener.context.find_parameter('rackup.path').should == "config.ru"
   end
 end
