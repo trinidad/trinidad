@@ -10,7 +10,8 @@ module Trinidad
     def context_listener; 'org.jruby.rack.RackServletContextListener'; end
 
     def rackup_script
-      File.read(File.join(web_app_dir, rackup))
+      script = File.directory?(rackup) ? File.join(rackup, 'config.ru') : rackup
+      File.read(File.join(web_app_dir, script))
     end
   end
 end

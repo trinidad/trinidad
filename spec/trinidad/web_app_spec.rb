@@ -148,4 +148,15 @@ describe Trinidad::WebApp do
       app.init_params.should_not include('rackup')
     end
   end
+
+  it "loads rackup file from a given directory" do
+    FakeFS do
+      create_rackup_file('rack')
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :rackup => 'rack'
+      })
+      app.init_params.should include('rackup')
+    end
+  end
 end
