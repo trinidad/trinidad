@@ -160,4 +160,16 @@ describe Trinidad::WebApp do
       app.init_params['rackup.path'].should == 'rack/config.ru'
     end
   end
+
+  it "allows to configure the servlet from the configuration options" do
+    app = Trinidad::WebApp.create({}, {
+      :servlet => {
+        :class => 'org.jruby.trinidad.FakeServlet',
+        :name => 'FakeServlet'
+      }
+    })
+
+    app.servlet[:class].should == 'org.jruby.trinidad.FakeServlet'
+    app.servlet[:name].should == 'FakeServlet'
+  end
 end

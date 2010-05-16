@@ -11,7 +11,8 @@ module Trinidad
       @app_config = app_config
 
       @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
-      @servlet = {:class => servlet_class, :name => servlet_name} unless rack_servlet_configured?
+
+      configure_rack_servlet(servlet_class, servlet_name) unless rack_servlet_configured?
     end
 
     def rack_listener
@@ -76,6 +77,15 @@ module Trinidad
       if web_xml =~ /<context-param><param-name>#{param}<\/param-name><param-value>(.+)<\/param-value>/
         return $1
       end
+    end
+
+    def configure_rack_servlet(servlet_class, servlet_name)
+      servlet_config = @config[:servlet] || @app_config[:servlet]
+      if servlet_config
+        servlet_class = servlet_config[:class]
+        servlet_name = servlet_config[:name]
+      end
+      @servlet = {:class => servlet_class, :name => servlet_name}
     end
 
     def self.rackup?(app_config)
