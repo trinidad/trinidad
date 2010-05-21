@@ -3,6 +3,7 @@
 * Autoload the rackup file when it's under the directory WEB-INF.
 * Let jruby-rack reads the rackup file instead of passing its content as an init parameter.
 * Allow to configure the rack servlet from the configuration options.
+* Allow to use crt files to configure SSL
 
 == 0.9.1 (2010-05-09)
 

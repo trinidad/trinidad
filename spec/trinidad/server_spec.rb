@@ -32,6 +32,7 @@ describe Trinidad::Server do
       :web_app_dir => MOCK_WEB_APP_DIR})
 
     server.ssl_enabled?.should be_true
+    File.exist?('ssl').should be_true
   end
 
   it "enables ajp when config param is a number" do
@@ -131,22 +132,36 @@ describe Trinidad::Server do
     connector.get_property('maxKeepAliveRequests').should == 4
     connector.get_property('socket.bufferPool').should == '1000'
   end
-  
+
   it "adds the WebAppLifecycleListener to each webapp" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
     app_context = server.tomcat.host.find_child('/')    
-    
+
     app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::WebAppLifecycleListener')
   end
-  
+
   it "loads application extensions from the root of the configuration" do
     server = Trinidad::Server.new({
       :web_app_dir => MOCK_WEB_APP_DIR,
       :extensions => { :foo => {} }
     })
-    
+
     app_context = server.tomcat.host.find_child('/')
     app_context.doc_base.should == 'foo_app_extension'
+  end
+
+  it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do
+    require 'fileutils'
+    FileUtils.rm_rf 'ssl'
+
+    server = Trinidad::Server.new({
+      :ssl => {
+        :port => 8443,
+        :SSLCertificateFile => '/usr/local/ssl/server.crt'
+      },
+      :web_app_dir => MOCK_WEB_APP_DIR})
+
+    File.exist?('ssl').should be_false
   end
 
   def default_context_should_be_loaded(children)

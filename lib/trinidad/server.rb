@@ -73,7 +73,7 @@ module Trinidad
         connector.setProperty(key.to_s, value.to_s)
       end
 
-      @tomcat.getService().addConnector(connector)
+      @tomcat.service.add_connector(connector)
       connector
     end
 
@@ -87,11 +87,14 @@ module Trinidad
         :secure => true,
         :SSLEnabled => 'true'
       })
-      options[:keystore] ||= 'ssl/keystore'
-      options[:keystorePass] ||= 'waduswadus'
+
+      if !options[:keystore] && !options[:SSLCertificateFile]
+        options[:keystore] = 'ssl/keystore'
+        options[:keystorePass] = 'waduswadus'
+      end
 
       add_service_connector(options)
-      create_default_keystore(options) unless File.exist?(options[:keystore])
+      create_default_keystore(options)
     end
 
     def add_http_connector
@@ -116,10 +119,12 @@ module Trinidad
     end
 
     def create_default_keystore(config)
+      return if !config[:keystore] || File.exist?(config[:keystore])
+
       keystore_file = java.io.File.new(config[:keystore])
 
-      if (!keystore_file.parent_file.exists() &&
-              !keystore_file.parent_file.mkdir())
+      if (!keystore_file.parent_file.exists &&
+              !keystore_file.parent_file.mkdir)
           raise "Unable to create keystore folder: " + keystore_file.parent_file.canonical_path
       end
 
@@ -138,7 +143,7 @@ module Trinidad
 
     def start
       @tomcat.start
-      @tomcat.getServer().await
+      @tomcat.server.await
     end
 
     private
@@ -156,19 +161,19 @@ module Trinidad
     end
 
     def enable_naming
-      @tomcat.getServer().addLifecycleListener(Trinidad::Tomcat::NamingContextListener.new)
+      @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::NamingContextListener.new)
 
-      JSystem.setProperty("catalina.useNaming", "true")
+      JSystem.set_property("catalina.useNaming", "true")
 
       value = "org.apache.naming"
-      old_value = JSystem.getProperty(JContext.URL_PKG_PREFIXES) || value
+      old_value = JSystem.get_property(JContext::URL_PKG_PREFIXES) || value
 
       value = value + ":" + old_value unless old_value.include?(value)
-      JSystem.setProperty(JContext.URL_PKG_PREFIXES, value)
+      JSystem.set_property(JContext::URL_PKG_PREFIXES, value)
 
-      value = JSystem.getProperty(JContext.INITIAL_CONTEXT_FACTORY)
+      value = JSystem.get_property(JContext::INITIAL_CONTEXT_FACTORY)
       unless value
-        JSystem.setProperty(JContext.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
+        JSystem.set_property(JContext::INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
       end
     end
 
