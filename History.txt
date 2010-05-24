@@ -1,4 +1,4 @@
-== 0.9.2 (??)
+== 0.9.2 (2010-05-24)
 
 * Autoload the rackup file when it's under the directory WEB-INF.
 * Let jruby-rack reads the rackup file instead of passing its content as an init parameter.
