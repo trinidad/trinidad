@@ -45,7 +45,7 @@ begin
 
     gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
     gem.has_rdoc = false
-    gem.version = '0.2.0'
+    gem.version = '0.3.0.beta'
   end
 
   Jeweler::GemcutterTasks.new

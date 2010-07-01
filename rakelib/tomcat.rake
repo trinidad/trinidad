@@ -43,7 +43,7 @@ namespace :tomcat do
     end
 
     puts "updating tomcat's version number"
-    path = File.expand_path('../../lib/trinidad.rb', __FILE__)
+    path = File.expand_path('../../lib/trinidad/jars.rb', __FILE__)
     file = File.read(path)
     file.gsub!(/TOMCAT_VERSION = '(.+)'/, "TOMCAT_VERSION = '#{tomcat_version.first}'")
     File.open(path, 'w') { |io| io.write(file) }

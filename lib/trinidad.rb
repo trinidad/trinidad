@@ -23,5 +23,4 @@ require 'trinidad/rackup_web_app'
 
 module Trinidad
   VERSION = File.read(File.expand_path('../../VERSION', __FILE__))
-  TOMCAT_VERSION = '6.0.26'
 end

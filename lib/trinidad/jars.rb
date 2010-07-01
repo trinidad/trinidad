@@ -4,6 +4,7 @@ $:.unshift(TRINIDAD_LIBS) unless
 
 module Trinidad
   require 'tomcat-core'
+  TOMCAT_VERSION = '7.0.0'
 
   module Tomcat
     include_package 'org.apache.catalina'
