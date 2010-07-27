@@ -88,8 +88,10 @@ module Trinidad
         :SSLEnabled => 'true'
       })
 
-      if !options[:keystore] && !options[:SSLCertificateFile]
-        options[:keystore] = 'ssl/keystore'
+      options[:keystoreFile] ||= options.delete(:keystore)
+
+      if !options[:keystoreFile] && !options[:SSLCertificateFile]
+        options[:keystoreFile] = 'ssl/keystore'
         options[:keystorePass] = 'waduswadus'
       end
 
@@ -119,9 +121,10 @@ module Trinidad
     end
 
     def create_default_keystore(config)
-      return if !config[:keystore] || File.exist?(config[:keystore])
+      keystore_file_path = config[:keystoreFile]
+      return unless keystore_file_path && File.exist?(keystore_file_path)
 
-      keystore_file = java.io.File.new(config[:keystore])
+      keystore_file = java.io.File.new(keystore_file)
 
       if (!keystore_file.parent_file.exists &&
               !keystore_file.parent_file.mkdir)
@@ -134,7 +137,7 @@ module Trinidad
         "-keyalg", "RSA",
         "-validity", "365", 
         "-storepass", "key", 
-        "-keystore", config[:keystore], 
+        "-keystore", keystore_file_path,
         "-storepass", config[:keystorePass],
         "-keypass", config[:keystorePass]]
 
