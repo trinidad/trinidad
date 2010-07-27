@@ -1,3 +1,9 @@
+== 0.9.3 (2010-07-27)
+
+* Tomcat updated to version 7.0.0
+* fix TRINIDAD-9: Tomcat SSL configure options keystore and keystoreFile
+* fix TRINIDAD-10: When a web.xml is provided the tomcat's context doesn't start properly
+
 == 0.9.2 (2010-05-24)
 
 * Autoload the rackup file when it's under the directory WEB-INF.
