@@ -18,7 +18,7 @@ begin
 
     gem.add_dependency 'rack', '>=1.0'
     gem.add_dependency 'jruby-rack', '>=1.0.1'
-    gem.add_dependency 'trinidad_jars', '>=0.2.0'
+    gem.add_dependency 'trinidad_jars', '>=0.3.0'
 
     gem.add_development_dependency 'rspec'
     gem.add_development_dependency 'mocha'
