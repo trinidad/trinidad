@@ -47,7 +47,7 @@ Trinidad allows you to configure some parameters when the server is started from
   * -t, --threadsafe            =>  shortcut to work in threadsafe mode. Setting jruby_min_runtimes and jruby_max_runtimes to 1 in the configuration file the server behaves as the same way.
   * -l, --load EXTENSION_NAME   =>  loads an extension to use its command line options.
 
-The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/tomcat.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
+The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/trinidad.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 
   jruby -S trinidad -f
   jruby -S trinidad --config my_custom_configuration.yml
