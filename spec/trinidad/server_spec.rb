@@ -28,11 +28,16 @@ describe Trinidad::Server do
   end
 
   it "enables ssl when config param is a number" do
-    server = Trinidad::Server.new({:ssl => {:port => 8443},
-      :web_app_dir => MOCK_WEB_APP_DIR})
+    begin
+      server = Trinidad::Server.new({:ssl => {:port => 8443},
+        :web_app_dir => MOCK_WEB_APP_DIR})
 
-    server.ssl_enabled?.should be_true
-    File.exist?('ssl').should be_true
+      server.ssl_enabled?.should be_true
+      File.exist?('ssl').should be_true
+    ensure
+      require 'fileutils'
+      FileUtils.rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
+    end
   end
 
   it "enables ajp when config param is a number" do

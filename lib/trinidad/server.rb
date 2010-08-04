@@ -93,10 +93,10 @@ module Trinidad
       if !options[:keystoreFile] && !options[:SSLCertificateFile]
         options[:keystoreFile] = 'ssl/keystore'
         options[:keystorePass] = 'waduswadus'
+        create_default_keystore(options)
       end
 
       add_service_connector(options)
-      create_default_keystore(options)
     end
 
     def add_http_connector
@@ -121,10 +121,7 @@ module Trinidad
     end
 
     def create_default_keystore(config)
-      keystore_file_path = config[:keystoreFile]
-      return unless keystore_file_path && File.exist?(keystore_file_path)
-
-      keystore_file = java.io.File.new(keystore_file)
+      keystore_file = java.io.File.new(config[:keystoreFile])
 
       if (!keystore_file.parent_file.exists &&
               !keystore_file.parent_file.mkdir)
@@ -137,7 +134,7 @@ module Trinidad
         "-keyalg", "RSA",
         "-validity", "365", 
         "-storepass", "key", 
-        "-keystore", keystore_file_path,
+        "-keystore", config[:keystoreFile],
         "-storepass", config[:keystorePass],
         "-keypass", config[:keystorePass]]
 
