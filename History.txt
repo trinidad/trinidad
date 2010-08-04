@@ -1,3 +1,7 @@
+== 0.9.4 (2010-08-04)
+
+* fix error configuring ssl
+
 == 0.9.3 (2010-07-27)
 
 * Tomcat updated to version 7.0.0
