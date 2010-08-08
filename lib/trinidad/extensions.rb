@@ -33,7 +33,7 @@ module Trinidad
     end
 
     def self.extension(name, type, options)
-      class_name = (name.to_s.camelize << type).to_sym
+      class_name = (camelize(name.to_s) << type).to_sym
       load_extension(name) unless const_defined?(class_name)
       clazz = const_get(class_name) rescue nil
       clazz.new(options) if clazz
@@ -67,6 +67,11 @@ module Trinidad
       def configure(parser, default_options)
         raise NotImplementedError, "#{self.class}#configure not implemented"
       end
+    end
+
+    private
+    def self.camelize(string)
+      string.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
     end
   end
 end
