@@ -1,3 +1,8 @@
+== 0.9.5 (2010-08-08)
+
+* fix TRINIDAD-15: trinidad defines String#camelize incompatibly with ActiveSupport: Argument is missing
+* update JRuby-Rack dependency to avoid compatibility issues with rvm'
+
 == 0.9.4 (2010-08-04)
 
 * fix error configuring ssl
