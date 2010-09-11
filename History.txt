@@ -1,3 +1,8 @@
+== Trinidad_jars 0.3.1 (2010-09-12)
+
+* update to Tomcat 7.0.2
+* fix TRINIDAD-17: NPE when web app has a context path
+
 == 0.9.5 (2010-08-08)
 
 * fix TRINIDAD-15: trinidad defines String#camelize incompatibly with ActiveSupport: Argument is missing

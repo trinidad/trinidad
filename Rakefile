@@ -14,7 +14,14 @@ begin
 
     lib_files = Dir.glob('lib/trinidad/*').select {|d| !(d =~ /jars.rb$/)}
 
-    gem.files = FileList['bin/*', 'lib/trinidad.rb', 'History.txt', 'LICENSE', 'README.rdoc', 'VERSION', *lib_files]
+    gem.files = FileList['bin/*',
+      'lib/rack/handler/trinidad.rb',
+      'lib/trinidad.rb',
+      'History.txt',
+      'LICENSE',
+      'README.rdoc',
+      'VERSION',
+      *lib_files]
 
     gem.add_dependency 'rack', '>=1.0'
     gem.add_dependency 'jruby-rack', '>=1.0.2'
@@ -45,7 +52,7 @@ begin
 
     gem.files = FileList['lib/trinidad/jars.rb', 'trinidad-libs/*.jar']
     gem.has_rdoc = false
-    gem.version = '0.3.0'
+    gem.version = '0.3.1'
   end
 
   Jeweler::GemcutterTasks.new
