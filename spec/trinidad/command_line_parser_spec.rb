@@ -116,4 +116,9 @@ describe Trinidad::CommandLineParser do
     options = subject.parse(args)
     options.has_key?(:bar).should be_true
   end
+
+  it "adds the application directory path with the option --dir" do
+    args = "--dir #{MOCK_WEB_APP_DIR}".split
+    subject.parse(args)[:web_app_dir].should == MOCK_WEB_APP_DIR
+  end
 end

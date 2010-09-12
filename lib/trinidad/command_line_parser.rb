@@ -42,6 +42,11 @@ module Trinidad
         opts.banner = 'Trinidad server default options:'
         opts.separator ''
 
+        opts.on('-d', '--dir WEB_APP_DIRECTORY', 'Web app directory path',
+            "default: #{Dir.pwd}") do |v|
+          default_options[:web_app_dir] = v
+        end
+
         opts.on('-e', '--env ENVIRONMENT', 'Rails environment', 
             "default: #{default_options[:environment]}") do |v| 
           default_options[:environment] = v

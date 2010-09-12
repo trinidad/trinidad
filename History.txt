@@ -1,3 +1,7 @@
+== 0.9.6 (2010-09-12)
+
+* add option to specify the application directory path from the command line
+
 == Trinidad_jars 0.3.1 (2010-09-12)
 
 * update to Tomcat 7.0.2
