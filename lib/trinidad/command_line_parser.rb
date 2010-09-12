@@ -107,7 +107,7 @@ module Trinidad
         end
 
         opts.on('-v', '--version', 'display the current version') do
-          puts File.read(File.join(File.dirname(__FILE__), '..', '..', 'VERSION')).chomp
+          puts "trinidad #{Trinidad::VERSION} (tomcat #{Trinidad::TOMCAT_VERSION})"
           exit
         end
 
