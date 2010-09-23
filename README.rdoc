@@ -2,7 +2,8 @@
 
 Trinidad allows you to run a rails or rackup applications within an embedded Apache Tomcat container.
 
-This project was initially called "Tomcat-rails" but due to legal issues with the ASF and the Tomcat trademark it has been renamed.
+Mail list: http://groups.google.com/group/rails-trinidad
+Bug tracker: http://github.com/calavera/trinidad/issues
 
 == INSTALL:
 
