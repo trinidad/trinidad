@@ -1,5 +1,0 @@
-== TODO
-
-* Add more tests!!!!!!!
-* Add rdocs
-* configure it from warbler
