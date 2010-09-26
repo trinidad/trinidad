@@ -111,6 +111,10 @@ module Trinidad
           default_options[:jruby_max_runtimes] = 1
         end
 
+        opts.on('--address', '--address ADDRESS', 'Trinidad host address', 'default: localhost') do |v|
+          default_options[:address] = v
+        end
+
         opts.on('-v', '--version', 'display the current version') do
           puts "trinidad #{Trinidad::VERSION} (tomcat #{Trinidad::TOMCAT_VERSION})"
           exit

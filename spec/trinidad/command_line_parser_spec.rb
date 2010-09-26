@@ -121,4 +121,9 @@ describe Trinidad::CommandLineParser do
     args = "--dir #{MOCK_WEB_APP_DIR}".split
     subject.parse(args)[:web_app_dir].should == MOCK_WEB_APP_DIR
   end
+
+  it "accepts the option --address to set the trinidad's host name" do
+    args = "--address trinidad.host".split
+    subject.parse(args)[:address].should == 'trinidad.host'
+  end
 end

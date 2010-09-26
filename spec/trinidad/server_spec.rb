@@ -169,6 +169,15 @@ describe Trinidad::Server do
     File.exist?('ssl').should be_false
   end
 
+  it "uses localhost as host name by default" do
+    Trinidad::Server.new({}).tomcat.host.name.should == 'localhost'
+  end
+
+  it "uses the option :address to set the host name" do
+    server = Trinidad::Server.new({:address => 'trinidad.host'})
+    server.tomcat.host.name.should == 'trinidad.host'
+  end
+
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
     children[0].doc_base.should == MOCK_WEB_APP_DIR
