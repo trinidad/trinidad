@@ -27,7 +27,7 @@ def release(name, gem_file, version)
     exit!
   end
   sh "git commit --allow-empty -a -m 'Release #{name} #{version}'"
-  sh "git tag v#{version}"
+  sh "git tag v#{name}-#{version}"
   sh "git push origin master"
   sh "git push --tags"
   sh "gem push pkg/#{gem_file}.gem"

@@ -35,7 +35,6 @@ namespace :trinidad do
       'History.txt',
       'LICENSE',
       'README.rdoc',
-      'VERSION',
       *lib_files].join("\n")
 
     # piece file back together and write

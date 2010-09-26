@@ -63,7 +63,6 @@ lib/trinidad.rb
 History.txt
 LICENSE
 README.rdoc
-VERSION
 lib/trinidad/command_line_parser.rb
 lib/trinidad/core_ext.rb
 lib/trinidad/extensions.rb
