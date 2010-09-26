@@ -17,13 +17,13 @@ annotations_api = "#{TOMCAT_MAVEN_REPO}/tomcat-annotations-api/%s/tomcat-annotat
 el_api = "#{TOMCAT_MAVEN_REPO}/tomcat-el-api/%s/tomcat-el-api-%s.jar"
 embed = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-core/%s/tomcat-embed-core-%s.jar"
 embed_jasper = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-jasper/%s/tomcat-embed-jasper-%s.jar"
-embed_juli = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-logging-juli/%s/tomcat-embed-logging-juli-%s.jar"
+embed_logging = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-logging-log4j/%s/tomcat-embed-logging-log4j-%s.jar"
 utils = "#{TOMCAT_MAVEN_REPO}/tomcat-util/%s/tomcat-util-%s.jar"
 
 dependencies = [
   catalina, coyote, juli, jsp_api, servlet_api, 
   jasper, jasper_el, annotations_api, el_api,
-  embed, embed_jasper, embed_juli, utils
+  embed, embed_jasper, embed_logging, utils
 ]
 
 namespace :tomcat do
