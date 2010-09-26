@@ -30,7 +30,7 @@ def release(name, gem_file, version)
   sh "git tag v#{name}-#{version}"
   sh "git push origin master"
   sh "git push --tags"
-  sh "gem push pkg/#{gem_file}.gem"
+  sh "gem push pkg/#{gem_file}"
 end
 
 {
