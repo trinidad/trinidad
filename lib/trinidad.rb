@@ -22,5 +22,5 @@ require 'trinidad/rackup_web_app'
 
 
 module Trinidad
-  VERSION = File.read(File.expand_path('../../VERSION', __FILE__)).chomp
+  VERSION = '0.9.6'
 end
