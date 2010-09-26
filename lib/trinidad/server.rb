@@ -105,7 +105,7 @@ module Trinidad
       options[:port] = @config[:port]
       options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
 
-      connector = add_service_connector(options)
+      connector = add_service_connector(options, options[:protocol_handler])
       @tomcat.connector = connector
     end
 

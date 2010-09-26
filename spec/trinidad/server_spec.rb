@@ -122,6 +122,7 @@ describe Trinidad::Server do
     server.http_configured?.should be_true
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11NioProtocol'
+    server.tomcat.connector.protocol = 'org.apache.coyote.http11.Http11NioProtocol'
   end
 
   it "configures NioConnector with http option values" do
