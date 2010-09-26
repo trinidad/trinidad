@@ -1,3 +1,7 @@
+== 0.9.8 (2010-09-27)
+
+* fix http connector protocol enabling nio
+
 == 0.9.7 (2010-09-27)
 
 * add option --adress to set the Trinidad's host
