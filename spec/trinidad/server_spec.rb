@@ -177,6 +177,7 @@ describe Trinidad::Server do
   it "uses the option :address to set the host name" do
     server = Trinidad::Server.new({:address => 'trinidad.host'})
     server.tomcat.host.name.should == 'trinidad.host'
+    server.tomcat.server.address.should == 'trinidad.host'
   end
 
   def default_context_should_be_loaded(children)

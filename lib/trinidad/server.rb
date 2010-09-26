@@ -14,7 +14,8 @@ module Trinidad
         :default_web_xml => 'config/web.xml',
         :port => 3000,
         :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 5
+        :jruby_max_runtimes => 5,
+        :address => 'localhost'
       }
     end
 
@@ -31,7 +32,8 @@ module Trinidad
 
     def load_tomcat_server
       @tomcat = Trinidad::Tomcat::Tomcat.new
-      @tomcat.hostname = @config[:address] || 'localhost'
+      @tomcat.hostname = @config[:address]
+      @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
       @tomcat.base_dir = Dir.pwd
       @tomcat.host.app_base = Dir.pwd
