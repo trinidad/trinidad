@@ -1,6 +1,4 @@
 module Trinidad
-  JSystem = java.lang.System
-  JContext = javax.naming.Context
 
   class Server
     attr_reader :tomcat, :config
@@ -37,7 +35,7 @@ module Trinidad
       @tomcat.port = @config[:port].to_i
       @tomcat.base_dir = Dir.pwd
       @tomcat.host.app_base = Dir.pwd
-      enable_naming
+      @tomcat.enable_naming
 
       add_http_connector if http_configured?
       add_ssl_connector if ssl_enabled?
@@ -160,23 +158,6 @@ module Trinidad
         default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
 
         config[:web_apps] = { :default => default_app }
-      end
-    end
-
-    def enable_naming
-      @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::NamingContextListener.new)
-
-      JSystem.set_property("catalina.useNaming", "true")
-
-      value = "org.apache.naming"
-      old_value = JSystem.get_property(JContext::URL_PKG_PREFIXES) || value
-
-      value = value + ":" + old_value unless old_value.include?(value)
-      JSystem.set_property(JContext::URL_PKG_PREFIXES, value)
-
-      value = JSystem.get_property(JContext::INITIAL_CONTEXT_FACTORY)
-      unless value
-        JSystem.set_property(JContext::INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory")
       end
     end
 
