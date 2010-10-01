@@ -15,7 +15,7 @@ namespace :trinidad_jars do
   end
 
   desc "Build trinidad_jars gem"
-  task :build => :JARS_GEMSPEC do
+  task :build => :gemspec do
     build(JARS_GEMSPEC, trinidad_jars_gem_file)
   end
 
