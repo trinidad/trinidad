@@ -1,3 +1,7 @@
+== 0.9.10 (2010-10-02)
+
+* configure logging as expected by rails applications
+
 == 0.9.9 (2010-09-29)
 
 * set tomcat's server address properly
