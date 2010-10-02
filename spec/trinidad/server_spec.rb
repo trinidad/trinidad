@@ -145,7 +145,7 @@ describe Trinidad::Server do
 
   it "adds the WebAppLifecycleListener to each webapp" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
-    app_context = server.tomcat.host.find_child('/')    
+    app_context = server.tomcat.host.find_child('/')
 
     app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::WebAppLifecycleListener')
   end

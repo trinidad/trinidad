@@ -47,28 +47,28 @@ module Trinidad
           default_options[:web_app_dir] = v
         end
 
-        opts.on('-e', '--env ENVIRONMENT', 'Rails environment', 
-            "default: #{default_options[:environment]}") do |v| 
+        opts.on('-e', '--env ENVIRONMENT', 'Rails environment',
+            "default: #{default_options[:environment]}") do |v|
           default_options[:environment] = v
         end
 
-        opts.on('-p', '--port PORT', 'Port to bind to', 
-            "default: #{default_options[:port]}") do |v| 
+        opts.on('-p', '--port PORT', 'Port to bind to',
+            "default: #{default_options[:port]}") do |v|
           default_options[:port] = v
         end
 
-        opts.on('-c', '--context CONTEXT_PATH', 'The application context path', 
-            "default: #{default_options[:context_path]}") do |v| 
+        opts.on('-c', '--context CONTEXT_PATH', 'The application context path',
+            "default: #{default_options[:context_path]}") do |v|
           default_options[:context_path] = v
         end
 
-        opts.on('--lib', '--jars LIBS_DIR', 'Directory containing jars used by the application', 
-            "default: #{default_options[:libs_dir]}") do |v| 
+        opts.on('--lib', '--jars LIBS_DIR', 'Directory containing jars used by the application',
+            "default: #{default_options[:libs_dir]}") do |v|
           default_options[:libs_dir] = v
         end
 
-        opts.on('--classes', '--classes CLASSES_DIR', 'Directory containing classes used by the application', 
-            "default: #{default_options[:classes_dir]}") do |v| 
+        opts.on('--classes', '--classes CLASSES_DIR', 'Directory containing classes used by the application',
+            "default: #{default_options[:classes_dir]}") do |v|
           default_options[:classes_dir] = v
         end
 
@@ -81,7 +81,7 @@ module Trinidad
         opts.on('-a', '--ajp [AJP_PORT]', 'Enable ajp connections',
             "default port: #{default_options[:ajp_port]}") do |v|
           ajp_port = v.nil? ? default_options.delete(:ajp_port) : v.to_i
-          default_options[:ajp] = {:port => ajp_port} 
+          default_options[:ajp] = {:port => ajp_port}
         end
 
         opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',

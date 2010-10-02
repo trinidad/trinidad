@@ -86,7 +86,7 @@ module Trinidad
 
     def add_ssl_connector
       options = @config[:ssl].merge({
-        :scheme => 'https', 
+        :scheme => 'https',
         :secure => true,
         :SSLEnabled => 'true'
       })
@@ -131,12 +131,12 @@ module Trinidad
           raise "Unable to create keystore folder: " + keystore_file.parent_file.canonical_path
       end
 
-      keytool_args = ["-genkey", 
-        "-alias", "localhost", 
-        "-dname", "CN=localhost, OU=Trinidad, O=Trinidad, C=ES", 
+      keytool_args = ["-genkey",
+        "-alias", "localhost",
+        "-dname", "CN=localhost, OU=Trinidad, O=Trinidad, C=ES",
         "-keyalg", "RSA",
-        "-validity", "365", 
-        "-storepass", "key", 
+        "-validity", "365",
+        "-storepass", "key",
         "-keystore", config[:keystoreFile],
         "-storepass", config[:keystorePass],
         "-keypass", config[:keystorePass]]
