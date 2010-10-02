@@ -48,7 +48,8 @@ module Trinidad
       @app_config[:public]  || @config[:public] || 'public'
     end
 
-    %w{web_app_dir libs_dir classes_dir default_web_xml environment jruby_min_runtimes jruby_max_runtimes rackup}.each do |method_name|
+    %w{web_app_dir libs_dir classes_dir default_web_xml environment 
+        jruby_min_runtimes jruby_max_runtimes rackup log}.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
         @app_config[sym] || @config[sym]

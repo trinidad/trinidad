@@ -13,7 +13,8 @@ module Trinidad
         :port => 3000,
         :jruby_min_runtimes => 1,
         :jruby_max_runtimes => 5,
-        :address => 'localhost'
+        :address => 'localhost',
+        :log => 'INFO'
       }
     end
 
@@ -53,6 +54,7 @@ module Trinidad
         remove_defaults(app_context)
 
         web_app = WebApp.create(@config, app_config)
+        configure_logging(web_app)
 
         Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
         app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
@@ -153,7 +155,8 @@ module Trinidad
       unless (config.has_key?(:web_apps))
         default_app = {
           :context_path => config[:context_path] || '/',
-          :web_app_dir => config[:web_app_dir] || Dir.pwd
+          :web_app_dir => config[:web_app_dir] || Dir.pwd,
+          :log => config[:log]
         }
         default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
 
@@ -173,6 +176,38 @@ module Trinidad
       app_context.remove_servlet_mapping('*.jsp')
 
       app_context.process_tlds = false
+    end
+
+    def configure_logging(web_app)
+      log_path = File.join(web_app.web_app_dir, 'log', "#{web_app.environment}.log")
+      log_file = java.io.File.new(log_path)
+
+      unless log_file.exists
+        log_file.parent_file.mkdirs
+        log_file.create_new_file
+      end
+
+      jlogging = java.util.logging
+
+      log_handler = jlogging.FileHandler.new(log_path, true)
+      logger = jlogging.Logger.get_logger("")
+
+      log_level = web_app.log
+      unless %w{ALL CONFIG FINE FINER FINEST INFO OFF SEVERE WARNING}.include?(log_level)
+        puts "Invalid log level #{log_level}, using default: INFO"
+        log_level = 'INFO'
+      end
+
+      level = jlogging.Level.parse(log_level)
+
+      logger.handlers.each do |handler|
+        handler.level = level
+      end
+
+      logger.level = level
+
+      log_handler.formatter = jlogging.SimpleFormatter.new
+      logger.add_handler(log_handler)
     end
   end
 end

@@ -1,9 +1,14 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'fileutils'
 
 JSystem = java.lang.System
 JContext = javax.naming.Context
 
 describe Trinidad::Server do
+  after :each do
+    FileUtils.rm_rf(File.expand_path('../../../log', __FILE__))
+    FileUtils.rm_rf(File.join(MOCK_WEB_APP_DIR, 'log'))
+  end
 
   it "always uses symbols as configuration keys" do
     server = Trinidad::Server.new({'port' => 4000})
@@ -35,7 +40,6 @@ describe Trinidad::Server do
       server.ssl_enabled?.should be_true
       File.exist?('ssl').should be_true
     ensure
-      require 'fileutils'
       FileUtils.rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
     end
   end
@@ -178,6 +182,37 @@ describe Trinidad::Server do
     server = Trinidad::Server.new({:address => 'trinidad.host'})
     server.tomcat.host.name.should == 'trinidad.host'
     server.tomcat.server.address.should == 'trinidad.host'
+  end
+
+  it "creates the log file according with the environment if it doesn't exist" do
+    Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :environment => 'test'
+    })
+
+    File.exist?(File.join(MOCK_WEB_APP_DIR, 'log', 'test.log')).should be_true
+  end
+
+  it "uses the specified log level when it's valid" do
+    Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :environment => 'test',
+      :log => 'WARNING'
+    })
+
+    logger = java.util.logging.Logger.get_logger("")
+    logger.level.to_s.should == 'WARNING'
+  end
+
+  it "uses INFO as default log level when it's invalid" do
+    Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :environment => 'test',
+      :log => 'FOO'
+    })
+
+    logger = java.util.logging.Logger.get_logger("")
+    logger.level.to_s.should == 'INFO'
   end
 
   def default_context_should_be_loaded(children)

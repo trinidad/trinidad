@@ -126,4 +126,9 @@ describe Trinidad::CommandLineParser do
     args = "--address trinidad.host".split
     subject.parse(args)[:address].should == 'trinidad.host'
   end
+
+  it "accepts the option --log to set the logging level" do
+    args = '--log WARNING'.split
+    subject.parse(args)[:log].should == 'WARNING'
+  end
 end

@@ -115,6 +115,10 @@ module Trinidad
           default_options[:address] = v
         end
 
+        opts.on('-g', '--log LEVEL', 'Log level', 'default: INFO') do |v|
+          default_options[:log] = v
+        end
+
         opts.on('-v', '--version', 'display the current version') do
           puts "trinidad #{Trinidad::VERSION} (tomcat #{Trinidad::TOMCAT_VERSION})"
           exit
