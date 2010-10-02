@@ -48,6 +48,7 @@ Trinidad allows you to configure some parameters when the server is started from
   * -t, --threadsafe            =>  shortcut to work in threadsafe mode. Setting jruby_min_runtimes and jruby_max_runtimes to 1 in the configuration file the server behaves as the same way.
   * -l, --load EXTENSION_NAME   =>  load an extension to use its command line options.
   * --address HOST              =>  set the server host.
+  * -g, --log LEVEL             =>  set the log level, default INFO.
 
 The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/trinidad.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 
@@ -63,10 +64,11 @@ Other advanced options can be found in the wiki: http://wiki.github.com/calavera
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
 
 * Database connection pooling: http://github.com/calavera/trinidad-dbpool
-* Daemon, run Trinidad as a daemon: http://github.com/calavera/trinidad_daemon_extension
+* Daemon, run Trinidad as a daemon: http://github.com/calavera/trinidad_daemon_extension and http://github.com/calavera/trinidad_daemon
 * Hot deploy, do hot deploys monitorizing a temporal file, ala Passenger: http://github.com/calavera/trinidad_hotdeploy_extension
 * Sandbox, management console and REST api: http://github.com/calavera/trinidad_sandbox_extension
 * Logging, enhance the Trinidad's logging system: http://github.com/calavera/trinidad_logging_extension
+* Lifecycle, application and server lifecycle management: http://github.com/calavera/trinidad_lifecycle_extension
 
 You can find further information on how to write your own extension in the wiki: http://wiki.github.com/calavera/trinidad/extensions
 
