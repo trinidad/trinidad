@@ -22,5 +22,5 @@ require 'trinidad/rackup_web_app'
 
 
 module Trinidad
-  VERSION = '0.9.9'
+  VERSION = '0.9.10'
 end
