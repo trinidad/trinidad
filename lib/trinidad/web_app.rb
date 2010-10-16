@@ -36,12 +36,17 @@ module Trinidad
     end
 
     def rack_servlet_configured?
-      !!(web_xml && (web_xml.include?('<servlet-class>org.jruby.rack.RackServlet') ||
-        web_xml.include?('<filter-class>org.jruby.rack.RackFilter')))
+      !!( web_xml && (
+          web_xml.root.elements["/web-app/servlet[contains(servlet-class, 'org.jruby.rack.RackServlet')]"] ||
+          web_xml.root.elements["/web-app/filter[contains(filter-class, 'org.jruby.rack.RackFilter')]"]
+        )
+      )
     end
 
     def rack_listener_configured?
-      !!(web_xml && web_xml.include?("<listener-class>#{context_listener}"))
+      !!( web_xml &&
+          web_xml.root.elements["/web-app/listener[contains(listener-class, '#{context_listener}')]"]
+      )
     end
 
     def public_root
@@ -71,12 +76,21 @@ module Trinidad
 
     private
     def web_xml
-      @web_xml ||= File.read(default_deployment_descriptor).gsub(/\s+/, '') unless default_deployment_descriptor.nil?
+      return nil if @web_xml == false
+      @web_xml ||=
+        begin
+          require 'rexml/document'
+          REXML::Document.new( File.read(default_deployment_descriptor) )
+        rescue REXML::ParseException => e
+          puts "WARNING: invalid deployment descriptor:[#{default_deployment_descriptor}]"
+          puts e.message
+          false
+        end unless default_deployment_descriptor.nil?
     end
 
     def web_context_param(param)
-      if web_xml =~ /<context-param><param-name>#{param}<\/param-name><param-value>(.+)<\/param-value>/
-        return $1
+      if web_xml && param = web_xml.root.elements["/web-app/context-param[contains(param-name, '#{param}')]"]
+        param.elements['param-value'].text
       end
     end
 
