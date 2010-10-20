@@ -35,7 +35,7 @@ module Trinidad
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
       @tomcat.base_dir = Dir.pwd
-      @tomcat.host.app_base = Dir.pwd
+      @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
       @tomcat.enable_naming
 
       add_http_connector if http_configured?
@@ -46,10 +46,32 @@ module Trinidad
     end
 
     def create_web_apps
-      @config[:web_apps].each do |name, app_config|
-        app_config[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
-        app_config[:web_app_dir] ||= Dir.pwd
+      if @config[:web_apps]
+        @config[:web_apps].each do |name, app_config|
+          app_config[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
+          app_config[:web_app_dir] ||= Dir.pwd
 
+          create_web_app(app_config)
+        end
+      end
+      if @config[:apps_base]
+        apps_path = Dir.glob(File.join(@config[:apps_base], '*')).select {|path| !(path =~ /tomcat\.8080$/) }
+
+        apps_path.each do |path|
+          if File.directory?(path)
+            name = File.basename(path)
+            app_config = {
+              :context_path => (name == 'default' ? '/' : "/#{name.to_s}"),
+              :web_app_dir => File.expand_path(path)
+            }
+
+            create_web_app(app_config)
+          end
+        end
+      end
+    end
+
+    def create_web_app(app_config)
         app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
         remove_defaults(app_context)
 
@@ -58,7 +80,6 @@ module Trinidad
 
         Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
         app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
-      end
     end
 
     def add_service_connector(options, protocol = nil)
@@ -152,7 +173,7 @@ module Trinidad
     private
 
     def add_default_web_app!(config)
-      unless (config.has_key?(:web_apps))
+      if (!config.has_key?(:web_apps) && !config.has_key?(:apps_base))
         default_app = {
           :context_path => config[:context_path] || '/',
           :web_app_dir => config[:web_app_dir] || Dir.pwd,

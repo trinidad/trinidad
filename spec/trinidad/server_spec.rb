@@ -1,13 +1,14 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 require 'fileutils'
+include FileUtils
 
 JSystem = java.lang.System
 JContext = javax.naming.Context
 
 describe Trinidad::Server do
   after :each do
-    FileUtils.rm_rf(File.expand_path('../../../log', __FILE__))
-    FileUtils.rm_rf(File.join(MOCK_WEB_APP_DIR, 'log'))
+    rm_rf(File.expand_path('../../../log', __FILE__))
+    rm_rf(File.join(MOCK_WEB_APP_DIR, 'log'))
   end
 
   it "always uses symbols as configuration keys" do
@@ -40,7 +41,7 @@ describe Trinidad::Server do
       server.ssl_enabled?.should be_true
       File.exist?('ssl').should be_true
     ensure
-      FileUtils.rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
+      rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
     end
   end
 
@@ -161,8 +162,7 @@ describe Trinidad::Server do
   end
 
   it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do
-    require 'fileutils'
-    FileUtils.rm_rf 'ssl'
+    rm_rf 'ssl'
 
     server = Trinidad::Server.new({
       :ssl => {
@@ -213,6 +213,19 @@ describe Trinidad::Server do
 
     logger = java.util.logging.Logger.get_logger("")
     logger.level.to_s.should == 'INFO'
+  end
+
+  it "loads several applications if the option :apps_base is present" do
+    begin
+      Dir.mkdir('apps_base')
+      cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
+      cp_r MOCK_WEB_APP_DIR, 'apps_base/test1'
+
+      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      server.tomcat.host.find_children.should have(2).web_apps
+    ensure
+      rm_rf 'apps_base'
+    end
   end
 
   def default_context_should_be_loaded(children)

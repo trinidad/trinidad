@@ -128,6 +128,10 @@ module Trinidad
           Trinidad::Extensions.configure_options_extensions({name => {}}, opts, default_options)
         end
 
+        opts.on('--apps', '--apps APPS_BASE_DIR', 'applications base directory') do |path|
+          default_options[:apps_base] = path
+        end
+
         opts.on('-h', '--help', 'display the help') do
           puts opts
           exit
