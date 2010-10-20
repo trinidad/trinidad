@@ -49,6 +49,7 @@ Trinidad allows you to configure some parameters when the server is started from
   * -l, --load EXTENSION_NAME   =>  load an extension to use its command line options.
   * --address HOST              =>  set the server host.
   * -g, --log LEVEL             =>  set the log level, default INFO.
+  * --apps APPS_BASE_DIRECTORY  =>  set the applications base directory.
 
 The server can also be configured from a yaml file. If a file is not especified, the server tries to load the file <em>config/trinidad.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 
