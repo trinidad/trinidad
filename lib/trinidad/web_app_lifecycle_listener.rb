@@ -1,9 +1,6 @@
 module Trinidad
-  import org.apache.catalina.LifecycleListener
-  import org.apache.catalina.Lifecycle
-
   class WebAppLifecycleListener
-    include LifecycleListener
+    include Trinidad::Tomcat::LifecycleListener
 
     attr_reader :context
 
@@ -12,7 +9,7 @@ module Trinidad
     end
 
     def lifecycleEvent(event)
-      if Lifecycle::BEFORE_START_EVENT == event.type
+      if Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT == event.type
         init_defaults(event.lifecycle)
       end
     end
