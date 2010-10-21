@@ -1,3 +1,8 @@
+== 0.9.12 (2010-10-21)
+
+* fix problems loading tomcat classes from rack application
+* fix xml parsing of web.xml. Thanks to Karol Bucek
+
 == 0.9.11 (2010-10-20)
 
 * configure applications base directory to run several applications into the same container
