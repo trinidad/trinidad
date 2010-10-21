@@ -38,6 +38,32 @@ describe Trinidad::WebApp do
     end
   end
 
+  it "does not ignore rack_servlet when it's commented in a deployment descriptor" do
+    FakeFS do
+      create_rails_web_xml_with_rack_servlet_commented_out
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.servlet.should_not be_nil
+      app.servlet[:name].should == 'RackServlet'
+      app.servlet[:class].should == 'org.jruby.rack.RackServlet'
+    end
+  end
+
+  it "incorrectly formatted deployment descriptor should not be used" do
+    FakeFS do
+      create_rails_web_xml_formatted_incorrectly
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.send(:web_xml).should be_nil
+    end
+  end
+
   it "uses rack_servlet as the default servlet when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({}, {})
     app.servlet.should_not be_nil
@@ -93,6 +119,23 @@ describe Trinidad::WebApp do
 
       parameters['jruby.min.runtimes'].should be_nil
       parameters['jruby.max.runtimes'].should be_nil
+    end
+  end
+
+  it "does not ignore parameters from configuration when the deployment descriptor has them commented" do
+    FakeFS do
+      create_rackup_web_xml_with_jruby_runtime_parameters_commented_out
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml',
+        :jruby_min_runtimes => 2,
+        :jruby_max_runtimes => 5
+      })
+      parameters = app.init_params
+
+      parameters['jruby.min.runtimes'].should == '2'
+      parameters['jruby.max.runtimes'].should == '5'
     end
   end
 
