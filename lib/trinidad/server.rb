@@ -30,12 +30,14 @@ module Trinidad
     end
 
     def load_tomcat_server
+      base_dir = @config[:apps_base] || @config[:web_app_dir] || Dir.pwd
+
       @tomcat = Trinidad::Tomcat::Tomcat.new
+      @tomcat.base_dir = base_dir
       @tomcat.hostname = @config[:address]
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
-      @tomcat.base_dir = Dir.pwd
-      @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
+      @tomcat.host.app_base = base_dir
       @tomcat.enable_naming
 
       add_http_connector if http_configured?
@@ -73,6 +75,7 @@ module Trinidad
 
     def create_web_app(app_config)
         app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
+        app_context.work_dir = app_config[:web_app_dir]
         remove_defaults(app_context)
 
         web_app = WebApp.create(@config, app_config)
