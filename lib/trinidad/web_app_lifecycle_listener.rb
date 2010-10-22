@@ -6,6 +6,7 @@ module Trinidad
 
     def initialize(webapp)
       @webapp = webapp
+      @configured_logger = false
     end
 
     def lifecycleEvent(event)
@@ -24,6 +25,7 @@ module Trinidad
       end
       configure_init_params
       configure_context_loader
+      configure_logging
     end
 
     def configure_deployment_descriptor
@@ -83,6 +85,42 @@ module Trinidad
 
       resources_dir = File.join(@webapp.web_app_dir, @webapp.classes_dir)
       class_loader.addURL(java.io.File.new(resources_dir).to_url)
+    end
+
+    def configure_logging
+      return if @configured_logger
+
+      log_path = File.join(@webapp.web_app_dir, 'log', "#{@webapp.environment}.log")
+      log_file = java.io.File.new(log_path)
+
+      unless log_file.exists
+        log_file.parent_file.mkdirs
+        log_file.create_new_file
+      end
+
+      jlogging = java.util.logging
+
+      log_handler = jlogging.FileHandler.new(log_path, true)
+      logger = jlogging.Logger.get_logger("")
+
+      log_level = @webapp.log
+      unless %w{ALL CONFIG FINE FINER FINEST INFO OFF SEVERE WARNING}.include?(log_level)
+        puts "Invalid log level #{log_level}, using default: INFO"
+        log_level = 'INFO'
+      end
+
+      level = jlogging.Level.parse(log_level)
+
+      logger.handlers.each do |handler|
+        handler.level = level
+      end
+
+      logger.level = level
+
+      log_handler.formatter = jlogging.SimpleFormatter.new
+      logger.add_handler(log_handler)
+
+      @configured_logger = true
     end
   end
 end
