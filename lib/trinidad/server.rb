@@ -126,7 +126,8 @@ module Trinidad
     end
 
     def add_http_connector
-      options = @config[:http]
+      options = @config[:http] || {}
+      options[:address] ||= @config[:address]
       options[:port] = @config[:port]
       options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
 
@@ -143,7 +144,7 @@ module Trinidad
     end
 
     def http_configured?
-      @config.has_key?(:http)
+      @config.has_key?(:http) || @config[:address] != 'localhost'
     end
 
     def create_default_keystore(config)

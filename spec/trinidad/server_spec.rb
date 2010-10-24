@@ -139,6 +139,16 @@ describe Trinidad::Server do
     connector.get_property('socket.bufferPool').should == '1000'
   end
 
+  it "configures the http connector address when the address in the configuration is not localhost" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :address => '10.0.0.1'
+    })
+
+    connector = server.tomcat.connector
+    connector.get_property("address").to_s.should == '/10.0.0.1'
+  end
+
   it "adds the WebAppLifecycleListener to each webapp" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
     app_context = server.tomcat.host.find_child('/')
