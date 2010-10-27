@@ -30,14 +30,12 @@ module Trinidad
     end
 
     def load_tomcat_server
-      base_dir = @config[:apps_base] || @config[:web_app_dir] || Dir.pwd
-
       @tomcat = Trinidad::Tomcat::Tomcat.new
-      @tomcat.base_dir = base_dir
+      @tomcat.base_dir = Dir.pwd
       @tomcat.hostname = @config[:address]
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
-      @tomcat.host.app_base = base_dir
+      @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
       @tomcat.enable_naming
 
       add_http_connector if http_configured?
@@ -74,14 +72,14 @@ module Trinidad
     end
 
     def create_web_app(app_config)
-        app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
-        app_context.work_dir = app_config[:web_app_dir]
-        remove_defaults(app_context)
+      app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
+      app_context.work_dir = app_config[:web_app_dir]
+      remove_defaults(app_context)
 
-        web_app = WebApp.create(@config, app_config)
+      web_app = WebApp.create(@config, app_config)
 
-        Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
-        app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
+      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
+      app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
     end
 
     def add_service_connector(options, protocol = nil)

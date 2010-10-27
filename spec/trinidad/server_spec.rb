@@ -202,6 +202,14 @@ describe Trinidad::Server do
     end
   end
 
+  it "does not create a temporary directory" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR
+    })
+    dir = server.tomcat.host.find_children.first.work_dir
+    File.expand_path(dir).should == File.expand_path(MOCK_WEB_APP_DIR)
+  end
+
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
     children[0].doc_base.should == MOCK_WEB_APP_DIR
