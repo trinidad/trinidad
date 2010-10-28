@@ -84,7 +84,6 @@ module Trinidad
 
     def add_service_connector(options, protocol = nil)
       connector = Trinidad::Tomcat::Connector.new(protocol)
-
       opts = options.dup
 
       connector.scheme = opts.delete(:scheme) if opts[:scheme]
@@ -129,7 +128,11 @@ module Trinidad
       options[:port] = @config[:port]
       options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
 
-      connector = add_service_connector(options, options[:protocol_handler])
+      if options[:apr]
+        @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
+      end
+
+      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1')
       @tomcat.connector = connector
     end
 

@@ -210,6 +210,17 @@ describe Trinidad::Server do
     File.expand_path(dir).should == File.expand_path(MOCK_WEB_APP_DIR)
   end
 
+  it "adds the APR lifecycle listener to the server if the option is available" do
+    server = Trinidad::Server.new({
+      :http => {:apr => true}
+    })
+
+    server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11AprProtocol'
+    server.tomcat.server.find_lifecycle_listeners.
+      select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
+      should have(1).listener
+  end
+
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
     children[0].doc_base.should == MOCK_WEB_APP_DIR
