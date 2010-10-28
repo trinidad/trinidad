@@ -124,7 +124,7 @@ module Trinidad
 
     def add_http_connector
       options = @config[:http] || {}
-      options[:address] ||= @config[:address]
+      options[:address] ||= @config[:address] if @config[:address] != 'localhost'
       options[:port] = @config[:port]
       options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
 
