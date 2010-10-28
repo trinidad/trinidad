@@ -231,6 +231,16 @@ describe Trinidad::Server do
     end
   end
 
+  it "adds the APR lifecycle listener to the server if the option is available" do
+    server = Trinidad::Server.new({
+      :http => {:apr => true}
+    })
+
+    server.tomcat.server.find_lifecycle_listeners.
+      select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
+      should have(1).listener
+  end
+
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
     context = server.tomcat.host.find_children.first
     context.find_lifecycle_listeners.select do |listener|
