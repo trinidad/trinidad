@@ -3,7 +3,16 @@ module Trinidad
     attr_reader :config, :app_config, :class_loader, :servlet
 
     def self.create(config, app_config)
-      rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
+      war?(app_config) ? WarWebApp.new(config, app_config) :
+        rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
+    end
+
+    def self.rackup?(app_config)
+      app_config.has_key?(:rackup) || !Dir['WEB-INF/**/config.ru'].empty?
+    end
+
+    def self.war?(app_config)
+      app_config[:context_path] =~ /\.war$/
     end
 
     def initialize(config, app_config, servlet_class = 'org.jruby.rack.RackServlet', servlet_name = 'RackServlet')
@@ -30,7 +39,7 @@ module Trinidad
 
     def default_deployment_descriptor
       @deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(web_app_dir, default_web_xml))
+        file = File.expand_path(File.join(work_dir, default_web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -53,7 +62,7 @@ module Trinidad
       @app_config[:public]  || @config[:public] || 'public'
     end
 
-    %w{web_app_dir libs_dir classes_dir default_web_xml environment
+    %w{context_path web_app_dir libs_dir classes_dir default_web_xml environment
         jruby_min_runtimes jruby_max_runtimes rackup log}.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
@@ -69,6 +78,9 @@ module Trinidad
       end
     end
 
+    def war?; WebApp.war?(app_config); end
+    def work_dir; web_app_dir; end
+
     protected
     def add_parameter_unless_exist(param_name, param_value)
       @params[param_name] = param_value unless web_context_param(param_name)
@@ -80,7 +92,7 @@ module Trinidad
       @web_xml ||=
         begin
           require 'rexml/document'
-          REXML::Document.new( File.read(default_deployment_descriptor) )
+          REXML::Document.new(File.read(default_deployment_descriptor))
         rescue REXML::ParseException => e
           puts "WARNING: invalid deployment descriptor:[#{default_deployment_descriptor}]"
           puts e.message
@@ -101,10 +113,6 @@ module Trinidad
         servlet_name = servlet_config[:name]
       end
       @servlet = {:class => servlet_class, :name => servlet_name}
-    end
-
-    def self.rackup?(app_config)
-      app_config.has_key?(:rackup) || !Dir['WEB-INF/**/config.ru'].empty?
     end
   end
 end

@@ -46,6 +46,11 @@ module Trinidad
     end
 
     def create_web_apps
+      create_from_web_apps
+      create_from_apps_base
+    end
+
+    def create_from_web_apps
       if @config[:web_apps]
         @config[:web_apps].each do |name, app_config|
           app_config[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
@@ -54,11 +59,17 @@ module Trinidad
           create_web_app(app_config)
         end
       end
+    end
+
+    def create_from_apps_base
       if @config[:apps_base]
-        apps_path = Dir.glob(File.join(@config[:apps_base], '*')).select {|path| !(path =~ /tomcat\.8080$/) }
+        apps_path = Dir.glob(File.join(@config[:apps_base], '*')).
+          select {|path| !(path =~ /tomcat\.\d+$/) }
+
+        apps_path.reject! {|path| apps_path.include?(path + '.war') }
 
         apps_path.each do |path|
-          if File.directory?(path)
+          if (File.directory?(path) || path =~ /\.war$/)
             name = File.basename(path)
             app_config = {
               :context_path => (name == 'default' ? '/' : "/#{name.to_s}"),
@@ -72,14 +83,15 @@ module Trinidad
     end
 
     def create_web_app(app_config)
-      app_context = @tomcat.addWebapp(app_config[:context_path], app_config[:web_app_dir])
-      app_context.work_dir = app_config[:web_app_dir]
-      remove_defaults(app_context)
-
       web_app = WebApp.create(@config, app_config)
 
+      app_context = @tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
+      app_context.work_dir = web_app.work_dir
+
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
-      app_context.add_lifecycle_listener(WebAppLifecycleListener.new(web_app))
+
+      lifecycle = web_app.war? ? Lifecycle::War.new(web_app) : Lifecycle::Default.new(web_app)
+      app_context.add_lifecycle_listener(lifecycle)
     end
 
     def add_service_connector(options, protocol = nil)
@@ -188,20 +200,5 @@ module Trinidad
         config[:web_apps] = { :default => default_app }
       end
     end
-
-    def remove_defaults(app_context)
-      default_servlet = app_context.find_child('default')
-      app_context.remove_child(default_servlet) if default_servlet
-
-      jsp_servlet = app_context.find_child('jsp')
-      app_context.remove_child(jsp_servlet) if jsp_servlet
-
-      app_context.remove_servlet_mapping('/')
-      app_context.remove_servlet_mapping('*.jspx')
-      app_context.remove_servlet_mapping('*.jsp')
-
-      app_context.process_tlds = false
-    end
-
   end
 end

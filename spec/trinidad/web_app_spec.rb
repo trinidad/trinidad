@@ -215,4 +215,34 @@ describe Trinidad::WebApp do
     app.servlet[:class].should == 'org.jruby.trinidad.FakeServlet'
     app.servlet[:name].should == 'FakeServlet'
   end
+
+  it "is a war application if the context path ends with .war" do
+    app = Trinidad::WebApp.create({}, {
+      :context_path => 'foo.war'
+    })
+    app.war?.should be_true
+    app.should be_instance_of(Trinidad::WarWebApp)
+  end
+
+  it "uses the application directory as working directory" do
+    app = Trinidad::WebApp.create({}, {
+      :web_app_dir => 'foo'
+    })
+    app.work_dir.should == 'foo'
+  end
+
+  it "removes the war extension from the context path if it's a war application" do
+    app = Trinidad::WebApp.create({}, {
+      :context_path => 'foo.war'
+    })
+    app.context_path.should == 'foo'
+  end
+
+  it "removes the war extension from the working directory if it's a war application" do
+    app = Trinidad::WebApp.create({}, {
+      :context_path => 'foo.war',
+      :web_app_dir => 'foo.war'
+    })
+    app.work_dir.should == 'foo'
+  end
 end

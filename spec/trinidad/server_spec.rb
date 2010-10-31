@@ -94,19 +94,6 @@ describe Trinidad::Server do
     default_context_should_be_loaded(server.tomcat.host.find_children)
   end
 
-  it "removes default servlets from the application" do
-    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
-    app = server.tomcat.host.find_child('/')
-
-    app.find_child('default').should be_nil
-    app.find_child('jsp').should be_nil
-
-    app.find_servlet_mapping('*.jsp').should be_nil
-    app.find_servlet_mapping('*.jspx').should be_nil
-
-    app.process_tlds.should be_false
-  end
-
   it "uses the default HttpConnector when http is not configured" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
     server.http_configured?.should be_false
@@ -149,11 +136,11 @@ describe Trinidad::Server do
     connector.get_property("address").to_s.should == '/10.0.0.1'
   end
 
-  it "adds the WebAppLifecycleListener to each webapp" do
+  it "adds the default lifecycle listener to each webapp" do
     server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
     app_context = server.tomcat.host.find_child('/')
 
-    app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::WebAppLifecycleListener')
+    app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::Lifecycle::Default')
   end
 
   it "loads application extensions from the root of the configuration" do
@@ -215,10 +202,32 @@ describe Trinidad::Server do
       :http => {:apr => true}
     })
 
-    server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11AprProtocol'
     server.tomcat.server.find_lifecycle_listeners.
       select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
       should have(1).listener
+  end
+
+  it "adds the default lifecycle listener when the application is not packed with warbler" do
+    server = Trinidad::Server.new({
+      :web_app_dir => MOCK_WEB_APP_DIR
+    })
+    listeners = find_listeners(server)
+    listeners.should have(1).listener
+  end
+
+  it "adds the war lifecycle listener when the application is packed with warbler" do
+    server = Trinidad::Server.new({
+      :apps_base => File.join(MOCK_WEB_APP_DIR, 'apps_base')
+    })
+    listeners = find_listeners(server, Trinidad::Lifecycle::War)
+    listeners.should have(1).listener
+  end
+
+  def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
+    context = server.tomcat.host.find_children.first
+    context.find_lifecycle_listeners.select do |listener|
+      listener.instance_of? listener_class
+    end
   end
 
   def default_context_should_be_loaded(children)
