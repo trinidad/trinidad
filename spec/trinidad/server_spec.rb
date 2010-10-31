@@ -216,11 +216,19 @@ describe Trinidad::Server do
   end
 
   it "adds the war lifecycle listener when the application is packed with warbler" do
-    server = Trinidad::Server.new({
-      :apps_base => File.join(MOCK_WEB_APP_DIR, 'apps_base')
-    })
-    listeners = find_listeners(server, Trinidad::Lifecycle::War)
-    listeners.should have(1).listener
+    begin
+      Dir.mkdir('apps_base')
+
+      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      server.create_web_app({
+        :context_path => '/foo.war',
+        :web_app_dir => 'foo.war'
+      })
+      listeners = find_listeners(server, Trinidad::Lifecycle::War)
+      listeners.should have(1).listener
+    ensure
+      rm_rf 'apps_base'
+    end
   end
 
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
