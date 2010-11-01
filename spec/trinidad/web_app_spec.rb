@@ -243,6 +243,6 @@ describe Trinidad::WebApp do
       :context_path => 'foo.war',
       :web_app_dir => 'foo.war'
     })
-    app.work_dir.should == 'foo'
+    app.work_dir.should == 'foo/WEB-INF'
   end
 end

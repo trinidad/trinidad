@@ -5,7 +5,7 @@ module Trinidad
     end
 
     def work_dir
-      web_app_dir.gsub(/\.war$/, '')
+      File.join(web_app_dir.gsub(/\.war$/, ''), 'WEB-INF')
     end
   end
 end
