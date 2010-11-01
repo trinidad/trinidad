@@ -24,12 +24,11 @@ describe Trinidad::Lifecycle::Base do
     @listener.remove_defaults(@context)
 
     @context.welcome_files.should have(0).files
-    @context.find_servlet_mappings.should have(0).mappings
 
     @context.find_child('jsp').should be_nil
-    @context.find_child('default').should be_nil
 
     @context.process_tlds.should be_false
+    @context.xml_validation.should be_false
   end
 
   it "creates the log file according with the environment if it doesn't exist" do

@@ -25,17 +25,14 @@ module Trinidad
         context.remove_welcome_file('index.htm')
         context.remove_welcome_file('index.html')
 
-        default_servlet = context.find_child('default')
-        context.remove_child(default_servlet) if default_servlet
-
         jsp_servlet = context.find_child('jsp')
         context.remove_child(jsp_servlet) if jsp_servlet
 
-        context.remove_servlet_mapping('/')
         context.remove_servlet_mapping('*.jspx')
         context.remove_servlet_mapping('*.jsp')
 
         context.process_tlds = false
+        context.xml_validation = false
       end
 
       def configure_logging
