@@ -32,7 +32,7 @@ describe Trinidad::CommandLineParser do
       create_default_config_file
       options = subject.parse(['-f'])
 
-      options[:config].should == 'config/trinidad.yml'
+      options[:config].should == File.expand_path('config/trinidad.yml')
       options[:port].should == 8080
     end
   end
@@ -135,5 +135,13 @@ describe Trinidad::CommandLineParser do
   it "accepts the option --apps to set the applications base directory" do
     args = '--apps foo'.split
     subject.parse(args)[:apps_base].should == 'foo'
+  end
+
+  it "loads the configuration file from the web app directory if the option is present" do
+    args = "-d #{MOCK_WEB_APP_DIR} -f tomcat.yml".split
+    options = subject.parse(args)
+
+    options[:config].should == File.expand_path('tomcat.yml', MOCK_WEB_APP_DIR)
+    options[:port].should == 4000
   end
 end
