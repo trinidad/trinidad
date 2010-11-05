@@ -28,7 +28,7 @@ namespace :trinidad do
     replace_header(head, :version, :trinidad_version)
     replace_header(head, :date)
 
-    lib_files = Dir.glob('lib/trinidad/*').select {|d| !(d =~ /jars.rb$/)}
+    lib_files = Dir.glob('lib/trinidad/**/*').select {|d| !(d =~ /jars.rb$/)}
 
     files = FileList['bin/*',
       'lib/trinidad.rb',

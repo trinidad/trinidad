@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'trinidad'
-  s.version           = '1.0.0'
+  s.version           = '1.0.1'
   s.date              = '2010-11-04'
   s.rubyforge_project = 'trinidad'
 
@@ -72,6 +72,9 @@ lib/trinidad/rails_web_app.rb
 lib/trinidad/server.rb
 lib/trinidad/war_web_app.rb
 lib/trinidad/web_app.rb
+lib/trinidad/lifecycle/lifecycle_listener_base.rb
+lib/trinidad/lifecycle/lifecycle_listener_default.rb
+lib/trinidad/lifecycle/lifecycle_listener_war.rb
   ]
   # = MANIFEST =
 
