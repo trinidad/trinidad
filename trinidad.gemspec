@@ -13,8 +13,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'trinidad'
-  s.version           = '0.9.12'
-  s.date              = '2010-10-22'
+  s.version           = '1.0.0'
+  s.date              = '2010-11-04'
   s.rubyforge_project = 'trinidad'
 
   ## Make sure your summary is short. The description may be as long
@@ -66,11 +66,12 @@ README.rdoc
 lib/trinidad/command_line_parser.rb
 lib/trinidad/core_ext.rb
 lib/trinidad/extensions.rb
+lib/trinidad/lifecycle
 lib/trinidad/rackup_web_app.rb
 lib/trinidad/rails_web_app.rb
 lib/trinidad/server.rb
+lib/trinidad/war_web_app.rb
 lib/trinidad/web_app.rb
-lib/trinidad/web_app_lifecycle_listener.rb
   ]
   # = MANIFEST =
 
