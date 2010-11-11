@@ -24,5 +24,5 @@ require 'trinidad/rackup_web_app'
 require 'trinidad/war_web_app'
 
 module Trinidad
-  VERSION = '1.0.1'
+  VERSION = '1.0.2'
 end
