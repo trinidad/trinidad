@@ -1,3 +1,7 @@
+== Trinidad_jars 0.3.3 (2010-11-11)
+
+* fix TRINIDAD-27: Tomcat 7.0.2 deletes working directory upon shutdown
+
 == 1.0.1 (2010-11-04)
 
 * fix problem loading lifecycle
