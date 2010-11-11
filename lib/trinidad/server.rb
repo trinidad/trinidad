@@ -86,7 +86,6 @@ module Trinidad
       web_app = WebApp.create(@config, app_config)
 
       app_context = @tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
-      app_context.work_dir = web_app.work_dir
 
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
 
