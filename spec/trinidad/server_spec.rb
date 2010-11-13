@@ -189,14 +189,6 @@ describe Trinidad::Server do
     end
   end
 
-  it "does not create a temporary directory" do
-    server = Trinidad::Server.new({
-      :web_app_dir => MOCK_WEB_APP_DIR
-    })
-    dir = server.tomcat.host.find_children.first.work_dir
-    File.expand_path(dir).should == File.expand_path(MOCK_WEB_APP_DIR)
-  end
-
   it "adds the APR lifecycle listener to the server if the option is available" do
     server = Trinidad::Server.new({
       :http => {:apr => true}
