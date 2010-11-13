@@ -245,4 +245,9 @@ describe Trinidad::WebApp do
     })
     app.work_dir.should == 'foo/WEB-INF'
   end
+
+  it "uses development as default environment when the option is missing" do
+    app = Trinidad::WebApp.create({}, {})
+    app.environment.should == 'development'
+  end
 end

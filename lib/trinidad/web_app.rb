@@ -62,7 +62,7 @@ module Trinidad
       @app_config[:public]  || @config[:public] || 'public'
     end
 
-    %w{context_path web_app_dir libs_dir classes_dir default_web_xml environment
+    %w{context_path web_app_dir libs_dir classes_dir default_web_xml
         jruby_min_runtimes jruby_max_runtimes rackup log}.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
@@ -80,6 +80,7 @@ module Trinidad
 
     def war?; WebApp.war?(app_config); end
     def work_dir; web_app_dir; end
+    def environment; @app_config[:environment] || @config[:environment] || 'development'; end
 
     protected
     def add_parameter_unless_exist(param_name, param_value)
