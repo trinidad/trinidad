@@ -1,3 +1,7 @@
+== 1.0.3 (2010-12-08)
+
+* fix TRINIDAD-31: fix bug causing trailing slashes errors loading assets
+
 == 1.0.2 (2010-11-11)
 
 * stop using application directory as work directory to prevent TRINIDAD-27 and other issues
