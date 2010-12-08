@@ -53,7 +53,7 @@ module Trinidad
     def create_from_web_apps
       if @config[:web_apps]
         @config[:web_apps].each do |name, app_config|
-          app_config[:context_path] ||= (name.to_s == 'default' ? '/' : "/#{name.to_s}")
+          app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name.to_s}")
           app_config[:web_app_dir] ||= Dir.pwd
 
           create_web_app(app_config)
@@ -72,7 +72,7 @@ module Trinidad
           if (File.directory?(path) || path =~ /\.war$/)
             name = File.basename(path)
             app_config = {
-              :context_path => (name == 'default' ? '/' : "/#{name.to_s}"),
+              :context_path => (name == 'default' ? '' : "/#{name.to_s}"),
               :web_app_dir => File.expand_path(path)
             }
 
@@ -190,7 +190,7 @@ module Trinidad
     def add_default_web_app!(config)
       if (!config.has_key?(:web_apps) && !config.has_key?(:apps_base))
         default_app = {
-          :context_path => config[:context_path] || '/',
+          :context_path => config[:context_path],
           :web_app_dir => config[:web_app_dir] || Dir.pwd,
           :log => config[:log]
         }

@@ -82,7 +82,7 @@ describe Trinidad::Server do
     context_loaded = server.tomcat.host.find_children
     context_loaded.should have(3).web_apps
 
-    expected = ['/mock1', '/mock2', '/']
+    expected = ['/mock1', '/mock2', '']
     context_loaded.each do |context|
       expected.delete(context.path).should == context.path
     end

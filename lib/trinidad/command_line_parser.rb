@@ -13,7 +13,7 @@ module Trinidad
       @default_options = {
         :port => 3000,
         :environment => 'development',
-        :context_path => '/',
+        :context_path => '',
         :libs_dir => 'lib',
         :classes_dir => 'classes',
         :ssl_port => 8443,
