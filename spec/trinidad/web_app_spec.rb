@@ -250,4 +250,10 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({}, {})
     app.environment.should == 'development'
   end
+
+  it "includes the ruby version as a parameter to load the jruby compatibility version" do
+    app = Trinidad::WebApp.create({}, {})
+    app.init_params.should include('jruby.compat.version')
+    app.init_params['jruby.compat.version'].should == RUBY_VERSION
+  end
 end

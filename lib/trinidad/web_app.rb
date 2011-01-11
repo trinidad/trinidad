@@ -34,6 +34,7 @@ module Trinidad
       add_parameter_unless_exist 'jruby.max.runtimes', jruby_max_runtimes.to_s
       add_parameter_unless_exist 'jruby.initial.runtimes', jruby_min_runtimes.to_s
       add_parameter_unless_exist 'public.root', File.join('/', public_root)
+      add_parameter_unless_exist 'jruby.compat.version', RUBY_VERSION
       @params
     end
 
