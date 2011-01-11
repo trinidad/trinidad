@@ -1,3 +1,7 @@
+== 1.0.4 (2011-01-11)
+
+* Add 'jruby.compat.version' parameter to let jruby-rack loads on 1.9 mode
+
 == 1.0.3 (2010-12-08)
 
 * fix TRINIDAD-31: fix bug causing trailing slashes errors loading assets
