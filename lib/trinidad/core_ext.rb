@@ -14,12 +14,14 @@ Hash.class_eval do
         next
       end
 
-      target[key] = hash[key]
+      value = hash[key]
+      value.strip! if value.respond_to?(:strip!)
+      target[key] = value
     end
 
     target
   end
-  
+
   def deep_merge!(second)
     second.each_pair do |k,v|
       if self[k].is_a?(Hash) and second[k].is_a?(Hash)
