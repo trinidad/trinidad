@@ -75,4 +75,4 @@ You can find further information on how to write your own extension in the wiki:
 
 == Copyright
 
-Copyright (c) 2010 David Calavera<calavera@apache.org>. See LICENSE for details.
+Copyright (c) 2011 David Calavera<calavera@apache.org>. See LICENSE for details.
