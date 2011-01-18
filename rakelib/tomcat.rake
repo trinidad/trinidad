@@ -2,36 +2,21 @@ require 'open-uri'
 require 'fileutils'
 include FileUtils
 
-
 TOMCAT_CORE_PATH = File.expand_path('../../trinidad-libs/tomcat-core.jar', __FILE__)
 TOMCAT_MAVEN_REPO = 'http://repo2.maven.org/maven2/org/apache/tomcat'
 
-catalina = "#{TOMCAT_MAVEN_REPO}/tomcat-catalina/%s/tomcat-catalina-%s.jar"
-coyote = "#{TOMCAT_MAVEN_REPO}/tomcat-coyote/%s/tomcat-coyote-%s.jar"
-juli = "#{TOMCAT_MAVEN_REPO}/tomcat-juli/%s/tomcat-juli-%s.jar"
-jsp_api = "#{TOMCAT_MAVEN_REPO}/tomcat-jsp-api/%s/tomcat-jsp-api-%s.jar"
-servlet_api = "#{TOMCAT_MAVEN_REPO}/tomcat-servlet-api/%s/tomcat-servlet-api-%s.jar"
-jasper = "#{TOMCAT_MAVEN_REPO}/tomcat-jasper/%s/tomcat-jasper-%s.jar"
-jasper_el = "#{TOMCAT_MAVEN_REPO}/tomcat-jasper-el/%s/tomcat-jasper-el-%s.jar"
-annotations_api = "#{TOMCAT_MAVEN_REPO}/tomcat-annotations-api/%s/tomcat-annotations-api-%s.jar"
-el_api = "#{TOMCAT_MAVEN_REPO}/tomcat-el-api/%s/tomcat-el-api-%s.jar"
-embed = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-core/%s/tomcat-embed-core-%s.jar"
-embed_jasper = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-jasper/%s/tomcat-embed-jasper-%s.jar"
-embed_logging = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-logging-log4j/%s/tomcat-embed-logging-log4j-%s.jar"
-utils = "#{TOMCAT_MAVEN_REPO}/tomcat-util/%s/tomcat-util-%s.jar"
+tomcat = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-core/%s/tomcat-embed-core-%s.jar"
+tomcat_jasper = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-jasper/%s/tomcat-embed-jasper-%s.jar"
+tomcat_logging = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-logging-log4j/%s/tomcat-embed-logging-log4j-%s.jar"
 
-dependencies = [
-  catalina, coyote, juli, jsp_api, servlet_api, 
-  jasper, jasper_el, annotations_api, el_api,
-  embed, embed_jasper, embed_logging, utils
-]
+dependencies = [tomcat, tomcat_jasper, tomcat_logging]
 
 namespace :tomcat do
   desc "Updates Tomcat to a given version"
   task :update, :version do |task, args|
     tomcat_version = [args[:version]] * 2
 
-    cd ENV['TMPDIR'] do
+    cd (ENV['TMPDIR'] || '/tmp') do
       dependencies.each do |dependency|
         dependency_path = dependency % tomcat_version
         dependency_name = dependency_path.split('/').last
