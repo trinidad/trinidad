@@ -1,3 +1,7 @@
+== Trinidad_jars 1.0.0 (2011-01-18)
+
+* Upgrade to Tomcat 7.0.6, first stable release of the Tomcat 7 branch.
+
 == 1.0.5 (2011-01-13)
 
 * Fix trailing spaces on arguments. Thank you Windows.
