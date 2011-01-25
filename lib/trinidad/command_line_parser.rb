@@ -1,6 +1,5 @@
 module Trinidad
   require 'optparse'
-  require 'yaml'
 
   class CommandLineParser
     attr_reader :default_options
@@ -30,6 +29,7 @@ module Trinidad
       end
 
       if default_options.has_key?(:config)
+        require 'yaml'
         default_options[:config] = File.expand_path(default_options[:config], default_options[:web_app_dir] || Dir.pwd)
 
         config_options = YAML.load_file(default_options[:config])
