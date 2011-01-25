@@ -83,6 +83,10 @@ module Trinidad
     def work_dir; web_app_dir; end
     def environment; @app_config[:environment] || @config[:environment] || 'development'; end
 
+    def solo?
+      !self.is_a?(WarWebApp) && @app_config[:solo]
+    end
+
     protected
     def add_parameter_unless_exist(param_name, param_value)
       @params[param_name] = param_value unless web_context_param(param_name)

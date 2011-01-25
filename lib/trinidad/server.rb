@@ -192,7 +192,8 @@ module Trinidad
         default_app = {
           :context_path => config[:context_path],
           :web_app_dir => config[:web_app_dir] || Dir.pwd,
-          :log => config[:log]
+          :log => config[:log],
+          :solo => true
         }
         default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
 
