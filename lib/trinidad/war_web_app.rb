@@ -7,5 +7,9 @@ module Trinidad
     def work_dir
       File.join(web_app_dir.gsub(/\.war$/, ''), 'WEB-INF')
     end
+
+    def monitor
+      File.expand_path(web_app_dir)
+    end
   end
 end

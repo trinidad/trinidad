@@ -21,7 +21,8 @@ module Trinidad
     def initialize(config = {})
       load_config(config)
       load_tomcat_server
-      create_web_apps
+      apps = create_web_apps
+      load_host_monitor(apps)
     end
 
     def load_config(config)
@@ -46,13 +47,20 @@ module Trinidad
     end
 
     def create_web_apps
-      create_from_web_apps
-      create_from_apps_base
+      apps = []
+      apps << create_from_web_apps
+      apps << create_from_apps_base
+
+      apps.flatten.compact
+    end
+
+    def load_host_monitor(apps)
+      @tomcat.host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(*apps))
     end
 
     def create_from_web_apps
       if @config[:web_apps]
-        @config[:web_apps].each do |name, app_config|
+        @config[:web_apps].map do |name, app_config|
           app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name.to_s}")
           app_config[:web_app_dir] ||= Dir.pwd
 
@@ -68,7 +76,7 @@ module Trinidad
 
         apps_path.reject! {|path| apps_path.include?(path + '.war') }
 
-        apps_path.each do |path|
+        apps_path.map do |path|
           if (File.directory?(path) || path =~ /\.war$/)
             name = File.basename(path)
             app_config = {
@@ -91,6 +99,8 @@ module Trinidad
 
       lifecycle = web_app.war? ? Lifecycle::War.new(web_app) : Lifecycle::Default.new(web_app)
       app_context.add_lifecycle_listener(lifecycle)
+
+      {:context => app_context, :monitor => web_app.monitor}
     end
 
     def add_service_connector(options, protocol = nil)

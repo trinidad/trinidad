@@ -13,6 +13,7 @@ $:.unshift(File.dirname(__FILE__) + '/fixtures')
 require 'java'
 require 'trinidad'
 require 'mocha'
+require 'fileutils'
 
 Spec::Runner.configure do |config|
   config.mock_with :mocha

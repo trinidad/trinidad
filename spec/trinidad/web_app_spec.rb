@@ -256,4 +256,27 @@ describe Trinidad::WebApp do
     app.init_params.should include('jruby.compat.version')
     app.init_params['jruby.compat.version'].should == RUBY_VERSION
   end
+
+  it "uses tmp/restart.txt as a monitor file for context reloading" do
+    app = Trinidad::WebApp.create({
+      :web_app_dir => MOCK_WEB_APP_DIR
+    }, {})
+    app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
+  end
+
+  it "accepts a monitor file as configuration parameter" do
+    app = Trinidad::WebApp.create({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :monitor => 'foo.txt'
+    }, {})
+    app.monitor.should == File.expand_path('foo.txt', MOCK_WEB_APP_DIR)
+  end
+
+  it "uses the war file to monitorize an application packed as a war" do
+    app = Trinidad::WebApp.create({}, {
+      :context_path => 'foo.war',
+      :web_app_dir => 'foo.war'
+    })
+    app.monitor.should == File.expand_path('foo.war')
+  end
 end

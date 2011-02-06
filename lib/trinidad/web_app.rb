@@ -87,6 +87,11 @@ module Trinidad
       !self.is_a?(WarWebApp) && @app_config[:solo]
     end
 
+    def monitor
+      m_file = @app_config[:monitor] || @config[:monitor] || 'tmp/restart.txt'
+      File.expand_path(m_file, work_dir)
+    end
+
     protected
     def add_parameter_unless_exist(param_name, param_value)
       @params[param_name] = param_value unless web_context_param(param_name)

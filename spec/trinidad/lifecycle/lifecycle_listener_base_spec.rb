@@ -1,5 +1,4 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
-require 'fileutils'
 
 describe Trinidad::Lifecycle::Base do
   before do
@@ -20,7 +19,7 @@ describe Trinidad::Lifecycle::Base do
     FileUtils.rm_rf(File.join(MOCK_WEB_APP_DIR, 'log'))
   end
 
-  it "should remove the context default configurations" do
+  it "removes the context default configurations" do
     @listener.remove_defaults(@context)
 
     @context.welcome_files.should have(0).files

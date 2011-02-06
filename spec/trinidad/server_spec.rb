@@ -233,6 +233,25 @@ describe Trinidad::Server do
       should have(1).listener
   end
 
+  it "creates the host listener with all the applications into the server" do
+    server = Trinidad::Server.new({
+      :web_apps => {
+        :mock1 => {
+          :web_app_dir => MOCK_WEB_APP_DIR
+        },
+        :mock2 => {
+          :web_app_dir => MOCK_WEB_APP_DIR
+        }
+      }
+    })
+
+    host_listeners = server.tomcat.host.find_lifecycle_listeners.
+      select {|listener| listener.instance_of?(Trinidad::Lifecycle::Host)}
+
+    host_listeners.should have(1).listener
+    host_listeners.first.contexts.should have(2).applications
+  end
+
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
     context = server.tomcat.host.find_children.first
     context.find_lifecycle_listeners.select do |listener|
