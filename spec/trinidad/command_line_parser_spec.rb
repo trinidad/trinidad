@@ -30,7 +30,7 @@ describe Trinidad::CommandLineParser do
   it "uses config/trinidad.yml as the default configuration file name" do
     FakeFS do
       create_default_config_file
-      options = subject.parse(['-f'])
+      options = subject.parse([''])
 
       options[:config].should == File.expand_path('config/trinidad.yml')
       options[:port].should == 8080

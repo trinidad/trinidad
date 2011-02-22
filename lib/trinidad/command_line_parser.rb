@@ -16,7 +16,8 @@ module Trinidad
         :libs_dir => 'lib',
         :classes_dir => 'classes',
         :ssl_port => 8443,
-        :ajp_port => 8009
+        :ajp_port => 8009,
+        :config => 'config/trinidad.yml'
       }
     end
 
@@ -32,8 +33,10 @@ module Trinidad
         require 'yaml'
         default_options[:config] = File.expand_path(default_options[:config], default_options[:web_app_dir] || Dir.pwd)
 
-        config_options = YAML.load_file(default_options[:config])
-        default_options.deep_merge!(config_options.symbolize!)
+        if File.exist?(default_options[:config])
+          config_options = YAML.load_file(default_options[:config])
+          default_options.deep_merge!(config_options.symbolize!)
+        end
       end
 
       default_options
@@ -86,17 +89,9 @@ module Trinidad
           default_options[:ajp] = {:port => ajp_port}
         end
 
-        opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',
+        opts.on('-f', '--config CONFIG_FILE', 'Configuration file',
             "default: #{default_options[:config]}") do |file|
-          default_options[:config] = 'config/trinidad.yml'
-
-          if file
-            default_options[:config] = file
-          elsif File.exist?('config/tomcat.yml') && !File.exist?(default_options[:config])
-            puts "[WARNING] Default configuration file name has been moved to trinidad.yml, tomcat.yml will not be supported in future versions."
-            puts "\tYou still can use tomcat.yml passing it as the file name to this option: -f config/tomcat.yml"
-            default_options[:config] = 'config/tomcat.yml'
-          end
+          default_options[:config] = file
         end
 
         opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
