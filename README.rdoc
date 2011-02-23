@@ -64,7 +64,9 @@ Other advanced options can be found in the wiki: http://wiki.github.com/calavera
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
 
 * Database connection pooling: http://github.com/calavera/trinidad-dbpool
-* Daemon, run Trinidad as a daemon: http://github.com/calavera/trinidad_daemon_extension and http://github.com/calavera/trinidad_daemon
+* Daemons:
+    ** Daemon based on Akuma (ala GF gem): http://github.com/calavera/trinidad_daemon_extension
+    ** Daemon based on Apache Commons Daemon (supports Unix and Windows systems): http://github.com/calavera/trinidad_daemon
 * Hot deploy, do hot deploys monitorizing a temporal file, ala Passenger: http://github.com/calavera/trinidad_hotdeploy_extension
 * Sandbox, management console and REST api: http://github.com/calavera/trinidad_sandbox_extension
 * Logging, enhance the Trinidad's logging system: http://github.com/calavera/trinidad_logging_extension
