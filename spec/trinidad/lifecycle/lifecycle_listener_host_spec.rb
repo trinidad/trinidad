@@ -21,7 +21,7 @@ describe "Trinidad::Lifecycle::Host" do
     )
   end
 
-  after { FileUtils.rm monitor }
+  after { FileUtils.rm monitor if File.exist?(monitor) }
 
   it "creates the monitor file when receives a before start event" do
     File.exist?(monitor).should be_false
@@ -46,5 +46,23 @@ describe "Trinidad::Lifecycle::Host" do
 
     File.new(monitor, File::CREAT|File::TRUNC)
     listener.lifecycleEvent periodic_event
+  end
+
+  it "creates the parent directory if it doesn't exist" do
+    tmp = File.expand_path('tmp', MOCK_WEB_APP_DIR)
+    monitor = File.join(tmp, 'restart.txt')
+    FileUtils.rm_rf(tmp) if File.exist?(tmp)
+
+    begin
+      listener = Trinidad::Lifecycle::Host.new({
+        :context => app,
+        :monitor => monitor}
+      )
+
+      listener.lifecycleEvent(start_event)
+      File.exist?(monitor).should be_true
+    ensure
+      FileUtils.rm_rf(tmp) if File.exist?(tmp)
+    end
   end
 end

@@ -21,16 +21,20 @@ module Trinidad
 
       def init_monitors
         @contexts.each do |c|
-          opts = File.exist?(c[:monitor]) ? 'r' : File::CREAT|File::TRUNC
+          monitor = c[:monitor]
+          opts = File.exist?(monitor) ? 'r' : 'w+'
 
-          file = File.new(c[:monitor], opts)
+          unless File.exist?(dir = File.dirname(monitor))
+            Dir.mkdir dir
+          end
+          file = File.new(monitor, opts)
           c[:mtime] = file.mtime
         end
       end
 
       def check_monitors
         @contexts.each do |c|
-          # double check monitor, capistrano removes it temporary
+          # double check monitor, capistrano removes it temporarily
           sleep(0.5) unless File.exist?(c[:monitor])
           next unless File.exist?(c[:monitor])
 
