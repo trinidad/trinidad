@@ -89,9 +89,9 @@ module Trinidad
           default_options[:ajp] = {:port => ajp_port}
         end
 
-        opts.on('-f', '--config CONFIG_FILE', 'Configuration file',
+        opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',
             "default: #{default_options[:config]}") do |file|
-          default_options[:config] = file
+          default_options[:config] = file unless file.nil?
         end
 
         opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
