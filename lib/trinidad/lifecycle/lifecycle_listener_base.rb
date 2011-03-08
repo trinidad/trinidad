@@ -2,6 +2,7 @@ module Trinidad
   module Lifecycle
     class Base
       include Trinidad::Tomcat::LifecycleListener
+      attr_reader :webapp
 
       def initialize(webapp)
         @webapp = webapp

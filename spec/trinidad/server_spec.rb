@@ -189,6 +189,19 @@ describe Trinidad::Server do
     end
   end
 
+  it "loads rack apps from the app_base directory" do
+    begin
+      Dir.mkdir('apps_base')
+      cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
+
+      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      listeners = find_listeners(server)
+      listeners.first.webapp.should be_instance_of(Trinidad::RackupWebApp)
+    ensure
+      rm_rf 'apps_base'
+    end
+  end
+
   it "adds the APR lifecycle listener to the server if the option is available" do
     server = Trinidad::Server.new({
       :http => {:apr => true}
