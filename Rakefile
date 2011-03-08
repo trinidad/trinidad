@@ -41,23 +41,10 @@ end
   task t => ["trinidad_jars:#{t}", "trinidad:#{t}"]
 end
 
-begin
-  require 'spec/rake/spectask'
-rescue LoadError
-  gem 'rspec'
-  require 'spec/rake/spectask'
-end
-Spec::Rake::SpecTask.new(:spec) do |spec|
-  spec.libs << 'lib' << 'spec'
-  spec.spec_opts = ['--options', "spec/spec.opts"]
-  spec.spec_files = FileList['spec/**/*_spec.rb']
-end
+require 'rspec/core/rake_task'
 
-Spec::Rake::SpecTask.new(:rcov) do |spec|
-  spec.libs << 'lib' << 'spec'
-  spec.spec_opts = ['--options', "spec/spec.opts"]
-  spec.pattern = 'spec/**/*_spec.rb'
-  spec.rcov = true
+RSpec::Core::RakeTask.new(:spec) do |spec|
+  spec.rspec_opts = ['--color', "--format documentation"]
 end
 
 task :default => :spec

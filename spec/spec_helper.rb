@@ -1,5 +1,5 @@
 begin
-  require 'spec'
+  require 'rspec'
 rescue LoadError
   require 'rubygems'
   gem 'rspec'
@@ -15,7 +15,7 @@ require 'trinidad'
 require 'mocha'
 require 'fileutils'
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.mock_with :mocha
 end
 
