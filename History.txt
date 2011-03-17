@@ -1,3 +1,14 @@
+== Trinidad 1.1.0 (??)
+
+* Hot deployment integrated in the core gem
+* Load config/trinidad.yml by default without the `-f` option if it exists
+* Load config.ru for applications under the apps_base directory
+* Share the JRuby runtime with JRuby-Rack
+
+== Trinidad_jars 1.0.1 (2011-03-17)
+
+* Upgrade to Tomcat 7.0.11
+
 == Trinidad_jars 1.0.0 (2011-01-18)
 
 * Upgrade to Tomcat 7.0.6, first stable release of the Tomcat 7 branch.
