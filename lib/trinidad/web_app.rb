@@ -87,6 +87,10 @@ module Trinidad
       !self.is_a?(WarWebApp) && @app_config[:solo]
     end
 
+    def threadsafe?
+      jruby_min_runtimes.to_i == 1 && jruby_max_runtimes.to_i == 1
+    end
+
     def monitor
       m_file = @app_config[:monitor] || @config[:monitor] || 'tmp/restart.txt'
       File.expand_path(m_file, work_dir)

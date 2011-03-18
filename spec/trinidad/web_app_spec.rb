@@ -279,4 +279,24 @@ describe Trinidad::WebApp do
     })
     app.monitor.should == File.expand_path('foo.war')
   end
+
+  it "is threadsafe when min and max runtimes are 1" do
+    app = Trinidad::WebApp.create({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 1
+    }, {})
+
+    app.threadsafe?.should be_true
+  end
+
+  it "is not threadsafe when min and max runtimes are 1" do
+    app = Trinidad::WebApp.create({
+      :web_app_dir => MOCK_WEB_APP_DIR,
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 2
+    }, {})
+
+    app.threadsafe?.should be_false
+  end
 end
