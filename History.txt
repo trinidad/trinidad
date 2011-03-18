@@ -1,8 +1,8 @@
-== Trinidad 1.1.0 (??)
+== Trinidad 1.1.0 (2011-03-18)
 
 * Hot deployment integrated in the core gem
 * Load config/trinidad.yml by default without the `-f` option if it exists
-* Load config.ru for applications under the apps_base directory
+* Load config.ru for applications under the `apps_base` directory when the option is enabled
 * Share the JRuby runtime with JRuby-Rack
 
 == Trinidad_jars 1.0.1 (2011-03-17)
