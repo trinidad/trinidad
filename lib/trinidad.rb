@@ -1,11 +1,7 @@
-$:.unshift(File.dirname(__FILE__)) unless
-  $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
-
-require "java"
+require 'java'
 require 'rubygems'
 
 require 'jruby-rack'
-require JRubyJars.jruby_rack_jar_path
 
 gem 'trinidad_jars'
 
