@@ -18,14 +18,7 @@ module Trinidad
 
       def configure_defaults(context)
         remove_defaults(context)
-        configure_context_runtime(context)
         configure_logging
-      end
-
-      def configure_context_runtime(context)
-        if @webapp.solo? && @webapp.threadsafe?
-          context.servlet_context.set_attribute('jruby.runtime', JRuby.runtime)
-        end
       end
 
       def remove_defaults(context)

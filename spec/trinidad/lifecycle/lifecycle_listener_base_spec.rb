@@ -60,19 +60,6 @@ describe Trinidad::Lifecycle::Base do
     logger.handlers.should have(current_handlers + 1).handlers
   end
 
-  it "sets the runtime as a servlet contexts attribute for solo and threadsafe applications" do
-    @options[:solo] = true
-
-    app = Trinidad::WebApp.new({
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 1
-    }, @options)
-    listener = Trinidad::Lifecycle::Base.new(app)
-
-    listener.configure_context_runtime(@context)
-    @context.servlet_context.get_attribute('jruby.runtime').should_not be_nil
-  end
-
   def configure_logging(level)
     @options[:log] = level
     @listener = Trinidad::Lifecycle::Base.new(Trinidad::WebApp.new({}, @options))
