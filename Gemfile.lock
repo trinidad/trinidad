@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trinidad (1.0.5)
+    trinidad (1.1.0)
       jruby-rack (>= 1.0.6)
       trinidad_jars (>= 1.0.0)
     trinidad_jars (1.0.1)
