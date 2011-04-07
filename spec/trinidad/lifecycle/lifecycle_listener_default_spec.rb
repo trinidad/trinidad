@@ -45,10 +45,15 @@ describe Trinidad::Lifecycle::Default do
       expected_xml = File.join(Dir.pwd, 'config/web.xml')
 
       listener.configure_deployment_descriptor(@context).should == expected_xml
-      @context.default_web_xml.should == expected_xml
 
       @context.find_lifecycle_listeners.
         map {|l| l.class.name }.should include('Java::OrgApacheCatalinaStartup::ContextConfig')
+
+      context_configs = @context.find_lifecycle_listeners.select do |listener|
+        listener.class.name == 'Java::OrgApacheCatalinaStartup::ContextConfig'
+      end
+      context_configs.size.should == 1
+      context_configs.first.default_web_xml.should == expected_xml
     end
   end
 
