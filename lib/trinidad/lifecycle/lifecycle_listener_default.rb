@@ -14,12 +14,17 @@ module Trinidad
 
       def configure_deployment_descriptor(context)
         if descriptor = @webapp.default_deployment_descriptor
-          context.setDefaultWebXml(descriptor)
-
-          context_config = Trinidad::Tomcat::ContextConfig.new
+          listeners = context.findLifecycleListeners
+          context_config = listeners && listeners.find do |listener|
+            listener.is_a?(Trinidad::Tomcat::ContextConfig)
+          end
+          
+          unless context_config
+            context_config = Trinidad::Tomcat::ContextConfig.new
+            context.addLifecycleListener(context_config)
+          end
+          
           context_config.setDefaultWebXml(descriptor)
-
-          context.addLifecycleListener(context_config)
         end
         descriptor
       end
