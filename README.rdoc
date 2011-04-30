@@ -8,12 +8,12 @@ Trinidad allows you to run a rails or rackup applications within an embedded Apa
 
 == INSTALL:
 
-  jgem install trinidad
+  $ jruby -S gem install trinidad
 
 == USAGE:
 
-    $ cd myapp
-    $ jruby -S trinidad
+  $ cd myapp
+  $ jruby -S trinidad
 
 == CONFIGURATION:
 
