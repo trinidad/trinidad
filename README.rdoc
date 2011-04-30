@@ -3,7 +3,7 @@
 Trinidad allows you to run a rails or rackup applications within an embedded Apache Tomcat container.
 
 * Mail list: http://groups.google.com/group/rails-trinidad
-* Bug tracker: http://github.com/calavera/trinidad/issues
+* Bug tracker: http://github.com/trinidad/trinidad/issues
 * Irc channel on Freenode: #trinidad
 
 == INSTALL:
@@ -12,27 +12,7 @@ Trinidad allows you to run a rails or rackup applications within an embedded Apa
 
 == USAGE:
 
-Rails applications:
-
-    $ cd myrailsapp
-    $ jruby -S trinidad
-
-Rack applications:
-
-    $ cd myrackapplication
-
-    $ jruby -S trinidad -r path_to_rackup/rackup_file
-
-    or if the name of the file is config.ru
-
-    $ jruby -S trinidad -r path_to_rackup
-
-    or if config.ru is in the base directory
-
-    $ jruby -S trinidad -r
-
-    or if config.ru is under the directory WEB-INF
-
+    $ cd myapp
     $ jruby -S trinidad
 
 == CONFIGURATION:
@@ -70,16 +50,16 @@ modified with the option `:monitor`.
 
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
 
-* Database connection pooling: http://github.com/calavera/trinidad-dbpool
+* Database connection pooling: http://github.com/trinidad/trinidad-dbpool
 * Daemons:
-    ** Daemon based on Akuma (ala GF gem): http://github.com/calavera/trinidad_daemon_extension
-    ** Daemon based on Apache Commons Daemon (supports Unix and Windows systems): http://github.com/calavera/trinidad_daemon
-* Hot deploy, do hot deploys monitorizing a temporal file, ala Passenger: http://github.com/calavera/trinidad_hotdeploy_extension
-* Sandbox, management console and REST api: http://github.com/calavera/trinidad_sandbox_extension
-* Logging, enhance the Trinidad's logging system: http://github.com/calavera/trinidad_logging_extension
-* Lifecycle, application and server lifecycle management: http://github.com/calavera/trinidad_lifecycle_extension
+    ** Daemon based on Akuma (ala GF gem): http://github.com/trinidad/trinidad_daemon_extension
+    ** Daemon based on Apache Commons Daemon (supports Unix and Windows systems): http://github.com/trinidad/trinidad_daemon
+* Sandbox, management console and REST api: http://github.com/trinidad/trinidad_sandbox_extension
+* Logging, enhance the Trinidad's logging system: http://github.com/trinidad/trinidad_logging_extension
+* Lifecycle, application and server lifecycle management: http://github.com/trinidad/trinidad_lifecycle_extension
+* Scheduler, based on Quartz: http://github.com/trinidad/trinidad_scheduler_extension
 
-You can find further information on how to write your own extension in the wiki: http://wiki.github.com/calavera/trinidad/extensions
+You can find further information on how to write your own extension in the wiki: http://wiki.github.com/trinidad/trinidad/extensions
 
 == Copyright
 
