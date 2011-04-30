@@ -265,6 +265,15 @@ describe Trinidad::Server do
     host_listeners.first.contexts.should have(2).applications
   end
 
+  it "autoconfigures rack when config.ru is present in the app directory" do
+    FakeFS do
+      create_rackup_file('rack')
+      server = Trinidad::Server.new({:web_app_dir => 'rack'})
+
+      server.tomcat.host.children.should have(1).application
+    end
+  end
+
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
     context = server.tomcat.host.find_children.first
     context.find_lifecycle_listeners.select do |listener|

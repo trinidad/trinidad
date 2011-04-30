@@ -3,6 +3,8 @@ module Trinidad
     attr_reader :config, :app_config, :class_loader, :servlet
 
     def self.create(config, app_config)
+      autodetect_configuration(config, app_config)
+
       war?(app_config) ? WarWebApp.new(config, app_config) :
         rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
     end
@@ -128,6 +130,31 @@ module Trinidad
         servlet_name = servlet_config[:name]
       end
       @servlet = {:class => servlet_class, :name => servlet_name}
+    end
+
+    def self.autodetect_configuration(config, app_config)
+      # Check for Rails threadsafe mode
+      environment = app_config[:environment] || config[:environment]
+      if threadsafe_instance?(app_config[:web_app_dir], environment)
+        app_config[:jruby_min_runtimes] = 1
+        app_config[:jruby_max_runtimes] = 1
+      end
+
+      # Check for rackup (but still use config/environment.rb for Rails 3)
+      if !app_config[:rackup] && !config[:rackup] &&
+          File.exists?("#{app_config[:web_app_dir]}/config.ru") &&
+          !File.exists?("#{app_config[:web_app_dir]}/config/environment.rb")
+        app_config[:rackup] = 'config.ru'
+      end
+    end
+
+    def self.threadsafe_instance?(app_base, environment)
+      threadsafe_match?("#{app_base}/config/environments/#{environment}.rb") ||
+        threadsafe_match?("#{app_base}/config/environment.rb")
+    end
+
+    def self.threadsafe_match?(file)
+      File.exist?(file) && File.readlines(file).any? { |l| l =~ /^[^#]*threadsafe!/ }
     end
   end
 end

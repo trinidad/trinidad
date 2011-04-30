@@ -83,9 +83,6 @@ module Trinidad
               :context_path => (name == 'default' ? '' : "/#{name.to_s}"),
               :web_app_dir => File.expand_path(path)
             }
-            if File.directory?(path) && File.exist?(File.expand_path('config.ru', path))
-              app_config[:rackup] = 'config.ru'
-            end
 
             create_web_app(app_config)
           end

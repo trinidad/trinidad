@@ -159,6 +159,18 @@ EOF
 EOF
   end
 
+  def create_rails_environment(env = 'environment.rb')
+    config_file "config/#{env}", <<-EOF
+    config.threadsafe!
+EOF
+  end
+
+  def create_rails_environment_non_threadsafe(env = 'environment.rb')
+    config_file "config/#{env}", <<-EOF
+    # config.threadsafe!
+EOF
+  end
+
   private 
   def config_file(path, content)
     File.open(path, 'w') {|io| io.write(content) }

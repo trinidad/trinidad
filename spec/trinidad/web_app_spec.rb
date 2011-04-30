@@ -299,4 +299,47 @@ describe Trinidad::WebApp do
 
     app.threadsafe?.should be_false
   end
+
+  it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the specified environment" do
+    FakeFS do
+      create_rails_environment('environments/staging.rb')
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :environment => 'staging',
+        :jruby_min_runtimes => 1,
+        :jruby_max_runtimes => 2
+      })
+
+      app.threadsafe?.should be_true
+    end
+  end
+
+  it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
+    FakeFS do
+      create_rails_environment
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :jruby_min_runtimes => 1,
+        :jruby_max_runtimes => 2
+      })
+
+      app.threadsafe?.should be_true
+    end
+  end
+
+  it "does not set threadsafe when the option is not enabled" do
+    FakeFS do
+      create_rails_environment_non_threadsafe
+
+      app = Trinidad::WebApp.create({}, {
+        :web_app_dir => Dir.pwd,
+        :jruby_min_runtimes => 1,
+        :jruby_max_runtimes => 2
+      })
+
+      app.threadsafe?.should be_false
+    end
+  end
 end
