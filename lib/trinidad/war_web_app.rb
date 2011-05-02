@@ -11,5 +11,9 @@ module Trinidad
     def monitor
       File.expand_path(web_app_dir)
     end
+
+    def define_lifecycle
+      Trinidad::Lifecycle::War.new(self)
+    end
   end
 end

@@ -98,6 +98,10 @@ module Trinidad
       File.expand_path(m_file, work_dir)
     end
 
+    def define_lifecycle
+      Trinidad::Lifecycle::Default.new(self)
+    end
+
     protected
     def add_parameter_unless_exist(param_name, param_value)
       @params[param_name] = param_value unless web_context_param(param_name)

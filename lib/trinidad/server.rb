@@ -55,7 +55,7 @@ module Trinidad
     end
 
     def load_host_monitor(apps)
-      @tomcat.host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(*apps))
+      @tomcat.host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(@tomcat, *apps))
     end
 
     def create_from_web_apps
@@ -97,10 +97,9 @@ module Trinidad
 
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
 
-      lifecycle = web_app.war? ? Lifecycle::War.new(web_app) : Lifecycle::Default.new(web_app)
-      app_context.add_lifecycle_listener(lifecycle)
+      app_context.add_lifecycle_listener(web_app.define_lifecycle)
 
-      {:context => app_context, :monitor => web_app.monitor}
+      {:context => app_context, :app => web_app, :monitor => web_app.monitor}
     end
 
     def add_service_connector(options, protocol = nil)
