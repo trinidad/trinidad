@@ -46,7 +46,7 @@ module Trinidad
             c[:lock] = true
             c[:mtime] = mtime
             c[:context] = create_takeover(c)
-            c[:context].start
+            Thread.new { c[:context].start }
           end
         end
       end
