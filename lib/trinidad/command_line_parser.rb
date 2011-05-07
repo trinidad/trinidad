@@ -121,8 +121,10 @@ module Trinidad
           exit
         end
 
-        opts.on('-l', '--load EXTENSION_NAME', 'load options for a given extension') do |name|
-          Trinidad::Extensions.configure_options_extensions({name => {}}, opts, default_options)
+        opts.on('-l', '--load EXTENSION_NAMES', Array, 'load options for extensions') do |ext_names|
+          ext_names.each do |ext|
+            Trinidad::Extensions.configure_options_extensions({ext => {}}, opts, default_options)
+          end
         end
 
         opts.on('--apps', '--apps APPS_BASE_DIR', 'applications base directory') do |path|

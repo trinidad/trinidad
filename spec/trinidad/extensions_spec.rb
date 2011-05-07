@@ -26,7 +26,7 @@ describe Trinidad::Extensions do
 
     lambda {
       parser.parse! ['--foo']
-      options.has_key?(:bar).should be_true
+      options.has_key?(:foo).should be_true
     }.should_not raise_error
   end
 

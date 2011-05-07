@@ -171,7 +171,7 @@ EOF
 EOF
   end
 
-  private 
+  private
   def config_file(path, content)
     File.open(path, 'w') {|io| io.write(content) }
   end

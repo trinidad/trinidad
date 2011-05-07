@@ -113,9 +113,10 @@ describe Trinidad::CommandLineParser do
     options[:jruby_max_runtimes].should == 1
   end
 
-  it "loads a given extension to add its options to the parser" do
-    args = "--load foo --foo".split
+  it "loads the given extensions to add its options to the parser" do
+    args = "--load foo,bar --foo".split
     options = subject.parse(args)
+    options.has_key?(:foo).should be_true
     options.has_key?(:bar).should be_true
   end
 

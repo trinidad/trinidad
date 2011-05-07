@@ -15,7 +15,7 @@ module Trinidad
     class FooOptionsExtension < OptionsExtension
       def configure(parser, default_options)
         parser.on('--foo') do
-          default_options[:bar] = true
+          default_options[:foo] = true
         end
       end
     end
