@@ -19,6 +19,11 @@ namespace :trinidad_jars do
     build(JARS_GEMSPEC, trinidad_jars_gem_file)
   end
 
+  desc "Install trinidad_jars gem"
+  task :install => :build do
+    sh "gem install pkg/#{trinidad_jars_gem_file}"
+  end
+
   desc "Update trinidad_jars gemspec"
   task :gemspec do
     # read spec file and split out manifest section

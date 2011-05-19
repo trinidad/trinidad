@@ -35,6 +35,7 @@ end
 
 {
   :build => 'Build all Trinidad gems',
+  :install => 'Install all Trinidad gems',
   :release => 'Release all Trinidad gems'
 }.each do |t, d|
   desc d
