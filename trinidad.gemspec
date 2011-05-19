@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'trinidad'
   s.version           = '1.2.0.dev'
-  s.date              = '2011-04-26'
+  s.date              = '2011-05-18'
   s.rubyforge_project = 'trinidad'
 
   ## Make sure your summary is short. The description may be as long
@@ -76,6 +76,7 @@ lib/trinidad/lifecycle/lifecycle_listener_base.rb
 lib/trinidad/lifecycle/lifecycle_listener_default.rb
 lib/trinidad/lifecycle/lifecycle_listener_host.rb
 lib/trinidad/lifecycle/lifecycle_listener_war.rb
+lib/trinidad/lifecycle/takeover.rb
   ]
   # = MANIFEST =
 
