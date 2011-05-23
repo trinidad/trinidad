@@ -190,6 +190,8 @@ module Trinidad
     end
 
     def start
+      trap_signals(@tomcat)
+
       @tomcat.start
       @tomcat.server.await
     end
@@ -207,6 +209,11 @@ module Trinidad
 
         config[:web_apps] = { :default => default_app }
       end
+    end
+
+    def trap_signals(tomcat)
+      trap('INT') { tomcat.stop }
+      trap('TERM') { tomcat.stop }
     end
   end
 end
