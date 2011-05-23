@@ -44,8 +44,8 @@ Gem::Specification.new do |s|
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
-  s.add_dependency('trinidad_jars', ">= 1.0.0")
-  s.add_dependency('jruby-rack', ">= 1.0.6")
+  s.add_dependency('trinidad_jars', ">= 1.0.1")
+  s.add_dependency('jruby-rack', ">= 1.0.9")
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
