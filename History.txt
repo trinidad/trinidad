@@ -1,3 +1,9 @@
+== Trinidad 1.2.0 (2011-05-24)
+
+* Zero downtime hot deploy
+* Autodetect framework and threadsafe environment
+* Upgrade jruby-rack dependency to 1.0.9
+
 == Trinidad 1.1.1 (2011-03-27)
 
 * Remove shared runtime initialization
