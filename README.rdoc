@@ -32,13 +32,13 @@ Trinidad allows you to configure some parameters when the server is started from
   * -g, --log LEVEL             =>  set the log level, default INFO.
   * --apps APPS_BASE_DIRECTORY  =>  set the applications base directory.
 
-The server can also be configured from a yaml file. By default, if a file is not especified, the server tries to load the file <em>config/trinidad.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
+The server can also be configured from a yaml file. By default, if a file is not specified, the server tries to load the file <em>config/trinidad.yml</em>. Within this file you can add other options like jruby.min.runtimes(:jruby_min_runtimes) or jruby.max.runtimes(:jruby_max_runtimes).
 
   jruby -S trinidad --config my_custom_configuration.yml
 
-You can also specify a default web.xml to config your web application. By default the server tries to load the file <em>config/web.xml</em> but you can modify this path adding the option <em>default_web_xml</em> within your configuration file. 
+You can also specify a default web.xml to configure your web application. By default the server tries to load the file <em>config/web.xml</em> but you can modify this path by adding the option <em>default_web_xml</em> within your configuration file. 
 
-Other advanced options can be found in the wiki: http://wiki.github.com/trinidad/trinidad/advanced-configuration
+Other advanced options can be found on the wiki: http://wiki.github.com/trinidad/trinidad/advanced-configuration
 
 == HOT DEPLOYMENT:
 
