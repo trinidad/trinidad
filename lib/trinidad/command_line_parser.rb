@@ -31,10 +31,11 @@ module Trinidad
 
       if default_options.has_key?(:config)
         require 'yaml'
+        require 'erb'
         default_options[:config] = File.expand_path(default_options[:config], default_options[:web_app_dir] || Dir.pwd)
 
         if File.exist?(default_options[:config])
-          config_options = YAML.load_file(default_options[:config])
+          config_options = YAML.load(ERB.new(File.read(default_options[:config])).result(binding))
           default_options.deep_merge!(config_options.symbolize!)
         end
       end

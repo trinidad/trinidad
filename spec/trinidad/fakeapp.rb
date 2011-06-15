@@ -17,6 +17,13 @@ EOF
 EOF
   end
 
+  def create_erb_config_file
+    @default ||= config_file 'config/trinidad.yml', <<-EOF
+---
+  port: <%= 4100 + 4200 %>
+EOF
+  end
+
   def create_rails_web_xml
     @rails_web_xml ||= config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>

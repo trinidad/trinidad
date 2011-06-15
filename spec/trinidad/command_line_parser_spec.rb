@@ -49,6 +49,15 @@ describe Trinidad::CommandLineParser do
     end
   end
 
+  it "allows erb substitution in the configuration file" do
+    FakeFS do
+      create_erb_config_file
+      options = subject.parse(['-f'])
+
+      options[:port].should == 8300
+    end
+  end
+
   it "adds default ssl port to options" do
     args = '--ssl'.split
 
