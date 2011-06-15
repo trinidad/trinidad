@@ -131,6 +131,10 @@ module Trinidad
           default_options[:apps_base] = path
         end
 
+        opts.on('--monitor' '--monitor MONITOR_FILE', 'monitor file for hot deployments') do |monitor|
+          default_options[:monitor] = monitor
+        end
+
         opts.on('-h', '--help', 'display the help') do
           puts opts
           exit

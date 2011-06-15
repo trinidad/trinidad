@@ -147,4 +147,9 @@ describe Trinidad::CommandLineParser do
     options[:config].should == File.expand_path('tomcat.yml', MOCK_WEB_APP_DIR)
     options[:port].should == 4000
   end
+
+  it "can modify the monitor file for hot deploys" do
+    args = "--monitor tmp/foo.txt".split
+    subject.parse(args)[:monitor].should == 'tmp/foo.txt'
+  end
 end
