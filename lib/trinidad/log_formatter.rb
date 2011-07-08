@@ -1,11 +1,11 @@
 module Trinidad
   class LogFormatter < Java::JavaUtilLogging::Formatter
-    def self.date_format
-      @date_format ||= Java::JavaText::SimpleDateFormat.new "yyyy-MM-dd HH:mm:ss"
+    def initialize format = "yyyy-MM-dd HH:mm:ss"
+      @format = Java::JavaText::SimpleDateFormat.new format
     end
 
     def format(record)
-      timestamp = self.class.date_format.format(Java::JavaUtil::Date.new(record.millis))
+      timestamp = @format.format(Java::JavaUtil::Date.new record.millis)
       level = record.level.name
       message = record.message.chomp
 
