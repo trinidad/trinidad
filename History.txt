@@ -1,3 +1,9 @@
+== Trinidad 1.2.2 (2011-07-12)
+
+* Better log formatter
+* Allow to use an ERB template as configuration file
+* Fix trinidad_init_services compatibility issues
+
 == Trinidad 1.2.1 (2011-06-15)
 
 * Allow to specify the monitor file from the command line
