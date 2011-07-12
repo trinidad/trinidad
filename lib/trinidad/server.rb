@@ -14,7 +14,8 @@ module Trinidad
         :jruby_min_runtimes => 1,
         :jruby_max_runtimes => 5,
         :address => 'localhost',
-        :log => 'INFO'
+        :log => 'INFO',
+        :trap => true
       }
     end
 
@@ -190,10 +191,15 @@ module Trinidad
     end
 
     def start
-      trap_signals(@tomcat)
+      trap_signals if @config[:trap]
 
       @tomcat.start
       @tomcat.server.await
+    end
+
+    def stop
+      @tomcat.stop
+      @tomcat.destroy
     end
 
     private
@@ -211,9 +217,9 @@ module Trinidad
       end
     end
 
-    def trap_signals(tomcat)
-      trap('INT') { tomcat.stop }
-      trap('TERM') { tomcat.stop }
+    def trap_signals
+      trap('INT') { stop }
+      trap('TERM') { stop }
     end
   end
 end
