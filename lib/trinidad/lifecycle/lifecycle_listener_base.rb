@@ -60,14 +60,14 @@ module Trinidad
 
         level = jlogging.Level.parse(log_level)
 
+        logger.add_handler(log_handler)
+
         logger.handlers.each do |handler|
           handler.level = level
+          handler.formatter = Trinidad::LogFormatter.new
         end
 
         logger.level = level
-
-        log_handler.formatter = jlogging.SimpleFormatter.new
-        logger.add_handler(log_handler)
 
         @configured_logger = true
       end
