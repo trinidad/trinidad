@@ -68,6 +68,7 @@ module Trinidad
 
         Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
 
+        web_app.generate_class_loader
         context.add_lifecycle_listener(web_app.define_lifecycle)
         context.add_lifecycle_listener(Trinidad::Lifecycle::Takeover.new(c))
 

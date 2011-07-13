@@ -21,7 +21,7 @@ module Trinidad
       @config = config
       @app_config = app_config
 
-      @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
+      generate_class_loader
 
       configure_rack_servlet(servlet_class, servlet_name) unless rack_servlet_configured?
     end
@@ -100,6 +100,10 @@ module Trinidad
 
     def define_lifecycle
       Trinidad::Lifecycle::Default.new(self)
+    end
+
+    def generate_class_loader
+      @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
 
     protected
