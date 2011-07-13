@@ -1,3 +1,7 @@
+== Trinidad 1.2.3 (2011-07-13)
+
+* fix JRuby class loader generation with hot deploy
+
 == Trinidad 1.2.2 (2011-07-12)
 
 * Better log formatter
