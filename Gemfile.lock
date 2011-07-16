@@ -13,6 +13,7 @@ GEM
     fakefs (0.3.1)
     jruby-rack (1.0.9)
     mocha (0.9.12)
+    rake (0.8.7)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -28,5 +29,6 @@ PLATFORMS
 DEPENDENCIES
   fakefs
   mocha
+  rake (= 0.8.7)
   rspec
   trinidad!
