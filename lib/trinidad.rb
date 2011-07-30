@@ -17,10 +17,12 @@ require 'trinidad/lifecycle/lifecycle_listener_host'
 require 'trinidad/lifecycle/lifecycle_listener_base'
 require 'trinidad/lifecycle/lifecycle_listener_default'
 require 'trinidad/lifecycle/lifecycle_listener_war'
+require 'trinidad/lifecycle/lifecycle_listener_java'
 require 'trinidad/web_app'
 require 'trinidad/rails_web_app'
 require 'trinidad/rackup_web_app'
 require 'trinidad/war_web_app'
+require 'trinidad/java_web_app'
 
 module Trinidad
   VERSION = '1.2.3'
