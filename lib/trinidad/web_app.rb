@@ -5,12 +5,18 @@ module Trinidad
     def self.create(config, app_config)
       autodetect_configuration(config, app_config)
 
-      war?(app_config) ? WarWebApp.new(config, app_config) :
-        rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
+      war?(app_config)      ? WarWebApp.new(config, app_config)    :
+        rackup?(app_config) ? RackupWebApp.new(config, app_config) :
+        rails?(app_config)  ? RailsWebApp.new(config, app_config)  :
+                              JavaWebApp.new(config, app_config)
     end
 
     def self.rackup?(app_config)
       app_config.has_key?(:rackup) || !Dir['WEB-INF/**/config.ru'].empty?
+    end
+
+    def self.rails?(app_config)
+      File.exists?("#{app_config[:web_app_dir]}/config/environment.rb")
     end
 
     def self.war?(app_config)
