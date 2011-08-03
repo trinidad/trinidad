@@ -1,5 +1,5 @@
 module Trinidad
-  module Liefcycle
+  module Lifecycle
     class Java < Base
       def configure_defaults(context)
         super
