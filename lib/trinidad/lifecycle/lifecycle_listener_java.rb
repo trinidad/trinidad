@@ -2,7 +2,7 @@ module Trinidad
   module Lifecycle
     class Java < Base
       def configure_defaults(context)
-        super
+        configure_logging
         configure_class_loader(context)
       end
 
