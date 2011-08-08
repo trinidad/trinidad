@@ -4,7 +4,7 @@ PATH
     trinidad (1.2.3)
       jruby-rack (>= 1.0.9)
       trinidad_jars (>= 1.0.1)
-    trinidad_jars (1.0.1)
+    trinidad_jars (1.0.2)
 
 GEM
   remote: http://rubygems.org/

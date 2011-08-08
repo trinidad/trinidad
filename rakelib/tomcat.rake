@@ -4,12 +4,13 @@ include FileUtils
 
 TOMCAT_CORE_PATH = File.expand_path('../../trinidad-libs/tomcat-core.jar', __FILE__)
 TOMCAT_MAVEN_REPO = 'http://repo2.maven.org/maven2/org/apache/tomcat'
+ECJ = 'http://repo2.maven.org/maven2/org/eclipse/jdt/core/compiler/ecj/3.5.1/ecj-3.5.1.jar'
 
 tomcat = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-core/%s/tomcat-embed-core-%s.jar"
 tomcat_jasper = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-jasper/%s/tomcat-embed-jasper-%s.jar"
 tomcat_logging = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-logging-log4j/%s/tomcat-embed-logging-log4j-%s.jar"
 
-dependencies = [tomcat, tomcat_jasper, tomcat_logging]
+dependencies = [tomcat, tomcat_jasper, tomcat_logging, ECJ]
 
 namespace :tomcat do
   desc "Updates Tomcat to a given version"
