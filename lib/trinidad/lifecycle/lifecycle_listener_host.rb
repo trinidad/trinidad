@@ -63,7 +63,7 @@ module Trinidad
         context.add_lifecycle_listener Trinidad::Tomcat::Tomcat::DefaultWebXmlListener.new
 
         config = Trinidad::Tomcat::ContextConfig.new
-        config.default_web_xml = 'org/apache/catalin/startup/NO_DEFAULT_XML'
+        config.default_web_xml = 'org/apache/catalina/startup/NO_DEFAULT_XML'
         context.add_lifecycle_listener config
 
         Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
