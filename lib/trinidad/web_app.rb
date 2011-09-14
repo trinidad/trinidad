@@ -137,7 +137,12 @@ module Trinidad
         servlet_class = servlet_config[:class]
         servlet_name = servlet_config[:name]
       end
-      @servlet = {:class => servlet_class, :name => servlet_name}
+      @servlet = {:name => servlet_name}
+      if servlet_config[:instance]
+        @servlet[:instance] = servlet_config[:instance]
+      else
+        @servlet[:class] = servlet_class
+      end
     end
 
     def self.autodetect_configuration(config, app_config)
