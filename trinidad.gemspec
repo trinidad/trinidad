@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'trinidad'
   s.version           = '1.2.3'
-  s.date              = '2011-07-13'
+  s.date              = '2011-09-14'
   s.rubyforge_project = 'trinidad'
 
   ## Make sure your summary is short. The description may be as long
@@ -63,6 +63,8 @@ lib/trinidad.rb
 History.txt
 LICENSE
 README.rdoc
+lib/rack/handler
+lib/rack/handler/trinidad.rb
 lib/trinidad/command_line_parser.rb
 lib/trinidad/core_ext.rb
 lib/trinidad/extensions.rb

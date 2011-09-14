@@ -18,12 +18,12 @@ module Trinidad
           context_config = listeners && listeners.find do |listener|
             listener.is_a?(Trinidad::Tomcat::ContextConfig)
           end
-          
+
           unless context_config
             context_config = Trinidad::Tomcat::ContextConfig.new
             context.addLifecycleListener(context_config)
           end
-          
+
           context_config.setDefaultWebXml(descriptor)
         end
         descriptor
@@ -31,7 +31,11 @@ module Trinidad
 
       def configure_rack_servlet(context)
         wrapper = context.create_wrapper
-        wrapper.servlet_class = @webapp.servlet[:class]
+        if @webapp.servlet[:instance]
+          wrapper.servlet = @webapp.servlet[:instance]
+        else
+          wrapper.servlet_class = @webapp.servlet[:class]
+        end
         wrapper.name = @webapp.servlet[:name]
 
         context.add_child(wrapper)
@@ -39,7 +43,7 @@ module Trinidad
       end
 
       def configure_rack_listener(context)
-        context.addApplicationListener(@webapp.rack_listener)
+        context.addApplicationListener(@webapp.rack_listener) unless @webapp.servlet[:instance]
       end
 
       def configure_init_params(context)
