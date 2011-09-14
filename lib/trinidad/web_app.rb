@@ -132,17 +132,12 @@ module Trinidad
     end
 
     def configure_rack_servlet(servlet_class, servlet_name)
-      servlet_config = @config[:servlet] || @app_config[:servlet]
-      if servlet_config
-        servlet_class = servlet_config[:class]
-        servlet_name = servlet_config[:name]
-      end
-      @servlet = {:name => servlet_name}
-      if servlet_config[:instance]
-        @servlet[:instance] = servlet_config[:instance]
-      else
-        @servlet[:class] = servlet_class
-      end
+      servlet_config = @config[:servlet] || @app_config[:servlet] || {}
+      @servlet = {
+        :class => servlet_config[:class] || servlet_class,
+        :name => servlet_config[:name] || servlet_name,
+        :instance => servlet_config[:instance]
+      }
     end
 
     def self.autodetect_configuration(config, app_config)
