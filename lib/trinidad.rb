@@ -6,7 +6,6 @@ require 'jruby-rack'
 gem 'trinidad_jars'
 
 require 'trinidad/core_ext'
-
 require 'trinidad/extensions'
 require 'trinidad/command_line_parser'
 require 'trinidad/jars'
@@ -21,6 +20,7 @@ require 'trinidad/web_app'
 require 'trinidad/rails_web_app'
 require 'trinidad/rackup_web_app'
 require 'trinidad/war_web_app'
+require 'rack/handler/tinidad'
 
 module Trinidad
   VERSION = '1.2.3'
