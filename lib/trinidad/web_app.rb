@@ -1,5 +1,7 @@
 module Trinidad
   class WebApp
+    DEFAULT_MONITORED_APP_DIRS = ['app', 'lib', 'public']
+
     attr_reader :config, :app_config, :class_loader, :servlet
 
     def self.create(config, app_config)
@@ -94,8 +96,13 @@ module Trinidad
     end
 
     def monitor
-      m_file = @app_config[:monitor] || @config[:monitor] || 'tmp/restart.txt'
-      File.expand_path(m_file, work_dir)
+      m_file = @app_config[:monitor] || @config[:monitor] || (DEFAULT_MONITORED_APP_DIRS + ['tmp/restart.txt'])
+      if m_file.is_a? Enumerable
+        m_file.map { |m| File.expand_path(m, work_dir)}
+      else
+        [File.expand_path(m_file, work_dir)]
+      end
+
     end
 
     def define_lifecycle

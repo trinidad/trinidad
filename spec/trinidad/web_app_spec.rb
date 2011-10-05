@@ -261,7 +261,13 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({
       :web_app_dir => MOCK_WEB_APP_DIR
     }, {})
-    app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
+    app.monitor.size.should == 4
+    app.monitor.should include(
+                           File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR),
+                           File.expand_path('app', MOCK_WEB_APP_DIR),
+                           File.expand_path('public', MOCK_WEB_APP_DIR),
+                           File.expand_path('lib', MOCK_WEB_APP_DIR))
+
   end
 
   it "accepts a monitor file as configuration parameter" do
@@ -269,7 +275,7 @@ describe Trinidad::WebApp do
       :web_app_dir => MOCK_WEB_APP_DIR,
       :monitor => 'foo.txt'
     }, {})
-    app.monitor.should == File.expand_path('foo.txt', MOCK_WEB_APP_DIR)
+    app.monitor.should == [File.expand_path('foo.txt', MOCK_WEB_APP_DIR)]
   end
 
   it "uses the war file to monitorize an application packed as a war" do
