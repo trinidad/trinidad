@@ -30,17 +30,30 @@ module Trinidad
       end
 
       if default_options.has_key?(:config)
-        require 'yaml'
-        require 'erb'
         default_options[:config] = File.expand_path(default_options[:config], default_options[:web_app_dir] || Dir.pwd)
 
-        if File.exist?(default_options[:config])
+        if yaml_configuration?(default_options[:config])
+          require 'yaml'
+          require 'erb'
           config_options = YAML.load(ERB.new(File.read(default_options[:config])).result(binding))
           default_options.deep_merge!(config_options.symbolize!)
         end
       end
 
+      Trinidad.configure(default_options)
+      if ruby_configuration?(default_options[:config])
+        load default_options[:config]
+      end
+
       default_options
+    end
+
+    def yaml_configuration?(config)
+      config && File.exist?(config) && config =~ /\.yml$/
+    end
+
+    def ruby_configuration?(config)
+      config && File.exist?(config) && config =~ /\.rb$/
     end
 
     def options_parser

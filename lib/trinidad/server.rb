@@ -27,8 +27,8 @@ module Trinidad
     end
 
     def load_config(config)
-      @config = default_options.deep_merge(config).symbolize!
-      add_default_web_app!(@config)
+      @config = config
+      add_default_web_app!(config)
     end
 
     def load_tomcat_server
