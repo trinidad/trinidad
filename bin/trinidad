@@ -3,4 +3,4 @@
 require "trinidad"
 
 opts = Trinidad::CommandLineParser.parse(ARGV)
-Trinidad::Server.new(opts).start
+Trinidad::Server.new(Trinidad.configuration).start

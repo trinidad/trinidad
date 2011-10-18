@@ -6,8 +6,15 @@ JSystem = java.lang.System
 JContext = javax.naming.Context
 
 describe Trinidad::Server do
+  before { Trinidad.configure }
+
+  after do
+    rm_rf File.expand_path('../../ssl', File.dirname(__FILE__))
+  end
+
   it "always uses symbols as configuration keys" do
-    server = Trinidad::Server.new({'port' => 4000})
+    Trinidad.configure {|c| c.port = 4000 }
+    server = Trinidad::Server.new
     server.config[:port].should == 4000
   end
 
@@ -42,13 +49,14 @@ describe Trinidad::Server do
 
   it "enables ajp when config param is a number" do
     server = Trinidad::Server.new({:ajp => {:port => 8009}})
-
     server.ajp_enabled?.should be_true
   end
 
   it "includes a connector with https scheme when ssl is enabled" do
-    server = Trinidad::Server.new({:ssl => {:port => 8443},
-      :web_app_dir => MOCK_WEB_APP_DIR})
+    Trinidad.configure do |c|
+      c.ssl = {:port => 8443}
+    end
+    server = Trinidad::Server.new
 
     connectors = server.tomcat.service.find_connectors
     connectors.should have(1).connector
@@ -56,7 +64,11 @@ describe Trinidad::Server do
   end
 
   it "includes a connector with protocol AJP when ajp is enabled" do
-    server = Trinidad::Server.new({:ajp => {:port => 8009}})
+    Trinidad.cleanup
+    Trinidad.configure do |c|
+      c.ajp = {:port => 8009}
+    end
+    server = Trinidad::Server.new
 
     connectors = server.tomcat.service.find_connectors
     connectors.should have(1).connector
@@ -89,13 +101,15 @@ describe Trinidad::Server do
   end
 
   it "loads the default application from the current directory if :web_apps is not present" do
-    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    Trinidad.cleanup
+    Trinidad.configure {|c| c.web_app_dir = MOCK_WEB_APP_DIR}
+    server = Trinidad::Server.new
 
     default_context_should_be_loaded(server.tomcat.host.find_children)
   end
 
   it "uses the default HttpConnector when http is not configured" do
-    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    server = Trinidad::Server.new
     server.http_configured?.should be_false
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11Protocol'
@@ -137,17 +151,19 @@ describe Trinidad::Server do
   end
 
   it "adds the default lifecycle listener to each webapp" do
-    server = Trinidad::Server.new({:web_app_dir => MOCK_WEB_APP_DIR})
+    Trinidad.configuration.web_app_dir = MOCK_WEB_APP_DIR
+    server = Trinidad::Server.new
     app_context = server.tomcat.host.find_child('/')
 
     app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::Lifecycle::Default')
   end
 
   it "loads application extensions from the root of the configuration" do
-    server = Trinidad::Server.new({
-      :web_app_dir => MOCK_WEB_APP_DIR,
-      :extensions => { :foo => {} }
-    })
+    Trinidad.configure do |c|
+      c.web_app_dir = MOCK_WEB_APP_DIR
+      c.extensions = { :foo => {} }
+    end
+    server = Trinidad::Server.new
 
     app_context = server.tomcat.host.find_child('/')
     app_context.doc_base.should == 'foo_app_extension'
@@ -167,7 +183,7 @@ describe Trinidad::Server do
   end
 
   it "uses localhost as host name by default" do
-    Trinidad::Server.new({}).tomcat.host.name.should == 'localhost'
+    Trinidad::Server.new.tomcat.host.name.should == 'localhost'
   end
 
   it "uses the option :address to set the host name" do

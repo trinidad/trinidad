@@ -33,7 +33,6 @@ describe Trinidad::CommandLineParser do
       ['', '-f'].each do |opt|
         options = subject.parse([opt])
 
-        options[:config].should == File.expand_path('config/trinidad.yml')
         options[:port].should == 8080
       end
     end
@@ -153,7 +152,6 @@ describe Trinidad::CommandLineParser do
     args = "-d #{MOCK_WEB_APP_DIR} -f tomcat.yml".split
     options = subject.parse(args)
 
-    options[:config].should == File.expand_path('tomcat.yml', MOCK_WEB_APP_DIR)
     options[:port].should == 4000
   end
 

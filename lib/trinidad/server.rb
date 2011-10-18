@@ -3,23 +3,7 @@ module Trinidad
   class Server
     attr_reader :tomcat, :config
 
-    def default_options
-      {
-        :environment => 'development',
-        :context_path => '/',
-        :libs_dir => 'lib',
-        :classes_dir => 'classes',
-        :default_web_xml => 'config/web.xml',
-        :port => 3000,
-        :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 5,
-        :address => 'localhost',
-        :log => 'INFO',
-        :trap => true
-      }
-    end
-
-    def initialize(config = {})
+    def initialize(config = Trinidad.configuration)
       load_config(config)
       load_tomcat_server
       apps = create_web_apps
@@ -27,14 +11,14 @@ module Trinidad
     end
 
     def load_config(config)
-      @config = default_options.deep_merge(config).symbolize!
-      add_default_web_app!(@config)
+      @config = config
+      add_default_web_app!(config)
     end
 
     def load_tomcat_server
       @tomcat = Trinidad::Tomcat::Tomcat.new
       @tomcat.base_dir = Dir.pwd
-      @tomcat.hostname = @config[:address]
+      @tomcat.hostname = @config[:address] || 'localhost'
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
       @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
@@ -158,15 +142,15 @@ module Trinidad
     end
 
     def ssl_enabled?
-      @config.has_key?(:ssl)
+      @config[:ssl] && !@config[:ssl].empty?
     end
 
     def ajp_enabled?
-      @config.has_key?(:ajp)
+      @config[:ajp] && !@config[:ajp].empty?
     end
 
     def http_configured?
-      @config.has_key?(:http) || @config[:address] != 'localhost'
+      (@config[:http] && !@config[:http].empty?) || @config[:address] != 'localhost'
     end
 
     def create_default_keystore(config)
@@ -205,13 +189,13 @@ module Trinidad
     private
 
     def add_default_web_app!(config)
-      if (!config.has_key?(:web_apps) && !config.has_key?(:apps_base))
+      if (!config[:web_apps] && !config[:apps_base])
         default_app = {
           :context_path => config[:context_path],
           :web_app_dir => config[:web_app_dir] || Dir.pwd,
           :log => config[:log]
         }
-        default_app[:rackup] = config[:rackup] if (config.has_key?(:rackup))
+        default_app[:rackup] = config[:rackup] if config[:rackup]
 
         config[:web_apps] = { :default => default_app }
       end

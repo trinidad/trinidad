@@ -180,6 +180,8 @@ EOF
 
   private
   def config_file(path, content)
+    dir = File.dirname(path)
+    Dir.mkdir(dir) unless File.exist?(dir)
     File.open(path, 'w') {|io| io.write(content) }
   end
 end
