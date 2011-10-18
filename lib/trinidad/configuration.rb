@@ -12,7 +12,7 @@ module Trinidad
     attr_accessor :port, :address, :environment, :context_path, :libs_dir, :classes_dir,
                  :default_web_xml, :log, :jruby_min_runtimes, :jruby_max_runtimes,
                  :monitor, :http, :ajp, :ssl, :extensions, :apps_base, :web_apps, :web_app_dir,
-                 :trap, :rackup, :servlet
+                 :trap, :rackup, :servlet, :public
 
     def initialize(options = {})
       options.symbolize!
@@ -26,12 +26,12 @@ module Trinidad
       @jruby_min_runtimes = 1
       @jruby_max_runtimes = 5
       @address = 'localhost'
-      @log_level = 'INFO'
+      @log = 'INFO'
       @trap = true
     end
 
     def [](name)
-      send name
+      respond_to?(name) ? send(name) : nil
     end
 
     def []=(name, value)
