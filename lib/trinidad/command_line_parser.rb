@@ -9,16 +9,7 @@ module Trinidad
     end
 
     def initialize
-      @default_options = {
-        :port => 3000,
-        :environment => 'development',
-        :context_path => '',
-        :libs_dir => 'lib',
-        :classes_dir => 'classes',
-        :ssl_port => 8443,
-        :ajp_port => 8009,
-        :config => 'config/trinidad.yml'
-      }
+      @default_options = {}
     end
 
     def parse!(argv)
@@ -29,20 +20,20 @@ module Trinidad
         exit(1)
       end
 
-      if default_options.has_key?(:config)
-        default_options[:config] = File.expand_path(default_options[:config], default_options[:web_app_dir] || Dir.pwd)
-
-        if yaml_configuration?(default_options[:config])
+      base_dir = default_options[:web_app_dir] || Dir.pwd
+      config = default_options.delete(:config) || Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
+      if config and config = File.expand_path(config, base_dir)
+        if yaml_configuration?(config)
           require 'yaml'
           require 'erb'
-          config_options = YAML.load(ERB.new(File.read(default_options[:config])).result(binding))
+          config_options = YAML.load(ERB.new(File.read(config)).result(binding))
           default_options.deep_merge!(config_options.symbolize!)
         end
       end
 
       Trinidad.configure(default_options)
-      if ruby_configuration?(default_options[:config])
-        load default_options[:config]
+      if ruby_configuration?(config)
+        load config
       end
 
       default_options
@@ -92,20 +83,20 @@ module Trinidad
         end
 
         opts.on('-s', '--ssl [SSL_PORT]', 'Enable secure socket layout',
-            "default port: #{default_options[:ssl_port]}") do |v|
-          ssl_port = v.nil? ? default_options.delete(:ssl_port) : v.to_i
+            "default port: 8443") do |v|
+          ssl_port = v.nil? ? 8443 : v.to_i
           default_options[:ssl] = {:port => ssl_port}
         end
 
         opts.on('-a', '--ajp [AJP_PORT]', 'Enable ajp connections',
-            "default port: #{default_options[:ajp_port]}") do |v|
-          ajp_port = v.nil? ? default_options.delete(:ajp_port) : v.to_i
+            "default port: 8009") do |v|
+          ajp_port = v.nil? ? 8009 : v.to_i
           default_options[:ajp] = {:port => ajp_port}
         end
 
         opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',
-            "default: #{default_options[:config]}") do |file|
-          default_options[:config] = file unless file.nil?
+            "default: config/trinidad.yml") do |file|
+          default_options[:config] = file || 'config/trinidad.yml'
         end
 
         opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',

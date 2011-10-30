@@ -5,7 +5,13 @@ module Trinidad
 
   def self.configure(options = {})
     self.configuration ||= Configuration.new(options)
-    yield configuration if block_given?
+    yield self.configuration if block_given?
+    self.configuration
+  end
+
+  # test only purposes
+  def self.cleanup
+    self.configuration = nil
   end
 
   class Configuration
@@ -15,8 +21,6 @@ module Trinidad
                  :trap, :rackup, :servlet, :public
 
     def initialize(options = {})
-      options.symbolize!
-
       @environment = 'development'
       @context_path = '/'
       @libs_dir = 'lib'
@@ -28,6 +32,8 @@ module Trinidad
       @address = 'localhost'
       @log = 'INFO'
       @trap = true
+
+      options.symbolize!.each {|k, v| self[k] = v}
     end
 
     def [](name)
