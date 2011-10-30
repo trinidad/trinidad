@@ -18,7 +18,7 @@ module Trinidad
     def load_tomcat_server
       @tomcat = Trinidad::Tomcat::Tomcat.new
       @tomcat.base_dir = Dir.pwd
-      @tomcat.hostname = @config[:address]
+      @tomcat.hostname = @config[:address] || 'localhost'
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
       @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
