@@ -60,8 +60,8 @@ You can use pure ruby to configure Trinidad. Actually, the yaml configuration fi
 
 ```ruby
 Trinidad.configure do |config|
-  c.port = 4000
-  c.address = '0.0.0.0'
+  config.port = 4000
+  config.address = '0.0.0.0'
 end
 ```
 
