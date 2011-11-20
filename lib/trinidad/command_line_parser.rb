@@ -20,23 +20,27 @@ module Trinidad
         exit(1)
       end
 
-      base_dir = default_options[:web_app_dir] || Dir.pwd
-      config = default_options.delete(:config) || Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
+      load_configuration(default_options)
+    end
+
+    def load_configuration(options)
+      base_dir = options[:web_app_dir] || Dir.pwd
+      config = options.delete(:config) || Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
       if config and config = File.expand_path(config, base_dir)
         if yaml_configuration?(config)
           require 'yaml'
           require 'erb'
           config_options = YAML.load(ERB.new(File.read(config)).result(binding))
-          default_options.deep_merge!(config_options.symbolize!)
+          options.deep_merge!(config_options.symbolize!)
         end
       end
 
-      Trinidad.configure(default_options)
+      Trinidad.configure(options)
       if ruby_configuration?(config)
         load config
       end
 
-      default_options
+      options
     end
 
     def yaml_configuration?(config)
