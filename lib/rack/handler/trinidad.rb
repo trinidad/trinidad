@@ -14,16 +14,17 @@ module Rack
         opts.each {|k,v| opts[k.to_s.downcase.to_sym] = v}
 
         opts[:app] = app
-        opts[:port] = opts[:port] || 3000
-        opts[:address] = (options[:host] || 'localhost')
+        opts[:port] ||= 3000
+        opts[:address] = opts[:host] || 'localhost'
+        opts[:servlet] = {:instance => servlet, :name => 'RackServlet'}
+        opts[:jruby_max_runtimes] ||= 1
 
         context = org.jruby.rack.embed.Context.new('Trinidad')
         dispatcher = org.jruby.rack.embed.Dispatcher.new(context, self.new(app))
         servlet = org.jruby.rack.embed.Servlet.new(dispatcher, context)
-        opts[:servlet] = {:instance => servlet, :name => 'RackServlet'}
-        opts[:jruby_max_runtimes] = 1
 
-        ::Trinidad::Server.new(opts).start
+        ::Trinidad::CommandLineParser.new.load_configuration(opts)
+        ::Trinidad::Server.new.start
       end
     end
   end
