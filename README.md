@@ -75,7 +75,7 @@ Although the early versions of Trinidad used an extension to let deploy applicat
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
 
 
-* Database connection pooling: http://github.com/trinidad/trinidad-dbpool
+* Database connection pooling: https://github.com/trinidad/trinidad_dbpool_extension
 * Daemon based on Akuma (ala GF gem): http://github.com/trinidad/trinidad_daemon_extension
 * Init services based on Apache Commons Daemon (supports Unix and Windows systems): http://github.com/trinidad/trinidad_init_services
 * Sandbox, management console and REST api: http://github.com/trinidad/trinidad_sandbox_extension
