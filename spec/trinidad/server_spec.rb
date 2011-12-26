@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + '/../spec_helper'
-require 'fileutils'
+require File.dirname(__FILE__) + '/fakeapp'
 include FileUtils
+include FakeApp
 
 JSystem = java.lang.System
 JContext = javax.naming.Context
@@ -286,8 +287,70 @@ describe Trinidad::Server do
       create_rackup_file('rack')
       server = Trinidad::Server.new({:web_app_dir => 'rack'})
 
-      server.tomcat.host.children.should have(1).application
+      server.tomcat.host.find_children.should have(1).application
     end
+  end
+
+  it "creates several hosts when they are set in the configuration" do
+    server = Trinidad::Server.new({:hosts => {
+      'foo' => 'localhost',
+      'lol' => 'lolhost'
+    }})
+
+    server.tomcat.engine.find_children.should have(2).hosts
+  end
+
+  it "adds aliases to the hosts when we provide an array of host names" do
+    server = Trinidad::Server.new({:hosts => {
+      'foo' => ['localhost', 'local'],
+      'lol' => ['lolhost', 'lol']
+    }})
+
+    hosts = server.tomcat.engine.find_children
+    hosts.map {|h| h.aliases}.flatten.should == ['lol', 'local']
+  end
+
+  it "doesn't add any alias when we only provide the host name" do
+    server = Trinidad::Server.new({:hosts => {
+      'foo' => 'localhost',
+      'lol' => 'lolhost'
+    }})
+
+    hosts = server.tomcat.engine.find_children
+    hosts.map {|h| h.aliases}.flatten.should be_empty
+  end
+
+  it "creates several hosts when they are set in the web_apps configuration" do
+    server = Trinidad::Server.new({
+      :web_apps => {
+        :mock1 => {
+          :web_app_dir => 'foo/mock1',
+          :hosts       => 'localhost'
+        },
+        :mock2 => {
+          :web_app_dir => 'bar/mock2',
+          :hosts       => 'lolhost'
+        }
+      }
+    })
+
+    server.tomcat.engine.find_children.should have(2).hosts
+  end
+
+  it "doesn't create a host if it already exists" do
+    server = Trinidad::Server.new({
+      :web_apps => {
+        :mock1 => {
+          :web_app_dir => 'foo/mock1',
+          :hosts       => 'localhost'
+        },
+        :mock2 => {
+          :web_app_dir => 'foo/mock2',
+          :hosts       => 'localhost'
+        }
+      }
+    })
+    server.tomcat.engine.find_children.should have(1).hosts
   end
 
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
