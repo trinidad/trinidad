@@ -70,6 +70,44 @@ end
 
 Although the early versions of Trinidad used an extension to let deploy applications monitorizing a file, since Trinidad 1.1.0 this feature is integrated into the core. When the file `tmp/restart.txt` is modified, the server reloads the application that the file belongs. This file can be modified with the option `monitor`.
 
+## Virtual hosts
+
+It's posible to configure Trinidad with multiple hosts and load the applications under them automatically. Take into account that each host must have its applications in a different directory.
+
+```ruby
+Trinidad.configure do |config|
+  config.hosts = {
+    # applications_path => host_name_list (the first one in the list is real host name, the other ones are aliases)
+    'app_local' => ['localhost', '127.0.0.1'],
+    'apps_lol'  => ['lolhost', 'lol'],
+    'apps_foo'  => 'foo'
+  }
+end
+```
+
+If the applications are configured via the web_apps section, the host for each app can be added with the key `hosts` under each application. If several applications belong to the same host put them under the same directory and specify the name of the host for each one:
+
+```ruby
+Trinidad.configure do |config|
+  config.web_apps = {
+    :mock1 => {
+      :web_app_dir => 'rails_apps/mock1',
+      # host_name_list (the first one in the list is real host name, the other ones are aliases)
+      :hosts       => ['rails.virtual.host', 'rails.host']
+    },
+    :mock2 => {
+      :web_app_dir => 'rails_apps/mock2',
+      :hosts       => 'rails.virtual.host'
+    },
+    :mock3 => {
+      :web_app_dir => 'rack_apps/mock3',
+      # host_name_list (the first one in the list is real host name, the other ones are aliases)
+      :hosts       => ['rack.virtual.host', 'rack.host']
+    }
+  }
+end
+```
+
 ## Extensions
 
 From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:

@@ -18,7 +18,7 @@ module Trinidad
     attr_accessor :port, :address, :environment, :context_path, :libs_dir, :classes_dir,
                  :default_web_xml, :log, :jruby_min_runtimes, :jruby_max_runtimes,
                  :monitor, :http, :ajp, :ssl, :extensions, :apps_base, :web_apps, :web_app_dir,
-                 :trap, :rackup, :servlet, :public
+                 :trap, :rackup, :servlet, :public, :hosts
 
     def initialize(options = {})
       @environment = 'development'

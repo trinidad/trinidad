@@ -21,7 +21,7 @@ module Trinidad
       @tomcat.hostname = @config[:address] || 'localhost'
       @tomcat.server.address = @config[:address]
       @tomcat.port = @config[:port].to_i
-      @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
+      create_hosts
       @tomcat.enable_naming
 
       add_http_connector if http_configured?
@@ -29,6 +29,31 @@ module Trinidad
       add_ajp_connector if ajp_enabled?
 
       @tomcat = Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
+    end
+
+    def create_hosts
+      if @config[:hosts]
+        @config[:hosts].each do |apps_base, names|
+          create_host(apps_base, names)
+        end
+
+        set_default_host
+      elsif @config[:web_apps]
+        # create the hosts when they are specified for each app into
+        # web_apps. We must create them before creating the
+        # applications.
+        @config[:web_apps].each do |name, app_config|
+          if host_names = app_config.delete(:hosts)
+            dir = app_config[:web_app_dir] || Dir.pwd
+            apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
+            app_config[:host] = create_host(apps_base, host_names)
+          end
+
+          set_default_host
+        end
+      else
+        @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
+      end
     end
 
     def create_web_apps
@@ -40,14 +65,16 @@ module Trinidad
     end
 
     def load_host_monitor(apps)
-      @tomcat.host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(@tomcat, *apps))
+      @tomcat.engine.find_children.each do |host|
+        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(@tomcat, *apps))
+      end
     end
 
     def create_from_web_apps
       if @config[:web_apps]
         @config[:web_apps].map do |name, app_config|
           app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name.to_s}")
-          app_config[:web_app_dir] ||= Dir.pwd
+          app_config[:web_app_dir]  ||= Dir.pwd
 
           create_web_app(app_config)
         end
@@ -55,30 +82,35 @@ module Trinidad
     end
 
     def create_from_apps_base
-      if @config[:apps_base]
-        apps_path = Dir.glob(File.join(@config[:apps_base], '*')).
-          select {|path| !(path =~ /tomcat\.\d+$/) }
+      if @config[:apps_base] || @config[:hosts]
+        @tomcat.engine.find_children.map do |host|
+          apps_base = host.app_base
 
-        apps_path.reject! {|path| apps_path.include?(path + '.war') }
+          apps_path = Dir.glob(File.join(apps_base, '*')).
+            select {|path| !(path =~ /tomcat\.\d+$/) }
 
-        apps_path.map do |path|
-          if (File.directory?(path) || path =~ /\.war$/)
-            name = File.basename(path)
-            app_config = {
-              :context_path => (name == 'default' ? '' : "/#{name.to_s}"),
-              :web_app_dir => File.expand_path(path)
-            }
+          apps_path.reject! {|path| apps_path.include?(path + '.war') }
 
-            create_web_app(app_config)
+          apps_path.map do |path|
+            if (File.directory?(path) || path =~ /\.war$/)
+              name = File.basename(path)
+              app_config = {
+                :context_path => (name == 'default' ? '' : "/#{name.to_s}"),
+                :web_app_dir  => File.expand_path(path),
+                :host         => host
+              }
+
+              create_web_app(app_config)
+            end
           end
-        end
+        end.flatten
       end
     end
 
     def create_web_app(app_config)
       web_app = WebApp.create(@config, app_config)
 
-      app_context = @tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
+      app_context = @tomcat.addWebapp(app_config[:host] || @tomcat.host, web_app.context_path, web_app.web_app_dir)
 
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
 
@@ -188,8 +220,28 @@ module Trinidad
 
     private
 
+    def create_host(apps_base, names)
+      host_names = Array(names)
+      host_name = host_names.shift
+      unless host = @tomcat.engine.find_child(host_name)
+        host = Trinidad::Tomcat::StandardHost.new
+        host.name = host_name
+        host.app_base = apps_base || Dir.pwd
+        host_names.each {|h| host.add_alias(h) } unless host_names.empty?
+
+        @tomcat.engine.add_child host
+      end
+      host
+    end
+
+    def set_default_host
+      # FIXME: Remove when the issue below is solved.
+      # workaround to solve this Tomcat issue: https://issues.apache.org/bugzilla/show_bug.cgi?id=52387
+      @tomcat.host = @tomcat.engine.find_children.first
+    end
+
     def add_default_web_app!(config)
-      if (!config[:web_apps] && !config[:apps_base])
+      if (!config[:web_apps] && !config[:apps_base] && !config[:hosts])
         default_app = {
           :context_path => config[:context_path],
           :web_app_dir => config[:web_app_dir] || Dir.pwd,
