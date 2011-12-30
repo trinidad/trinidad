@@ -13,8 +13,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'trinidad'
-  s.version           = '1.2.3'
-  s.date              = '2011-09-14'
+  s.version           = '1.3.0'
+  s.date              = '2011-12-30'
   s.rubyforge_project = 'trinidad'
 
   ## Make sure your summary is short. The description may be as long
@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   ## Specify any RDoc options here. You'll want to add your README and
   ## LICENSE files to the extra_rdoc_files list.
   s.rdoc_options = ["--charset=UTF-8"]
-  s.extra_rdoc_files = %w[README.rdoc LICENSE]
+  s.extra_rdoc_files = %w[README.md LICENSE]
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
@@ -63,10 +63,11 @@ bin/trinidad
 lib/trinidad.rb
 History.txt
 LICENSE
-README.rdoc
+README.md
 lib/rack/handler
 lib/rack/handler/trinidad.rb
 lib/trinidad/command_line_parser.rb
+lib/trinidad/configuration.rb
 lib/trinidad/core_ext.rb
 lib/trinidad/extensions.rb
 lib/trinidad/lifecycle

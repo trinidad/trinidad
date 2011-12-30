@@ -39,7 +39,7 @@ namespace :trinidad do
       'lib/trinidad.rb',
       'History.txt',
       'LICENSE',
-      'README.rdoc',
+      'README.md',
       *lib_files].join("\n")
 
     # piece file back together and write
