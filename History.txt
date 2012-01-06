@@ -1,3 +1,7 @@
+== Trinidad 1.3.1 (2012-01-06)
+
+* Fix Rack handler configuration issues
+
 == Trinidad_jars 1.0.2 (2011-12-31)
 
 * Bump Tomcat's version to 7.0.23

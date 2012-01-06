@@ -12,11 +12,60 @@ Trinidad allows you to run a rails or rackup applications within an embedded Apa
 $ jruby -S gem install trinidad
 ```
 
-## Usage
+## Quick Start
 
 ```
 $ cd myapp
 $ jruby -S trinidad
+```
+
+### Advanced Rackup setup
+
+**Sinatra**
+
+You can run your Sinatra application with Trinidad from the command line like this:
+
+```
+$ ruby app.rb -s Trinidad
+```
+
+Or tou can configure your application to always use it:
+
+```ruby
+require 'sinatra'
+require 'trinidad'
+
+configure do
+  set :server, :trinidad
+end
+```
+
+If you use Bundler, make sure you add Trinidad to your Gemfile:
+
+```
+gem 'trinidad'
+```
+
+**Rails**
+
+If you already have Trinidad in your Gemfile you can start the server with the rails command:
+
+```
+$ rails s trinidad
+```
+
+**Rackup**
+
+You can pass the server name as an option to `rackup`:
+
+```
+$ rackup -s trinidad
+```
+
+Or you can set Trinidad by default in your `config.ru` file:
+
+```
+#\ -s trinidad
 ```
 
 ## Configuration
