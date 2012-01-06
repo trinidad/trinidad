@@ -41,7 +41,7 @@ module Trinidad
     end
 
     def []=(name, value)
-      send :"#{name}=", value
+      send :"#{name}=", value if respond_to?(:"#{name}=")
     end
 
     def has_key?(name)
