@@ -1,9 +1,6 @@
 require 'java'
-require 'rubygems'
 
 require 'jruby-rack'
-
-gem 'trinidad_jars'
 
 require 'trinidad/core_ext'
 require 'trinidad/extensions'
