@@ -1,7 +1,6 @@
-require 'rack'
 require 'trinidad'
 
-gem 'jruby-rack'
+require 'rack/handler'
 require 'rack/handler/servlet'
 
 module Rack
