@@ -21,5 +21,5 @@ require 'trinidad/war_web_app'
 require 'rack/handler/trinidad'
 
 module Trinidad
-  VERSION = '1.3.2.dev'
+  VERSION = '1.3.2'
 end
