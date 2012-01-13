@@ -11,6 +11,7 @@ $:.unshift(File.dirname(__FILE__) + '/../trinidad-libs')
 $:.unshift(File.dirname(__FILE__) + '/fixtures')
 
 require 'java'
+require 'rack'
 require 'trinidad'
 require 'mocha'
 require 'fileutils'

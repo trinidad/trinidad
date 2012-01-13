@@ -14,6 +14,7 @@ GEM
     metaclass (0.0.1)
     mocha (0.10.0)
       metaclass (~> 0.0.1)
+    rack (1.4.0)
     rake (0.8.7)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
@@ -31,6 +32,7 @@ PLATFORMS
 DEPENDENCIES
   fakefs (>= 0.4.0)
   mocha
+  rack
   rake (= 0.8.7)
   rspec (~> 2.5.0)
   trinidad!
