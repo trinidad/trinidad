@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'ostruct'
 
 describe Trinidad::LogFormatter do
   let(:formatter) { Trinidad::LogFormatter.new }

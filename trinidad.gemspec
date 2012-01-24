@@ -50,9 +50,9 @@ Gem::Specification.new do |s|
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
   s.add_development_dependency('rack')
-  s.add_development_dependency('rspec', '~>2.5.0')
+  s.add_development_dependency('rspec', '~> 2.7')
   s.add_development_dependency('mocha')
-  s.add_development_dependency('fakefs', '>=0.4.0')
+  s.add_development_dependency('fakefs', '>= 0.4.0')
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
