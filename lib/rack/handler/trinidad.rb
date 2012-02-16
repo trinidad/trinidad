@@ -28,6 +28,10 @@ module Rack
         opts = {}
         options.each {|k, v| opts[k.to_s.downcase.to_sym] = v}
 
+        # this is rack's configuration file but also the trinidad's configuration.
+        # Removing it we allow to load trinidad's default configuration.
+        opts.delete(:config)
+
         threads = (opts[:threads] || '1:1').split(':')
         opts[:port] ||= 3000
         opts[:address] ||= opts[:host] || 'localhost'
