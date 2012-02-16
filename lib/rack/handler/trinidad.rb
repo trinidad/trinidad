@@ -1,5 +1,3 @@
-require 'trinidad'
-
 require 'rack/handler'
 require 'rack/handler/servlet'
 
