@@ -42,7 +42,7 @@ module Trinidad
 
     def default_deployment_descriptor
       @deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(work_dir, default_web_xml))
+        file = File.expand_path(File.join(web_app_dir, default_web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -95,7 +95,7 @@ module Trinidad
 
     def monitor
       m_file = @app_config[:monitor] || @config[:monitor] || 'tmp/restart.txt'
-      File.expand_path(m_file, work_dir)
+      File.expand_path(m_file, web_app_dir)
     end
 
     def define_lifecycle
