@@ -81,8 +81,8 @@ module Trinidad
       end
     end
 
-    def war?; WebApp.war?(app_config); end
-    def work_dir; web_app_dir; end
+    def war?; WebApp.war?(app_config); end    
+    def work_dir; @app_config[:work_dir] || @config[:work_dir] || web_app_dir; end
     def environment; @app_config[:environment] || @config[:environment] || 'development'; end
 
     def solo?
