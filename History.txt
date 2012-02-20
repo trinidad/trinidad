@@ -1,3 +1,7 @@
+== Trinidad 1.3.4 (2012-02-20)
+
+* Do not explicitely load rack/handler/trinidad.rb, it solves load issues with trinidad_init_services.
+
 == Trinidad 1.3.3 (2012-02-16)
 
 * Fix issues loading the default configuration file from the rack handler
