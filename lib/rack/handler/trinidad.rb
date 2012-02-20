@@ -1,3 +1,8 @@
+# NOTE: require 'rack/handler/trinidad' might get invoked 2 ways :
+# 1. Rack::Handler.try_require('rack/handler', 'trinidad') during rackup
+#    in this case trinidad.rb might not yet been loaded
+# 2. a user require (after trinidad.rb booted) - need to load rack first
+require 'trinidad'
 require 'rack/handler'
 require 'rack/handler/servlet'
 

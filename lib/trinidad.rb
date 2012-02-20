@@ -18,7 +18,6 @@ require 'trinidad/web_app'
 require 'trinidad/rails_web_app'
 require 'trinidad/rackup_web_app'
 require 'trinidad/war_web_app'
-require 'rack/handler/trinidad'
 
 module Trinidad
   VERSION = '1.3.3'
