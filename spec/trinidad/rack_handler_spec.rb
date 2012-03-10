@@ -43,6 +43,27 @@ describe 'Rack::Handler::Trinidad' do
       servlet.dispatcher.should_not be nil
     end
 
+    it "starts a trinidad server" do
+      app = mock("app")
+      Trinidad::Server.expects(:new).returns server = mock("server")
+      server.expects(:start)
+      
+      Rack::Handler::Trinidad.run app
+    end
+
+    it "yields when a block is given to run" do
+      app = mock("app")
+      Trinidad::Server.expects(:new).returns server = mock("server")
+      server.expects(:start)
+      
+      yielded = false
+      Rack::Handler::Trinidad.run(app) do |server|
+        server.should be(server)
+        yielded = true
+      end
+      yielded.should == true
+    end
+    
   end
     
 end
