@@ -17,7 +17,9 @@ module Rack
         opts[:servlet] = {:instance => servlet, :name => 'RackServlet'}
 
         ::Trinidad::CommandLineParser.new.load_configuration(opts)
-        ::Trinidad::Server.new.start
+        server = ::Trinidad::Server.new
+        yield server if block_given?
+        server.start
       end
 
       def self.valid_options
