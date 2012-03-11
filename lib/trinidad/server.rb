@@ -208,6 +208,7 @@ module Trinidad
 
     def start
       trap_signals if @config[:trap]
+      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
 
       @tomcat.start
       @tomcat.server.await
