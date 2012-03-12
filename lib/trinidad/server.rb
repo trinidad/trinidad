@@ -16,6 +16,8 @@ module Trinidad
     end
 
     def load_tomcat_server
+      load_default_system_properties
+
       @tomcat = Trinidad::Tomcat::Tomcat.new
       @tomcat.base_dir = Dir.pwd
       @tomcat.hostname = @config[:address] || 'localhost'
@@ -208,7 +210,6 @@ module Trinidad
 
     def start
       trap_signals if @config[:trap]
-      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
 
       @tomcat.start
       @tomcat.server.await
@@ -217,6 +218,10 @@ module Trinidad
     def stop
       @tomcat.stop
       @tomcat.destroy
+    end
+
+    def load_default_system_properties
+      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
     end
 
     private
