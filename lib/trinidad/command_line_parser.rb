@@ -8,6 +8,10 @@ module Trinidad
       CommandLineParser.new.parse!(argv)
     end
 
+    def self.load(options = {})
+      CommandLineParser.new.load!(options)
+    end
+    
     def initialize
       @default_options = {}
     end
@@ -20,10 +24,10 @@ module Trinidad
         exit(1)
       end
 
-      load_configuration(default_options)
+      load!(default_options)
     end
 
-    def load_configuration(options)
+    def load!(options)
       base_dir = options[:web_app_dir] || Dir.pwd
       config = options.delete(:config) || Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
       if config and config = File.expand_path(config, base_dir)
@@ -42,6 +46,7 @@ module Trinidad
 
       options
     end
+    alias_method :load_configuration, :load!
 
     def yaml_configuration?(config)
       config && File.exist?(config) && config =~ /\.yml$/
