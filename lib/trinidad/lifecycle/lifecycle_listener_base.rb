@@ -50,8 +50,12 @@ module Trinidad
         jlogging = java.util.logging
 
         file_handler = jlogging.FileHandler.new(log_path, true)
-        out_handler  = jlogging.StreamHandler.new(JRuby.runtime.out, Trinidad::LogFormatter.new)
-        err_handler  = jlogging.StreamHandler.new(JRuby.runtime.err, Trinidad::LogFormatter.new)
+
+        out_handler  = jlogging.ConsoleHandler.new
+        out_handler.set_output_stream JRuby.runtime.out
+
+        err_handler  = jlogging.ConsoleHandler.new
+        err_handler.set_output_stream JRuby.runtime.err
 
         logger = jlogging.Logger.get_logger("")
 
