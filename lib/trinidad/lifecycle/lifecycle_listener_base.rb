@@ -49,7 +49,14 @@ module Trinidad
 
         jlogging = java.util.logging
 
-        log_handler = jlogging.FileHandler.new(log_path, true)
+        file_handler = jlogging.FileHandler.new(log_path, true)
+
+        out_handler  = jlogging.ConsoleHandler.new
+        out_handler.set_output_stream JRuby.runtime.out
+
+        err_handler  = jlogging.ConsoleHandler.new
+        err_handler.set_output_stream JRuby.runtime.err
+
         logger = jlogging.Logger.get_logger("")
 
         log_level = @webapp.log
@@ -60,7 +67,12 @@ module Trinidad
 
         level = jlogging.Level.parse(log_level)
 
-        logger.add_handler(log_handler)
+        console_handler = logger.handlers.first
+        logger.remove_handler(console_handler)
+
+        logger.add_handler(file_handler)
+        logger.add_handler(out_handler)
+        logger.add_handler(err_handler)
 
         logger.handlers.each do |handler|
           handler.level = level

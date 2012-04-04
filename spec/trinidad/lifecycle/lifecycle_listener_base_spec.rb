@@ -54,10 +54,10 @@ describe Trinidad::Lifecycle::Base do
 
     current_handlers = logger.handlers.size
     @listener.configure_logging
-    logger.handlers.should have(current_handlers + 1).handlers
+    logger.handlers.should have(current_handlers + 2).handlers
 
     @listener.configure_logging
-    logger.handlers.should have(current_handlers + 1).handlers
+    logger.handlers.should have(current_handlers + 2).handlers
   end
 
   def configure_logging(level)
