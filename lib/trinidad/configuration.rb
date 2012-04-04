@@ -9,11 +9,6 @@ module Trinidad
     self.configuration
   end
 
-  # test only purposes
-  def self.cleanup
-    self.configuration = nil
-  end
-
   class Configuration
     attr_accessor :port, :address, :environment, :context_path, :libs_dir, :classes_dir,
                  :default_web_xml, :log, :jruby_min_runtimes, :jruby_max_runtimes,

@@ -3,11 +3,13 @@ require File.dirname(__FILE__) + '/fakeapp'
 include FileUtils
 include FakeApp
 
-JSystem = java.lang.System
-JContext = javax.naming.Context
-
 describe Trinidad::Server do
+  
+  JSystem = java.lang.System
+  JContext = javax.naming.Context
+  
   before { Trinidad.configure }
+  after  { Trinidad.configuration = nil }
 
   after do
     rm_rf File.expand_path('../../ssl', File.dirname(__FILE__))
@@ -65,7 +67,6 @@ describe Trinidad::Server do
   end
 
   it "includes a connector with protocol AJP when ajp is enabled" do
-    Trinidad.cleanup
     Trinidad.configure do |c|
       c.ajp = {:port => 8009}
     end
@@ -102,7 +103,6 @@ describe Trinidad::Server do
   end
 
   it "loads the default application from the current directory if :web_apps is not present" do
-    Trinidad.cleanup
     Trinidad.configure {|c| c.web_app_dir = MOCK_WEB_APP_DIR}
     server = Trinidad::Server.new
 

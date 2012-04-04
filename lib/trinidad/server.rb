@@ -11,8 +11,8 @@ module Trinidad
     end
 
     def load_config(config)
-      @config = config
-      add_default_web_app!(config)
+      add_default_web_app! config
+      @config = config.freeze
     end
 
     def load_tomcat_server
@@ -41,9 +41,8 @@ module Trinidad
 
         set_default_host
       elsif @config[:web_apps]
-        # create the hosts when they are specified for each app into
-        # web_apps. We must create them before creating the
-        # applications.
+        # create the hosts when they are specified for each app into web_apps. 
+        # We must create them before creating the applications.
         @config[:web_apps].each do |name, app_config|
           if host_names = app_config.delete(:hosts)
             dir = app_config[:web_app_dir] || Dir.pwd
@@ -62,7 +61,7 @@ module Trinidad
       apps = []
       apps << create_from_web_apps
       apps << create_from_apps_base
-
+      
       apps.flatten.compact
     end
 

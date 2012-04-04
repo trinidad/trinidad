@@ -61,18 +61,18 @@ module Trinidad
       )
     end
 
-    def public_root
-      @app_config[:public]  || @config[:public] || 'public'
-    end
-
-    %w{context_path web_app_dir libs_dir classes_dir default_web_xml
-        jruby_min_runtimes jruby_max_runtimes rackup log}.each do |method_name|
+    %w{ context_path web_app_dir libs_dir classes_dir default_web_xml
+        jruby_min_runtimes jruby_max_runtimes rackup log }.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
         @app_config[sym] || @config[sym]
       end
     end
 
+    def public_root; @app_config[:public]  || @config[:public] || 'public'; end
+    def environment; @app_config[:environment] || @config[:environment] || 'development'; end
+    def work_dir; @app_config[:work_dir] || @config[:work_dir] || web_app_dir; end
+    
     def extensions
       @extensions ||= begin
         extensions = @config[:extensions] || {}
@@ -82,8 +82,6 @@ module Trinidad
     end
 
     def war?; WebApp.war?(app_config); end    
-    def work_dir; @app_config[:work_dir] || @config[:work_dir] || web_app_dir; end
-    def environment; @app_config[:environment] || @config[:environment] || 'development'; end
 
     def solo?
       !self.is_a?(WarWebApp) && @app_config[:solo]
@@ -147,12 +145,14 @@ module Trinidad
         app_config[:jruby_min_runtimes] = 1
         app_config[:jruby_max_runtimes] = 1
       end
-
+      
+      rackup = config[:rackup] || 'config.ru'
+      app_config[:web_app_dir] ||= config[:web_app_dir] || Dir.pwd
       # Check for rackup (but still use config/environment.rb for Rails 3)
-      if !app_config[:rackup] && !config[:rackup] &&
-          File.exists?("#{app_config[:web_app_dir]}/config.ru") &&
-          !File.exists?("#{app_config[:web_app_dir]}/config/environment.rb")
-        app_config[:rackup] = 'config.ru'
+      if !app_config[:rackup] &&
+          File.exists?(File.join(app_config[:web_app_dir], rackup)) &&
+          !File.exists?(File.join(app_config[:web_app_dir], 'config/environment.rb'))
+        app_config[:rackup] = rackup
       end
     end
 

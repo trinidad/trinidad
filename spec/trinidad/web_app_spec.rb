@@ -342,4 +342,19 @@ describe Trinidad::WebApp do
       app.threadsafe?.should be_false
     end
   end
+  
+  it "detects a rackup web app even if :rackup present in main config" do
+    FakeFS do
+      create_rackup_file 'main'
+      app = Trinidad::WebApp.create({ 
+        :rackup => 'main/config.ru'
+      }, {
+        :web_app_dir => Dir.pwd
+      })
+
+      app.should be_a(Trinidad::RackupWebApp)
+      app.init_params['rackup.path'].should == 'main/config.ru'
+    end
+  end
+  
 end
