@@ -12,11 +12,13 @@ namespace :tomcat do
 
   dependencies = [tomcat, tomcat_jasper, tomcat_logging]
   
-  desc "Updates Tomcat to a given version"
+  desc "Updates Tomcat to a given version e.g. `rake tomcat:update[7.0.26]`"
   task :update, :version do |task, args|
     tomcat_version = [args[:version]] * 2
 
-    Dir.chdir(Dir.tmpdir) do
+    temp_dir = File.join(Dir.tmpdir, (Time.now.to_f * 1000).to_i.to_s)
+    FileUtils.mkdir temp_dir
+    Dir.chdir(temp_dir) do
       dependencies.each do |dependency|
         dependency_path = dependency % tomcat_version
         dependency_name = dependency_path.split('/').last
@@ -28,11 +30,13 @@ namespace :tomcat do
       end
 
       # build the jar again
+      entries = Dir.entries(temp_dir) - [ '.', '..']
       puts "building the tomcat's core jar"
-      %x{jar -cvf #{TOMCAT_CORE_PATH} META-INF javax org}
+      %x{jar -cvf #{TOMCAT_CORE_PATH} #{entries.join(' ')}}
     end
+    FileUtils.rm_r temp_dir
 
-    puts "updating tomcat's version number to #{tomcat_version.first}"
+    puts "updating tomcat's version number to '#{tomcat_version.first}'"
     path = File.expand_path('../../lib/trinidad/jars.rb', __FILE__)
     file = File.read(path)
     file.gsub!(/TOMCAT_VERSION = '(.+)'/, "TOMCAT_VERSION = '#{tomcat_version.first}'")
