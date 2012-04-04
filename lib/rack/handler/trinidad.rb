@@ -41,6 +41,7 @@ module Rack
         threads = (opts[:threads] || '1:1').split(':')
         opts[:port] ||= 3000
         opts[:address] ||= opts[:host] || 'localhost'
+        # NOTE: this is currently not supported by embedded Dispatcher and has no effect :
         opts[:jruby_min_runtimes], opts[:jruby_max_runtimes] = threads[0].to_i, threads[1].to_i
         opts
       end
