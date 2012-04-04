@@ -1,14 +1,5 @@
 require 'rubygems'
 require 'rake'
-require 'date'
-
-def date
-  Date.today.to_s
-end
-
-def replace_header(head, header_name, method_name = header_name)
-  head.sub!(/(\.#{header_name}\s*= ').*'/) { "#{$1}#{send(method_name)}'"}
-end
 
 def version(file, constant)
  line = File.read(file)[/^\s*#{constant}\s*=\s*.*/]
@@ -16,9 +7,9 @@ def version(file, constant)
 end
 
 def build(gemspec_file, gem_file)
-  sh "mkdir -p pkg"
+  mkdir_p 'pkg'
   sh "gem build #{gemspec_file}"
-  sh "mv #{gem_file} pkg"
+  mv gem_file, 'pkg'
 end
 
 def release(name, gem_file, version)
@@ -37,9 +28,9 @@ end
   :build => 'Build all Trinidad gems',
   :install => 'Install all Trinidad gems',
   :release => 'Release all Trinidad gems'
-}.each do |t, d|
-  desc d
-  task t => ["trinidad_jars:#{t}", "trinidad:#{t}"]
+}.each do |task, desc|
+  desc desc
+  task task => ["trinidad_jars:#{task}", "trinidad:#{task}"]
 end
 
 require 'rspec/core/rake_task'
