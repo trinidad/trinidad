@@ -3,8 +3,10 @@
 coverage
 rdoc
 pkg
+ssl
+log
 nbproject
 .idea
 META-INF
-ssl
-log
+.rvmrc
+Gemfile.lock
