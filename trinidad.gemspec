@@ -3,10 +3,6 @@ $:.push File.expand_path("../lib", __FILE__)
 require 'trinidad/version'
 
 Gem::Specification.new do |s|
-  s.specification_version = 2 if s.respond_to? :specification_version=
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.rubygems_version = '1.3.5'
-  
   s.name              = 'trinidad'
   s.rubyforge_project = 'trinidad'
   s.version = Trinidad::VERSION
@@ -25,8 +21,8 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[README.md LICENSE]
   
-  s.add_dependency('trinidad_jars', ">= 1.0.2")
-  s.add_dependency('jruby-rack', ">= 1.1.5")
+  s.add_dependency('trinidad_jars', ">= 1.0.3")
+  s.add_dependency('jruby-rack', ">= 1.1.6")
   
   s.add_development_dependency('rack')
   s.add_development_dependency('rake')

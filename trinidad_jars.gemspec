@@ -2,10 +2,6 @@
 #$:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-  s.specification_version = 2 if s.respond_to? :specification_version=
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.rubygems_version = '1.3.5'
-  
   s.name              = 'trinidad_jars'
   s.rubyforge_project = 'trinidad_jars'
   

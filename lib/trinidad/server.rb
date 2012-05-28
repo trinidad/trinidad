@@ -38,8 +38,6 @@ module Trinidad
         @config[:hosts].each do |apps_base, names|
           create_host(apps_base, names)
         end
-
-        set_default_host
       elsif @config[:web_apps]
         # create the hosts when they are specified for each app into web_apps. 
         # We must create them before creating the applications.
@@ -49,8 +47,6 @@ module Trinidad
             apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
             app_config[:host] = create_host(apps_base, host_names)
           end
-
-          set_default_host
         end
       else
         @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
@@ -237,12 +233,6 @@ module Trinidad
         @tomcat.engine.add_child host
       end
       host
-    end
-
-    def set_default_host
-      # FIXME: Remove when the issue below is solved.
-      # workaround to solve this Tomcat issue: https://issues.apache.org/bugzilla/show_bug.cgi?id=52387
-      @tomcat.host = @tomcat.engine.find_children.first
     end
 
     def add_default_web_app!(config)
