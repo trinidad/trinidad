@@ -1,6 +1,6 @@
 == Trinidad
 
-Copyright (c) 2009 David Calavera
+Copyright (c) 2009-2012 David Calavera
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,4 +23,5 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 == Additional Bundled Software
 
-Apache Tomcat is licensed according to the terms of Apache License, Version 2.0 (current). See http://www.apache.org/licenses/LICENSE-2.0 for details.
+Apache Tomcat is licensed according to the terms of Apache License, Version 2.0 (current). 
+See http://www.apache.org/licenses/LICENSE-2.0 for details.
