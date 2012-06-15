@@ -12,8 +12,6 @@ module Trinidad
       end
 
       def lifecycleEvent(event)
-        host = event.lifecycle
-
         case event.type
         when Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT
           init_monitors
@@ -25,12 +23,12 @@ module Trinidad
       def init_monitors
         @contexts.each do |context|
           monitor = context[:monitor]
-          opts = File.exist?(monitor) ? 'r' : 'w+'
-
-          unless File.exist?(dir = File.dirname(monitor))
+          opts = 'w+'
+          if ! File.exist?(dir = File.dirname(monitor))
             Dir.mkdir dir
+          elsif File.exist?(monitor)
+            opts = 'r'
           end
-
           file = File.new(monitor, opts)
           context[:mtime] = file.mtime
         end

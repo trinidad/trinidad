@@ -25,7 +25,7 @@ describe "Trinidad::Lifecycle::Host" do
   after { FileUtils.rm monitor if File.exist?(monitor) }
 
   it "creates the monitor file when receives a before start event" do
-    File.exist?(monitor).should be_false
+    File.exist?(monitor).should be false
     listener.lifecycleEvent(start_event)
     sleep(1)
     File.exist?(monitor).should be_true
@@ -49,7 +49,7 @@ describe "Trinidad::Lifecycle::Host" do
 
       listener.lifecycleEvent(start_event)
       sleep(1)
-      File.exist?(monitor).should be_true
+      File.exist?(monitor).should be true
     end
   end
 
