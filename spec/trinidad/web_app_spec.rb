@@ -70,7 +70,7 @@ describe Trinidad::WebApp do
     app.servlet[:name].should == 'RackServlet'
     app.servlet[:class].should == 'org.jruby.rack.RackServlet'
   end
-
+  
   it "uses rack_listener as the default listener when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({}, {})
     app.rack_listener.should == 'org.jruby.rack.rails.RailsServletContextListener'
@@ -208,12 +208,14 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({}, {
       :servlet => {
         :class => 'org.jruby.trinidad.FakeServlet',
-        :name => 'FakeServlet'
+        :name => 'FakeServlet',
+        :async_supported => true
       }
     })
 
     app.servlet[:class].should == 'org.jruby.trinidad.FakeServlet'
     app.servlet[:name].should == 'FakeServlet'
+    app.servlet[:async_supported].should == true
   end
 
   it "is a war application if the context path ends with .war" do

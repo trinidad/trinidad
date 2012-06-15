@@ -35,6 +35,7 @@ module Trinidad
           wrapper.servlet = @webapp.servlet[:instance]
         else
           wrapper.servlet_class = @webapp.servlet[:class]
+          wrapper.async_supported = @webapp.servlet[:async_supported]
         end
         wrapper.name = @webapp.servlet[:name]
 

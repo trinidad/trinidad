@@ -61,7 +61,7 @@ module Trinidad
       )
     end
 
-    %w{ context_path web_app_dir libs_dir classes_dir default_web_xml
+    %w{ context_path web_app_dir libs_dir classes_dir default_web_xml async_supported 
         jruby_min_runtimes jruby_max_runtimes rackup log }.each do |method_name|
       define_method method_name do
         sym = method_name.to_sym
@@ -134,6 +134,7 @@ module Trinidad
       @servlet = {
         :class => servlet_config[:class] || servlet_class,
         :name => servlet_config[:name] || servlet_name,
+        :async_supported => !! servlet_config[:async_supported],
         :instance => servlet_config[:instance]
       }
     end
