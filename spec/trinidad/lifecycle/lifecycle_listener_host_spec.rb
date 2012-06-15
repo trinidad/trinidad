@@ -32,10 +32,10 @@ describe "Trinidad::Lifecycle::Host" do
   end
 
   it "does not create the monitor if already exists" do
-    file = File.new(monitor, File::CREAT|File::TRUNC)
-    mtime = file.mtime
+    FileUtils.touch monitor
+    mtime = File.mtime(monitor)
     sleep(1)
-
+    
     listener.lifecycleEvent(start_event)
     File.mtime(monitor).should == mtime
   end

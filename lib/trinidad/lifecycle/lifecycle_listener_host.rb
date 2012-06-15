@@ -23,8 +23,8 @@ module Trinidad
       end
 
       def init_monitors
-        @contexts.each do |c|
-          monitor = c[:monitor]
+        @contexts.each do |context|
+          monitor = context[:monitor]
           opts = File.exist?(monitor) ? 'r' : 'w+'
 
           unless File.exist?(dir = File.dirname(monitor))
@@ -32,28 +32,28 @@ module Trinidad
           end
 
           file = File.new(monitor, opts)
-          c[:mtime] = file.mtime
+          context[:mtime] = file.mtime
         end
       end
 
       def check_monitors
-        @contexts.each do |c|
+        @contexts.each do |context|
           # double check monitor, capistrano removes it temporarily
-          sleep(0.5) unless File.exist?(c[:monitor])
-          next unless File.exist?(c[:monitor])
+          sleep(0.5) unless File.exist?(context[:monitor])
+          next unless File.exist?(context[:monitor])
 
-          if (mtime = File.mtime(c[:monitor])) > c[:mtime] && !c[:lock]
-            c[:lock] = true
-            c[:mtime] = mtime
-            c[:context] = create_takeover(c)
-            Thread.new { c[:context].start }
+          if (mtime = File.mtime(context[:monitor])) > context[:mtime] && !context[:lock]
+            context[:lock] = true
+            context[:mtime] = mtime
+            context[:context] = create_takeover(context)
+            Thread.new { context[:context].start }
           end
         end
       end
 
-      def create_takeover(c)
-        web_app = c[:app]
-        old_context = c[:context]
+      def create_takeover(context)
+        web_app = context[:app]
+        old_context = context[:context]
 
         context = Trinidad::Tomcat::StandardContext.new
         context.name = rand.to_s
@@ -70,7 +70,7 @@ module Trinidad
 
         web_app.generate_class_loader
         context.add_lifecycle_listener(web_app.define_lifecycle)
-        context.add_lifecycle_listener(Trinidad::Lifecycle::Takeover.new(c))
+        context.add_lifecycle_listener(Trinidad::Lifecycle::Takeover.new(context))
 
         old_context.parent.add_child context
 
