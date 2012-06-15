@@ -27,7 +27,14 @@ EOF
   def create_rails_web_xml
     @rails_web_xml ||= config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app>
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+    version="2.4">
+
+    <display-name>Trinidad Rails Test</display-name>
+    <description>Trinidad Rails Test</description>
+
     <servlet>
         <servlet-name>RackServlet</servlet-name>
         <servlet-class>org.jruby.rack.RackServlet</servlet-class>
