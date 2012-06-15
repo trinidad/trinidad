@@ -10,7 +10,8 @@ module Trinidad
       end
 
       def lifecycleEvent(event)
-        if Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT == event.type
+        case event.type
+        when Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT then
           context = event.lifecycle
           configure_defaults(context)
         end
@@ -59,7 +60,7 @@ module Trinidad
 
         logger = jlogging.Logger.get_logger("")
 
-        log_level = @webapp.log
+        log_level = @webapp.log && @webapp.log.upcase
         unless %w{ALL CONFIG FINE FINER FINEST INFO OFF SEVERE WARNING}.include?(log_level)
           puts "Invalid log level #{log_level}, using default: INFO"
           log_level = 'INFO'
@@ -76,13 +77,21 @@ module Trinidad
 
         logger.handlers.each do |handler|
           handler.level = level
-          handler.formatter = Trinidad::LogFormatter.new
+          handler.formatter = log_formatter
         end
 
         logger.level = level
 
         @configured_logger = true
       end
+      
+      protected
+      
+      def log_formatter
+        # format used by Rails "2012-06-13 16:42:21 +0200"
+        Trinidad::LogFormatter.new("yyyy-MM-dd HH:mm:ss Z")
+      end
+      
     end
   end
 end

@@ -1,18 +1,37 @@
 module Trinidad
   class LogFormatter < Java::JavaUtilLogging::Formatter
-    def initialize(format = "yyyy-MM-dd HH:mm:ss Z")
-      @format = Java::JavaText::SimpleDateFormat.new format
-      calendar = Java::JavaUtil::GregorianCalendar.new
-      calendar.time_zone = Java::JavaUtil::SimpleTimeZone.new(0, 'UTC')
-      @format.calendar = calendar
+    
+    def initialize(format = nil, time_zone = nil)
+      super()
+      @format = format ? 
+        Java::JavaText::SimpleDateFormat.new(format) : 
+          Java::JavaText::SimpleDateFormat.new
+      case time_zone
+      when Java::JavaUtil::Calendar then
+        @format.calendar = time_zone
+      when Java::JavaUtil::TimeZone then
+        @format.time_zone = time_zone
+      when String then
+        time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zone)
+        @format.time_zone = time_zone
+      when Numeric then
+        time_zones = Java::JavaUtil::TimeZone.getAvailableIDs(time_zone)
+        if time_zones.length > 0
+          time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zones[0])
+          @format.time_zone = time_zone
+        end
+      end if time_zone
     end
 
+    JDate = Java::JavaUtil::Date
+    
     def format(record)
-      timestamp = @format.format(Java::JavaUtil::Date.new record.millis)
+      timestamp = @format.format JDate.new(record.millis)
       level = record.level.name
       message = record.message.chomp
 
       "#{timestamp} #{level}: #{message}\n"
     end
+    
   end
 end
