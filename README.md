@@ -159,15 +159,15 @@ end
 
 ## Extensions
 
-From the version 0.8.0 Trinidad allows to extend the server with more Tomcat features, here there is a list with the current available extensions:
+Trinidad allows to extend the server with more Tomcat features, here is a list of current available "official" extensions:
 
 
-* Database connection pooling: https://github.com/trinidad/trinidad_dbpool_extension
-* Daemon based on Akuma (ala GF gem): http://github.com/trinidad/trinidad_daemon_extension
-* Init services based on Apache Commons Daemon (supports Unix and Windows systems): http://github.com/trinidad/trinidad_init_services
-* Sandbox, management console and REST api: http://github.com/trinidad/trinidad_sandbox_extension
-* Logging, enhance the Trinidad's logging system: http://github.com/trinidad/trinidad_logging_extension
-* Lifecycle, application and server lifecycle management: http://github.com/trinidad/trinidad_lifecycle_extension
+* Database Connection Pooling: http://github.com/trinidad/trinidad_dbpool_extension
+* Daemonize Trinidad, based on Akuma: http://github.com/trinidad/trinidad_daemon_extension
+* Init Services (for Unix and Windows), based on Commons Daemon: http://github.com/trinidad/trinidad_init_services
+* Logging, enhance Trinidad's logging system: http://github.com/trinidad/trinidad_logging_extension
+* Application and Server Lifecycle Management: http://github.com/trinidad/trinidad_lifecycle_extension
+* Trinidad's Management Console and REST API: http://github.com/trinidad/trinidad_sandbox_extension
 * Scheduler, based on Quartz: http://github.com/trinidad/trinidad_scheduler_extension
 
 
@@ -175,4 +175,4 @@ You can find further information on how to write your own extension in the wiki:
 
 ## Copyright
 
-Copyright (c) 2011 David Calavera<calavera@apache.org>. See LICENSE for details.
+Copyright (c) 2011-2012 David Calavera<calavera@apache.org>. See LICENSE for details.
