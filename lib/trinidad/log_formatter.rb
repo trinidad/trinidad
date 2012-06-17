@@ -21,16 +21,34 @@ module Trinidad
           @format.time_zone = time_zone
         end
       end if time_zone
+      @writer = java.io.StringWriter.new
     end
 
     JDate = Java::JavaUtil::Date
     
     def format(record)
-      timestamp = @format.format JDate.new(record.millis)
+      timestamp = @format.synchronized do 
+        @format.format JDate.new(record.millis)
+      end
       level = record.level.name
-      message = record.message.chomp
+      message = formatMessage(record)
 
-      "#{timestamp} #{level}: #{message}\n"
+      out = "#{timestamp} #{level}: #{message}"
+      out << formatThrown(record).to_s
+      out << "\n"
+    end
+    
+    private
+    
+    def formatThrown(record)
+      @writer.synchronized do
+        @writer.getBuffer.setLength(0)
+        print_writer = java.io.PrintWriter.new(@writer)
+        print_writer.println
+        record.thrown.printStackTrace(print_writer)
+        print_writer.close
+        return @writer.toString
+      end if record.thrown
     end
     
   end
