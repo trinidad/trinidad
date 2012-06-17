@@ -1,8 +1,9 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require File.dirname(__FILE__) + '/../fakeapp'
-include FakeApp
 
 describe Trinidad::Lifecycle::Default do
+  include FakeApp
+  
   before do
     @mock = mock
     @mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
@@ -165,6 +166,6 @@ describe Trinidad::Lifecycle::Default do
 
   def web_app_listener(config)
     web_app = Trinidad::RailsWebApp.new(config, {})
-    listener = Trinidad::Lifecycle::Default.new(web_app)
+    Trinidad::Lifecycle::Default.new(web_app)
   end
 end

@@ -165,5 +165,61 @@ module Trinidad
     def self.threadsafe_match?(file)
       File.exist?(file) && File.readlines(file).any? { |l| l =~ /^[^#]*threadsafe!/ }
     end
+    
+    class Holder
+      
+      def initialize(web_app, context)
+        @web_app, @context = web_app, context
+      end
+      
+      attr_reader :web_app
+      attr_accessor :context
+      
+      def monitor
+        web_app.monitor
+      end
+      
+      attr_accessor :monitor_mtime
+      
+      def try_lock
+        locked? ? false : lock
+      end
+
+      def locked?; !!@lock; end
+      def lock; @lock = true; end
+      def unlock; @lock = false;end
+      
+      # #deprecated behave Hash like for (<= 1.3.5) compatibility
+      def [](key)
+        case key.to_sym
+          when :app then
+            web_app
+          when :context then
+            context
+          when :lock then
+            @lock
+          when :monitor then
+            monitor
+          when :mtime then
+            monitor_mtime
+          else raise NoMethodError, key.to_s
+        end
+      end
+
+      # #deprecated behave Hash like for (<= 1.3.5) compatibility
+      def []=(key, val)
+        case key.to_sym
+          when :context then
+            self.context=(val)
+          when :lock then
+            @lock = val
+          when :mtime then
+            self.monitor_mtime=(val)
+          else raise NoMethodError, "#{key}="
+        end
+      end
+      
+    end
+    
   end
 end

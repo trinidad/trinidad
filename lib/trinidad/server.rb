@@ -1,5 +1,4 @@
 module Trinidad
-
   class Server
     attr_reader :tomcat, :config
 
@@ -41,7 +40,7 @@ module Trinidad
       elsif @config[:web_apps]
         # create the hosts when they are specified for each app into web_apps. 
         # We must create them before creating the applications.
-        @config[:web_apps].each do |name, app_config|
+        @config[:web_apps].each do |_, app_config|
           if host_names = app_config.delete(:hosts)
             dir = app_config[:web_app_dir] || Dir.pwd
             apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
@@ -113,7 +112,7 @@ module Trinidad
 
       app_context.add_lifecycle_listener(web_app.define_lifecycle)
 
-      {:context => app_context, :app => web_app, :monitor => web_app.monitor}
+      WebApp::Holder.new(web_app, app_context)
     end
 
     def add_service_connector(options, protocol = nil)
@@ -149,7 +148,7 @@ module Trinidad
 
       if !options[:keystoreFile] && !options[:SSLCertificateFile]
         options[:keystoreFile] = 'ssl/keystore'
-        options[:keystorePass] = 'waduswadus'
+        options[:keystorePass] = 'waduswadus' # TODO prompt pass
         create_default_keystore(options)
       end
 
