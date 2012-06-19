@@ -35,7 +35,7 @@ module Trinidad
 
       out = "#{timestamp} #{level}: #{message}"
       out << formatThrown(record).to_s
-      out << "\n"
+      (lnb = "\n") == out[-1, 1] ? out : out << lnb
     end
     
     private

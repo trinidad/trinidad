@@ -28,6 +28,15 @@ describe Trinidad::LogFormatter do
     formatter.format(record).should == "2011-02-05 13:45:22 +0000 INFO: basza meg a zold tucsok\n"
   end
 
+  it "does not add new line to message if already present" do
+    record = JUL::LogRecord.new JUL::Level::INFO, msg = "basza meg a zold tucsok\n"
+    record.millis = java.lang.System.current_time_millis
+    
+    formatter = Trinidad::LogFormatter.new
+    log_msg = formatter.format(record)
+    log_msg[-(msg.size + 6)..-1].should == "INFO: basza meg a zold tucsok\n"
+  end
+  
   it "prints thrown exception if present" do
     record = JUL::LogRecord.new JUL::Level::SEVERE, nil
     record.message = "Bazinga!"
