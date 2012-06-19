@@ -32,40 +32,107 @@ module Trinidad
       @tomcat = Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
     end
 
-    def create_hosts
-      if @config[:hosts]
-        @config[:hosts].each do |apps_base, names|
-          create_host(apps_base, names)
-        end
-      elsif @config[:web_apps]
-        # create the hosts when they are specified for each app into web_apps. 
-        # We must create them before creating the applications.
-        @config[:web_apps].each do |_, app_config|
-          if host_names = app_config.delete(:hosts)
-            dir = app_config[:web_app_dir] || Dir.pwd
-            apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
-            app_config[:host] = create_host(apps_base, host_names)
-          end
-        end
-      else
-        @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
-      end
-    end
-
-    def create_web_apps
-      apps = []
-      apps << create_from_web_apps
-      apps << create_from_apps_base
-      
-      apps.flatten.compact
-    end
-
     def load_host_monitor(apps)
       @tomcat.engine.find_children.each do |host|
         host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(@tomcat, *apps))
       end
     end
 
+    def ssl_enabled?
+      @config[:ssl] && !@config[:ssl].empty?
+    end
+
+    def ajp_enabled?
+      @config[:ajp] && !@config[:ajp].empty?
+    end
+
+    def http_configured?
+      (@config[:http] && !@config[:http].empty?) || @config[:address] != 'localhost'
+    end
+    
+    def add_ajp_connector
+      add_service_connector(@config[:ajp], 'AJP/1.3')
+    end
+
+    def add_http_connector
+      options = @config[:http] || {}
+      options[:address] ||= @config[:address] if @config[:address] != 'localhost'
+      options[:port] = @config[:port]
+      options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
+
+      if options[:apr]
+        @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
+      end
+
+      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1')
+      @tomcat.connector = connector
+    end
+    
+    def add_ssl_connector
+      options = @config[:ssl].merge({
+        :scheme => 'https',
+        :secure => true,
+        :SSLEnabled => 'true'
+      })
+
+      options[:keystoreFile] ||= options.delete(:keystore)
+
+      if !options[:keystoreFile] && !options[:SSLCertificateFile]
+        options[:keystoreFile] = 'ssl/keystore'
+        options[:keystorePass] = 'waduswadus' # TODO prompt pass
+        generate_default_keystore(options)
+      end
+
+      add_service_connector(options)
+    end
+    
+    def add_service_connector(options, protocol = nil)
+      connector = Trinidad::Tomcat::Connector.new(protocol)
+      opts = options.dup
+
+      connector.scheme = opts.delete(:scheme) if opts[:scheme]
+      connector.secure = opts.delete(:secure) || false
+      connector.port = opts.delete(:port).to_i
+
+      connector.protocol_handler_class_name = opts.delete(:protocol_handler) if opts[:protocol_handler]
+
+      opts.each do |key, value|
+        connector.setProperty(key.to_s, value.to_s)
+      end
+
+      @tomcat.service.add_connector(connector)
+      connector
+    end
+
+    def add_web_app(web_app, host = nil)
+      host ||= web_app.app_config[:host] || @tomcat.host
+      app_context = @tomcat.addWebapp(host, web_app.context_path, web_app.web_app_dir)
+      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
+      app_context.add_lifecycle_listener(web_app.define_lifecycle)
+      app_context
+    end
+    
+    def start
+      trap_signals if @config[:trap]
+
+      @tomcat.start
+      @tomcat.server.await
+    end
+
+    def stop
+      @tomcat.stop
+      @tomcat.destroy
+    end
+
+    protected
+    
+    def create_web_apps
+      apps = []
+      apps << create_from_web_apps
+      apps << create_from_apps_base
+      apps.flatten.compact
+    end
+    
     def create_from_web_apps
       if @config[:web_apps]
         @config[:web_apps].map do |name, app_config|
@@ -105,83 +172,63 @@ module Trinidad
 
     def create_web_app(app_config)
       web_app = WebApp.create(@config, app_config)
-
-      app_context = @tomcat.addWebapp(app_config[:host] || @tomcat.host, web_app.context_path, web_app.web_app_dir)
-
-      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
-
-      app_context.add_lifecycle_listener(web_app.define_lifecycle)
-
-      WebApp::Holder.new(web_app, app_context)
+      WebApp::Holder.new(web_app, add_web_app(web_app))
     end
-
-    def add_service_connector(options, protocol = nil)
-      connector = Trinidad::Tomcat::Connector.new(protocol)
-      opts = options.dup
-
-      connector.scheme = opts.delete(:scheme) if opts[:scheme]
-      connector.secure = opts.delete(:secure) || false
-      connector.port = opts.delete(:port).to_i
-
-      connector.protocol_handler_class_name = opts.delete(:protocol_handler) if opts[:protocol_handler]
-
-      opts.each do |key, value|
-        connector.setProperty(key.to_s, value.to_s)
+    
+    def create_hosts
+      if @config[:hosts]
+        @config[:hosts].each do |apps_base, names|
+          create_host(apps_base, names)
+        end
+      elsif @config[:web_apps]
+        # create the hosts when they are specified for each app into web_apps. 
+        # We must create them before creating the applications.
+        @config[:web_apps].each do |_, app_config|
+          if host_names = app_config.delete(:hosts)
+            dir = app_config[:web_app_dir] || Dir.pwd
+            apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
+            app_config[:host] = create_host(apps_base, host_names)
+          end
+        end
+      else
+        @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
       end
-
-      @tomcat.service.add_connector(connector)
-      connector
     end
+    
+    def create_host(apps_base, names)
+      host_names = Array(names)
+      host_name = host_names.shift
+      unless host = @tomcat.engine.find_child(host_name)
+        host = Trinidad::Tomcat::StandardHost.new
+        host.name = host_name
+        host.app_base = apps_base || Dir.pwd
+        host_names.each { |name| host.add_alias(name) }
 
-    def add_ajp_connector
-      add_service_connector(@config[:ajp], 'AJP/1.3')
-    end
-
-    def add_ssl_connector
-      options = @config[:ssl].merge({
-        :scheme => 'https',
-        :secure => true,
-        :SSLEnabled => 'true'
-      })
-
-      options[:keystoreFile] ||= options.delete(:keystore)
-
-      if !options[:keystoreFile] && !options[:SSLCertificateFile]
-        options[:keystoreFile] = 'ssl/keystore'
-        options[:keystorePass] = 'waduswadus' # TODO prompt pass
-        create_default_keystore(options)
+        @tomcat.engine.add_child host
       end
-
-      add_service_connector(options)
+      host
     end
+    
+    def load_default_system_properties
+      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
+    end
+    
+    private
+    
+    def add_default_web_app!(config)
+      if (!config[:web_apps] && !config[:apps_base] && !config[:hosts])
+        default_app = {
+          :context_path => config[:context_path],
+          :web_app_dir => config[:web_app_dir] || Dir.pwd,
+          :log => config[:log]
+        }
+        default_app[:rackup] = config[:rackup] if config[:rackup]
 
-    def add_http_connector
-      options = @config[:http] || {}
-      options[:address] ||= @config[:address] if @config[:address] != 'localhost'
-      options[:port] = @config[:port]
-      options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
-
-      if options[:apr]
-        @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
+        config[:web_apps] = { :default => default_app }
       end
-
-      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1')
-      @tomcat.connector = connector
     end
-
-    def ssl_enabled?
-      @config[:ssl] && !@config[:ssl].empty?
-    end
-
-    def ajp_enabled?
-      @config[:ajp] && !@config[:ajp].empty?
-    end
-
-    def http_configured?
-      (@config[:http] && !@config[:http].empty?) || @config[:address] != 'localhost'
-    end
-
-    def create_default_keystore(config)
+    
+    def generate_default_keystore(config)
       keystore_file = java.io.File.new(config[:keystoreFile])
 
       if (!keystore_file.parent_file.exists &&
@@ -201,52 +248,7 @@ module Trinidad
 
       Trinidad::Tomcat::KeyTool.main(keytool_args.to_java(:string))
     end
-
-    def start
-      trap_signals if @config[:trap]
-
-      @tomcat.start
-      @tomcat.server.await
-    end
-
-    def stop
-      @tomcat.stop
-      @tomcat.destroy
-    end
-
-    def load_default_system_properties
-      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
-    end
-
-    private
-
-    def create_host(apps_base, names)
-      host_names = Array(names)
-      host_name = host_names.shift
-      unless host = @tomcat.engine.find_child(host_name)
-        host = Trinidad::Tomcat::StandardHost.new
-        host.name = host_name
-        host.app_base = apps_base || Dir.pwd
-        host_names.each {|h| host.add_alias(h) } unless host_names.empty?
-
-        @tomcat.engine.add_child host
-      end
-      host
-    end
-
-    def add_default_web_app!(config)
-      if (!config[:web_apps] && !config[:apps_base] && !config[:hosts])
-        default_app = {
-          :context_path => config[:context_path],
-          :web_app_dir => config[:web_app_dir] || Dir.pwd,
-          :log => config[:log]
-        }
-        default_app[:rackup] = config[:rackup] if config[:rackup]
-
-        config[:web_apps] = { :default => default_app }
-      end
-    end
-
+    
     def trap_signals
       trap('INT') { stop }
       trap('TERM') { stop }

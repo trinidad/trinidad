@@ -242,7 +242,7 @@ describe Trinidad::Server do
       Dir.mkdir('apps_base')
 
       server = Trinidad::Server.new({ :apps_base => 'apps_base' })
-      server.create_web_app({
+      server.send(:create_web_app, {
         :context_path => '/foo.war',
         :web_app_dir => 'foo.war'
       })
