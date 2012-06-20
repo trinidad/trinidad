@@ -3,11 +3,11 @@ module Trinidad
     class Host
       include Trinidad::Tomcat::LifecycleListener
 
-      attr_reader :tomcat, :app_holders
+      attr_reader :server, :app_holders
 
-      # #tomcat current tomcat instance
+      # #server current server instance
       # #app_holders deployed web application holders
-      def initialize(tomcat, *app_holders)
+      def initialize(server, *app_holders)
         app_holders.map! do |app_holder|
           if app_holder.is_a?(Hash) # backwards compatibility
             WebApp::Holder.new(app_holder[:app], app_holder[:context])
@@ -15,7 +15,7 @@ module Trinidad
             app_holder
           end
         end
-        @tomcat, @app_holders = tomcat, app_holders
+        @server, @app_holders = server, app_holders
       end
       
       def lifecycleEvent(event)
@@ -29,6 +29,8 @@ module Trinidad
 
       # #deprecated backwards (<= 1.3.5) compatibility
       alias_method :contexts, :app_holders
+      
+      def tomcat; @server.tomcat; end
       
       protected
       
@@ -74,26 +76,14 @@ module Trinidad
       private
       
       def takeover_app_context(app_holder)
-        web_app = app_holder.web_app
-        old_context = app_holder.context
-        new_context = Trinidad::Tomcat::StandardContext.new
-        new_context.name = "#{old_context.name}-#{java.lang.System.currentTimeMillis}"
-        new_context.path = old_context.path
-        new_context.doc_base = web_app.web_app_dir
-
-        new_context.add_lifecycle_listener Trinidad::Tomcat::Tomcat::DefaultWebXmlListener.new
-
-        config = Trinidad::Tomcat::ContextConfig.new
-        config.default_web_xml = 'org/apache/catalina/startup/NO_DEFAULT_XML'
-        new_context.add_lifecycle_listener config
-
-        Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, tomcat, new_context)
-
-        web_app.generate_class_loader
-        new_context.add_lifecycle_listener(web_app.define_lifecycle)
+        web_app, old_context = app_holder.web_app, app_holder.context
+        
+        web_app.generate_class_loader # use new class loader for application
+        no_host = org.apache.catalina.Host.impl {} # do not add to parent yet
+        new_context = server.add_web_app(web_app, no_host)
         new_context.add_lifecycle_listener(Takeover.new(old_context))
 
-        old_context.parent.add_child new_context
+        old_context.parent.add_child new_context # add to parent TODO starts!
 
         new_context
       end
@@ -107,10 +97,13 @@ module Trinidad
 
         def lifecycleEvent(event)
           if event.type == Trinidad::Tomcat::Lifecycle::AFTER_START_EVENT
+            new_context = event.lifecycle
+            new_context.remove_lifecycle_listener(self) # GC old context
+            
             @old_context.stop
             @old_context.destroy
-            # event.lifecycle == the new context ...
-            event.lifecycle.name = @old_context.name
+            # NOTE: name might not be changed once added to a parent
+            new_context.name = @old_context.name
           end
         end
       end

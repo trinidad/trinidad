@@ -2,7 +2,14 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Trinidad::Lifecycle::Host do
   
+  class SimpleServer < Trinidad::Server
+    def initialize(tomcat)
+      @tomcat = tomcat
+    end
+  end
+  
   let(:monitor) { File.expand_path('restart.txt', MOCK_WEB_APP_DIR) }
+  let(:server) { SimpleServer.new(tomcat) }
   let(:tomcat) { Trinidad::Tomcat::Tomcat.new }
   let(:context) { mock 'context' }
 
@@ -20,7 +27,7 @@ describe Trinidad::Lifecycle::Host do
     web_app = mock('web_app')
     web_app.stubs(:monitor).returns(monitor)
     app_holder = Trinidad::WebApp::Holder.new(web_app, context)
-    Trinidad::Lifecycle::Host.new(tomcat, app_holder)
+    Trinidad::Lifecycle::Host.new(server, app_holder)
   end
 
   after { FileUtils.rm monitor if File.exist?(monitor) }
@@ -54,16 +61,15 @@ describe Trinidad::Lifecycle::Host do
   it "creates a new context that takes over the original one" do
     context = Trinidad::Tomcat::StandardContext.new
     context.setPath('/foo'); context.setParent(tomcat.host)
-
+    
     Trinidad::Tomcat::StandardContext.any_instance.stubs(:start)
+    tomcat.host.start_children = false
     
     with_host_monitor do
-      web_app = Trinidad::WebApp.create({}, {
-        :web_app_dir => MOCK_WEB_APP_DIR, :monitor => monitor
-      })
+      web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
       
-      listener = Trinidad::Lifecycle::Host.new(tomcat, app_holder)
+      listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent start_event
       
       sleep(1)
@@ -81,14 +87,13 @@ describe Trinidad::Lifecycle::Host do
     context.setPath('/foo'); context.setParent(tomcat.host)
 
     Trinidad::Tomcat::StandardContext.any_instance.stubs(:start)
+    tomcat.host.start_children = false
     
     with_host_monitor do
-      web_app = Trinidad::WebApp.create({}, {
-        :web_app_dir => MOCK_WEB_APP_DIR, :monitor => monitor
-      })
+      web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
       
-      listener = Trinidad::Lifecycle::Host.new(tomcat, app_holder)
+      listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent start_event
       app_holder.monitor_mtime.should_not be nil
       monitor_mtime = app_holder.monitor_mtime
@@ -107,13 +112,13 @@ describe Trinidad::Lifecycle::Host do
     context = Trinidad::Tomcat::StandardContext.new
     context.setPath('/foo'); context.setParent(tomcat.host)
     
+    tomcat.host.start_children = false
+    
     with_host_monitor do
-      web_app = Trinidad::WebApp.create({}, {
-        :web_app_dir => MOCK_WEB_APP_DIR, :monitor => monitor
-      })
+      web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
       
-      listener = Trinidad::Lifecycle::Host.new(tomcat, app_holder)
+      listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent start_event
       
       app_holder.locked?.should be false
@@ -135,15 +140,14 @@ describe Trinidad::Lifecycle::Host do
     context.setPath('/foo'); context.setParent(tomcat.host)
 
     Trinidad::Tomcat::StandardContext.any_instance.stubs(:start)
+    tomcat.host.start_children = false
     
     with_host_monitor do
-      web_app = Trinidad::WebApp.create({}, {
-        :web_app_dir => MOCK_WEB_APP_DIR, :monitor => monitor
-      })
+      web_app = create_web_app
       class_loader = web_app.class_loader
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
 
-      listener = Trinidad::Lifecycle::Host.new(tomcat, app_holder)
+      listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent start_event
       
       sleep(1)
@@ -153,6 +157,17 @@ describe Trinidad::Lifecycle::Host do
 
       web_app.class_loader.should_not == class_loader
     end
+  end
+  
+  private
+  
+  def create_web_app(context_path = '/')
+    config = {}
+    Trinidad::WebApp.create(config, { 
+        :context_path => context_path, 
+        :web_app_dir => MOCK_WEB_APP_DIR, 
+        :monitor => monitor 
+    })
   end
   
 end

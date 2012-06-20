@@ -34,7 +34,7 @@ module Trinidad
 
     def load_host_monitor(apps)
       @tomcat.engine.find_children.each do |host|
-        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(@tomcat, *apps))
+        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *apps))
       end
     end
 
@@ -79,7 +79,7 @@ module Trinidad
 
       if !options[:keystoreFile] && !options[:SSLCertificateFile]
         options[:keystoreFile] = 'ssl/keystore'
-        options[:keystorePass] = 'waduswadus' # TODO prompt pass
+        options[:keystorePass] = 'waduswadus42'
         generate_default_keystore(options)
       end
 
