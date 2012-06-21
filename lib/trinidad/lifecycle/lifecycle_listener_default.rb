@@ -13,7 +13,7 @@ module Trinidad
       end
 
       def configure_deployment_descriptor(context)
-        if descriptor = @webapp.default_deployment_descriptor
+        if descriptor = web_app.default_deployment_descriptor
           listeners = context.findLifecycleListeners
           context_config = listeners && listeners.find do |listener|
             listener.is_a?(Trinidad::Tomcat::ContextConfig)
@@ -31,30 +31,30 @@ module Trinidad
 
       def configure_rack_servlet(context)
         wrapper = context.create_wrapper
-        if @webapp.servlet[:instance]
-          wrapper.servlet = @webapp.servlet[:instance]
+        if web_app.servlet[:instance]
+          wrapper.servlet = web_app.servlet[:instance]
         else
-          wrapper.servlet_class = @webapp.servlet[:class]
-          wrapper.async_supported = @webapp.servlet[:async_supported]
+          wrapper.servlet_class = web_app.servlet[:class]
+          wrapper.async_supported = web_app.servlet[:async_supported]
         end
-        wrapper.name = @webapp.servlet[:name]
+        wrapper.name = web_app.servlet[:name]
 
         context.add_child(wrapper)
         context.add_servlet_mapping('/*', wrapper.name)
       end
 
       def configure_rack_listener(context)
-        context.addApplicationListener(@webapp.rack_listener) unless @webapp.servlet[:instance]
+        context.addApplicationListener(web_app.rack_listener) unless web_app.servlet[:instance]
       end
 
       def configure_init_params(context)
-        @webapp.init_params.each do |name, value|
+        web_app.init_params.each do |name, value|
           context.addParameter(name, value)
         end
       end
 
       def configure_context_loader(context)
-        class_loader = @webapp.class_loader
+        class_loader = web_app.class_loader
 
         add_application_jars(class_loader)
         add_application_java_classes(class_loader)
@@ -65,9 +65,9 @@ module Trinidad
       end
 
       def add_application_jars(class_loader)
-        return unless @webapp.libs_dir
+        return unless web_app.libs_dir
 
-        resources_dir = File.join(@webapp.web_app_dir, @webapp.libs_dir, '**', '*.jar')
+        resources_dir = File.join(web_app.web_app_dir, web_app.libs_dir, '**', '*.jar')
 
         Dir[resources_dir].each do |resource|
           class_loader.addURL(java.io.File.new(resource).to_url)
@@ -75,9 +75,9 @@ module Trinidad
       end
 
       def add_application_java_classes(class_loader)
-        return unless @webapp.classes_dir
+        return unless web_app.classes_dir
 
-        resources_dir = File.join(@webapp.web_app_dir, @webapp.classes_dir)
+        resources_dir = File.join(web_app.web_app_dir, web_app.classes_dir)
         class_loader.addURL(java.io.File.new(resources_dir).to_url)
       end
     end

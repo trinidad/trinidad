@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
+require 'fileutils'
 
 describe Trinidad::Lifecycle::War do
   before do
@@ -8,7 +9,7 @@ describe Trinidad::Lifecycle::War do
 
   it "configures the war classloader" do
     @listener.configure_class_loader(@context)
-    @context.loader.should_not be_nil
+    @context.loader.should_not be nil
   end
 
   it "should create the log directory under the WEB-INF directory" do
@@ -24,11 +25,10 @@ describe Trinidad::Lifecycle::War do
         :environment => 'test'
       })
       listener = Trinidad::Lifecycle::War.new(app)
-      listener.configure_logging
+      listener.configure_logging(@context)
 
-      File.exist?('apps_base/foo/WEB-INF/log').should be_true
+      File.exist?('apps_base/foo/WEB-INF/log').should be true
     ensure
-      require 'fileutils'
       FileUtils.rm_rf('apps_base')
     end
   end

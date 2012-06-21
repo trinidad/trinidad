@@ -3,12 +3,11 @@ module Trinidad
     class War < Base
       def lifecycleEvent(event)
         case event.type
-        when Trinidad::Tomcat::Lifecycle::AFTER_STOP_EVENT
-          destroy_expanded_app
         when Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT
           expand_app(event.lifecycle)
+        when Trinidad::Tomcat::Lifecycle::AFTER_STOP_EVENT
+          destroy_expanded_app
         end
-
         super
       end
 
@@ -18,20 +17,20 @@ module Trinidad
       end
 
       def configure_class_loader(context)
-        loader = Trinidad::Tomcat::WebappLoader.new(@webapp.class_loader)
+        loader = Trinidad::Tomcat::WebappLoader.new(web_app.class_loader)
         loader.container = context
         context.loader = loader
       end
 
       def destroy_expanded_app
         require 'fileutils'
-        FileUtils.rm_rf @webapp.web_app_dir.gsub(/\.war$/, '')
+        FileUtils.rm_rf web_app.web_app_dir.gsub(/\.war$/, '')
       end
 
       def expand_app(context)
         if !File.exist?(context.doc_base)
           host = context.parent
-          war_file = java.io.File.new(@webapp.web_app_dir)
+          war_file = java.io.File.new(web_app.web_app_dir)
           war = java.net.URL.new("jar:" + war_file.toURI.toURL.to_s + "!/")
           path_name = File.basename(context.doc_base)
 

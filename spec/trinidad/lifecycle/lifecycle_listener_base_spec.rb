@@ -10,8 +10,8 @@ describe Trinidad::Lifecycle::Base do
         :environment => 'test',
         :log => 'INFO'
     }
-    @webapp = Trinidad::WebApp.new({}, @options)
-    @listener = Trinidad::Lifecycle::Base.new(@webapp)
+    @web_app = Trinidad::WebApp.new({}, @options)
+    @listener = Trinidad::Lifecycle::Base.new(@web_app)
   end
 
   after do
@@ -24,10 +24,10 @@ describe Trinidad::Lifecycle::Base do
 
     @context.welcome_files.should have(0).files
 
-    @context.find_child('jsp').should be_nil
+    @context.find_child('jsp').should be nil
 
-    @context.process_tlds.should be_false
-    @context.xml_validation.should be_false
+    @context.process_tlds.should be false
+    @context.xml_validation.should be false
   end
 
   it "creates the log file according with the environment if it doesn't exist" do
@@ -53,16 +53,17 @@ describe Trinidad::Lifecycle::Base do
     logger = java.util.logging.Logger.get_logger("")
 
     current_handlers = logger.handlers.size
-    @listener.configure_logging
-    logger.handlers.should have(current_handlers + 2).handlers
+    @listener.configure_logging(@context)
+    logger.handlers.should have(current_handlers + 1).handlers
 
-    @listener.configure_logging
-    logger.handlers.should have(current_handlers + 2).handlers
+    @listener.configure_logging(@context)
+    logger.handlers.should have(current_handlers + 1).handlers
   end
 
   def configure_logging(level)
     @options[:log] = level
     @listener = Trinidad::Lifecycle::Base.new(Trinidad::WebApp.new({}, @options))
-    @listener.configure_logging
+    @listener.configure_logging(@context)
   end
+  
 end

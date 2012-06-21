@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = %w[README.md LICENSE]
   
   s.add_dependency('trinidad_jars', ">= 1.0.4")
-  s.add_dependency('jruby-rack', ">= 1.1.6")
+  s.add_dependency('jruby-rack', ">= 1.1.7")
   
   s.add_development_dependency('rack')
   s.add_development_dependency('rake')
@@ -33,8 +33,7 @@ Gem::Specification.new do |s|
 
   s.files = `git ls-files`.split("\n").sort.
     reject { |file| file =~ /^\./ }. # .gitignore, .travis.yml
-    # TODO backward compatibility - include no spec files ?!
-    reject { |file| file =~ /^spec\// }.
+    reject { |file| file =~ /^spec\// }. # spec/**/*.spec
     # reject trinidad_jars.gemspec files :
     reject { |file| file == 'trinidad_jars.gemspec' || 
                     file == 'lib/trinidad/jars.rb'  || 

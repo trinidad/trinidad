@@ -2,11 +2,11 @@ module Trinidad
   module Lifecycle
     class Base
       include Trinidad::Tomcat::LifecycleListener
-      attr_reader :webapp
+      attr_reader :web_app
+      alias_method :webapp, :web_app
 
-      def initialize(webapp)
-        @webapp = webapp
-        @configured_logger = false
+      def initialize(web_app)
+        @web_app = web_app
       end
 
       def lifecycleEvent(event)
@@ -19,7 +19,7 @@ module Trinidad
 
       def configure_defaults(context)
         remove_defaults(context)
-        configure_logging
+        configure_logging(context)
       end
 
       def remove_defaults(context)
@@ -37,59 +37,8 @@ module Trinidad
         context.xml_validation = false
       end
 
-      def configure_logging
-        return if @configured_logger
-
-        log_path = File.join(@webapp.work_dir, 'log', "#{@webapp.environment}.log")
-        log_file = java.io.File.new(log_path)
-
-        unless log_file.exists
-          log_file.parent_file.mkdirs
-          log_file.create_new_file
-        end
-
-        jlogging = java.util.logging
-
-        file_handler = jlogging.FileHandler.new(log_path, true)
-
-        out_handler  = jlogging.ConsoleHandler.new
-        out_handler.set_output_stream JRuby.runtime.out
-
-        err_handler  = jlogging.ConsoleHandler.new
-        err_handler.set_output_stream JRuby.runtime.err
-
-        logger = jlogging.Logger.get_logger("")
-
-        log_level = @webapp.log && @webapp.log.upcase
-        unless %w{ALL CONFIG FINE FINER FINEST INFO OFF SEVERE WARNING}.include?(log_level)
-          puts "Invalid log level #{log_level}, using default: INFO"
-          log_level = 'INFO'
-        end
-
-        level = jlogging.Level.parse(log_level)
-
-        console_handler = logger.handlers.first
-        logger.remove_handler(console_handler)
-
-        logger.add_handler(file_handler)
-        logger.add_handler(out_handler)
-        logger.add_handler(err_handler)
-
-        logger.handlers.each do |handler|
-          handler.level = level
-          handler.formatter = log_formatter
-        end
-
-        logger.level = level
-
-        @configured_logger = true
-      end
-      
-      protected
-      
-      def log_formatter
-        # format used by Rails "2012-06-13 16:42:21 +0200"
-        Trinidad::LogFormatter.new("yyyy-MM-dd HH:mm:ss Z")
+      def configure_logging(context)
+        Trinidad::Logging.configure_web_app(web_app, context)
       end
       
     end

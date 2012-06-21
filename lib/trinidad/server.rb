@@ -4,6 +4,7 @@ module Trinidad
 
     def initialize(config = Trinidad.configuration)
       load_config(config)
+      configure_logging(@config[:log])
       load_tomcat_server
       apps = create_web_apps
       load_host_monitor(apps)
@@ -211,6 +212,10 @@ module Trinidad
     
     def load_default_system_properties
       java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
+    end
+    
+    def configure_logging(log_level)
+      Trinidad::Logging.configure(log_level)
     end
     
     private
