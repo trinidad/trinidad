@@ -4,14 +4,27 @@ require File.dirname(__FILE__) + '/fakeapp'
 include FakeApp
 
 describe Trinidad::WebApp do
+  
+  it "exposes configuration via [] and readers" do
+    config = { :classes_dir => 'classes', :libs_dir => 'vendor' }
+    app_config = { :classes_dir => 'klasses' }
+    app = Trinidad::WebApp.create(config, app_config)
+    
+    app[:classes_dir].should == 'klasses'
+    app[:libs_dir].should == 'vendor'
+    
+    app.classes_dir.should == 'klasses'
+    app.libs_dir.should == 'vendor'
+  end
+  
   it "creates a RailsWebApp if rackup option is not present" do
     app = Trinidad::WebApp.create({}, {})
-    app.should be_an_instance_of(Trinidad::RailsWebApp)
+    app.should be_a(Trinidad::RailsWebApp)
   end
 
   it "creates a RackupWebApp if rackup option is present" do
     app = Trinidad::WebApp.create({}, {:rackup => 'config.ru'})
-    app.should be_an_instance_of(Trinidad::RackupWebApp)
+    app.should be_a(Trinidad::RackupWebApp)
   end
 
   it "ignores rack_servlet when a deployment descriptor already provides it" do
@@ -22,7 +35,7 @@ describe Trinidad::WebApp do
         :web_app_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
-      app.servlet.should be_nil
+      app.servlet.should be nil
     end
   end
 
@@ -34,7 +47,7 @@ describe Trinidad::WebApp do
         :web_app_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
-      app.rack_listener.should be_nil
+      app.rack_listener.should be nil
     end
   end
 
@@ -46,7 +59,7 @@ describe Trinidad::WebApp do
         :web_app_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
-      app.servlet.should_not be_nil
+      app.servlet.should_not be nil
       app.servlet[:name].should == 'RackServlet'
       app.servlet[:class].should == 'org.jruby.rack.RackServlet'
     end
@@ -60,13 +73,13 @@ describe Trinidad::WebApp do
         :web_app_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
-      app.send(:web_xml).should be_nil
+      app.send(:web_xml).should be nil
     end
   end
 
   it "uses rack_servlet as the default servlet when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({}, {})
-    app.servlet.should_not be_nil
+    app.servlet.should_not be nil
     app.servlet[:name].should == 'RackServlet'
     app.servlet[:class].should == 'org.jruby.rack.RackServlet'
   end
@@ -95,6 +108,7 @@ describe Trinidad::WebApp do
   it "adds the rackup script as a context parameter when it's provided" do
     FakeFS do
       create_rackup_file
+      
       app = Trinidad::WebApp.create({}, {
         :web_app_dir => Dir.pwd,
         :rackup => 'config/config.ru'
@@ -117,8 +131,8 @@ describe Trinidad::WebApp do
       })
       parameters = app.init_params
 
-      parameters['jruby.min.runtimes'].should be_nil
-      parameters['jruby.max.runtimes'].should be_nil
+      parameters['jruby.min.runtimes'].should be nil
+      parameters['jruby.max.runtimes'].should be nil
     end
   end
 
@@ -144,7 +158,7 @@ describe Trinidad::WebApp do
       :web_app_dir => Dir.pwd,
       :default_web_xml => 'config/web.xml'
     })
-    app.default_deployment_descriptor.should be_nil
+    app.default_deployment_descriptor.should be nil
   end
 
   it "doesn't load any web.xml when the deployment descriptor doesn't exist" do
@@ -152,8 +166,8 @@ describe Trinidad::WebApp do
       :web_app_dir => Dir.pwd,
       :default_web_xml => 'config/web.xml'
     })
-    app.rack_servlet_configured?.should be_false
-    app.rack_listener_configured?.should be_false
+    app.rack_servlet_configured?.should be false
+    app.rack_listener_configured?.should be false
   end
 
   it "uses `public` as default public root directory" do
@@ -162,14 +176,14 @@ describe Trinidad::WebApp do
   end
 
   it "uses extensions from the global configuration" do
-    config = { :extensions => {:hotdeploy => {}} }
+    config = { :extensions => { :hotdeploy => {} } }
     app = Trinidad::WebApp.create(config, {})
     app.extensions.should include(:hotdeploy)
   end
 
   it "overrides global extensions with application extensions" do
-    config = { :extensions => {:hotdeploy => {}} }
-    app_config = { :extensions => {:hotdeploy => {:delay => 30000}} }
+    config = { :extensions => { :hotdeploy => {} } }
+    app_config = { :extensions => { :hotdeploy => { :delay => 30000 } } }
     app = Trinidad::WebApp.create(config, app_config)
     app.extensions[:hotdeploy].should include(:delay)
   end
@@ -177,9 +191,10 @@ describe Trinidad::WebApp do
   it "creates a rackup application when the rackup file is under WEB-INF directory" do
     FakeFS do
       create_rackup_file('WEB-INF')
+      
       app = Trinidad::WebApp.create({}, {})
 
-      app.should be_an_instance_of(Trinidad::RackupWebApp)
+      app.should be_a(Trinidad::RackupWebApp)
     end
   end
 
@@ -195,6 +210,7 @@ describe Trinidad::WebApp do
   it "loads rackup file from a given directory" do
     FakeFS do
       create_rackup_file('rack')
+      
       app = Trinidad::WebApp.create({}, {
         :web_app_dir => Dir.pwd,
         :rackup => 'rack'
@@ -222,8 +238,8 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({}, {
       :context_path => 'foo.war'
     })
-    app.war?.should be_true
-    app.should be_instance_of(Trinidad::WarWebApp)
+    app.should be_a(Trinidad::WarWebApp)
+    app.war?.should be true
   end
 
   it "uses the application directory as working directory" do
@@ -289,7 +305,7 @@ describe Trinidad::WebApp do
       :jruby_max_runtimes => 1
     }, {})
 
-    app.threadsafe?.should be_true
+    app.threadsafe?.should be true
   end
 
   it "is not threadsafe when min and max runtimes are 1" do
@@ -299,7 +315,7 @@ describe Trinidad::WebApp do
       :jruby_max_runtimes => 2
     }, {})
 
-    app.threadsafe?.should be_false
+    app.threadsafe?.should be false
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the specified environment" do
@@ -313,7 +329,7 @@ describe Trinidad::WebApp do
         :jruby_max_runtimes => 2
       })
 
-      app.threadsafe?.should be_true
+      app.threadsafe?.should be true
     end
   end
 
@@ -327,7 +343,7 @@ describe Trinidad::WebApp do
         :jruby_max_runtimes => 2
       })
 
-      app.threadsafe?.should be_true
+      app.threadsafe?.should be true
     end
   end
 
@@ -341,13 +357,14 @@ describe Trinidad::WebApp do
         :jruby_max_runtimes => 2
       })
 
-      app.threadsafe?.should be_false
+      app.threadsafe?.should be false
     end
   end
   
   it "detects a rackup web app even if :rackup present in main config" do
     FakeFS do
       create_rackup_file 'main'
+      
       app = Trinidad::WebApp.create({ 
         :rackup => 'main/config.ru'
       }, {

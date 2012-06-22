@@ -6,26 +6,49 @@ module Trinidad
       autodetect_configuration(config, app_config)
 
       war?(app_config) ? WarWebApp.new(config, app_config) :
-        rackup?(app_config) ? RackupWebApp.new(config, app_config) : RailsWebApp.new(config, app_config)
+        rackup?(app_config) ? RackupWebApp.new(config, app_config) :
+          RailsWebApp.new(config, app_config)
     end
 
     def self.rackup?(app_config)
-      app_config.has_key?(:rackup) || !Dir['WEB-INF/**/config.ru'].empty?
+      app_config[:rackup] || ! Dir['WEB-INF/**/config.ru'].empty?
     end
 
     def self.war?(app_config)
-      app_config[:context_path] =~ /\.war$/
+      app_config[:context_path] && app_config[:context_path][-4..-1] == '.war'
     end
 
     def initialize(config, app_config, servlet_class = 'org.jruby.rack.RackServlet', servlet_name = 'RackServlet')
-      @config = config
-      @app_config = app_config
+      @config, @app_config = config, app_config
 
       generate_class_loader
 
       configure_rack_servlet(servlet_class, servlet_name) unless rack_servlet_configured?
     end
 
+    def [](key)
+      key = key.to_sym
+      @app_config.has_key?(key) ? @app_config[key] : @config[key]
+    end
+    
+    %w{ context_path web_app_dir libs_dir classes_dir default_web_xml async_supported 
+        jruby_min_runtimes jruby_max_runtimes rackup log }.each do |method_name|
+      class_eval "def #{method_name}; self[:'#{method_name}']; end"
+    end
+
+    def public_root; self[:public] || 'public'; end
+    def environment; self[:environment] || 'development'; end
+    def work_dir; self[:work_dir] || web_app_dir; end
+    def log_dir; self[:log_dir] || File.join(work_dir, 'log'); end
+    
+    def extensions
+      @extensions ||= begin
+        extensions = @config[:extensions] || {}
+        extensions.merge!(@app_config[:extensions]) if @app_config[:extensions]
+        extensions
+      end
+    end
+    
     def rack_listener
       context_listener unless rack_listener_configured?
     end
@@ -61,30 +84,10 @@ module Trinidad
       )
     end
 
-    %w{ context_path web_app_dir libs_dir classes_dir default_web_xml async_supported 
-        jruby_min_runtimes jruby_max_runtimes rackup log }.each do |method_name|
-      define_method method_name do
-        sym = method_name.to_sym
-        @app_config[sym] || @config[sym]
-      end
-    end
-
-    def public_root; @app_config[:public]  || @config[:public] || 'public'; end
-    def environment; @app_config[:environment] || @config[:environment] || 'development'; end
-    def work_dir; @app_config[:work_dir] || @config[:work_dir] || web_app_dir; end
-    
-    def extensions
-      @extensions ||= begin
-        extensions = @config[:extensions] || {}
-        extensions.merge!(@app_config[:extensions]) if @app_config[:extensions]
-        extensions
-      end
-    end
-
-    def war?; WebApp.war?(app_config); end    
+    def war?; WebApp.war?(app_config); end
 
     def solo?
-      !self.is_a?(WarWebApp) && @app_config[:solo]
+      ! is_a?(WarWebApp) && app_config[:solo]
     end
 
     def threadsafe?
@@ -92,8 +95,7 @@ module Trinidad
     end
 
     def monitor
-      m_file = @app_config[:monitor] || @config[:monitor] || 'tmp/restart.txt'
-      File.expand_path(m_file, work_dir)
+      File.expand_path(self[:monitor] || 'tmp/restart.txt', work_dir)
     end
 
     def define_lifecycle
@@ -105,11 +107,13 @@ module Trinidad
     end
 
     protected
+    
     def add_parameter_unless_exist(param_name, param_value)
       @params[param_name] = param_value unless web_context_param(param_name)
     end
 
     private
+    
     def web_xml
       return nil if @web_xml == false
       @web_xml ||=
@@ -117,8 +121,8 @@ module Trinidad
           require 'rexml/document'
           REXML::Document.new(File.read(default_deployment_descriptor))
         rescue REXML::ParseException => e
-          puts "WARNING: invalid deployment descriptor:[#{default_deployment_descriptor}]"
-          puts e.message
+          logger = java.util.logging.Logger.getLogger('')
+          logger.warning "invalid deployment descriptor:[#{default_deployment_descriptor}]\n #{e.message}"
           false
         end unless default_deployment_descriptor.nil?
     end
@@ -150,9 +154,9 @@ module Trinidad
       rackup = config[:rackup] || 'config.ru'
       app_config[:web_app_dir] ||= config[:web_app_dir] || Dir.pwd
       # Check for rackup (but still use config/environment.rb for Rails 3)
-      if !app_config[:rackup] &&
+      if ! app_config[:rackup] &&
           File.exists?(File.join(app_config[:web_app_dir], rackup)) &&
-          !File.exists?(File.join(app_config[:web_app_dir], 'config/environment.rb'))
+          ! File.exists?(File.join(app_config[:web_app_dir], 'config/environment.rb'))
         app_config[:rackup] = rackup
       end
     end
