@@ -241,7 +241,7 @@ module Trinidad
           raise "Unable to create keystore folder: " + keystore_file.parent_file.canonical_path
       end
 
-      keytool_args = ["-genkey",
+      key_tool_args = ["-genkey",
         "-alias", "localhost",
         "-dname", "CN=localhost, OU=Trinidad, O=Trinidad, C=ES",
         "-keyalg", "RSA",
@@ -251,7 +251,8 @@ module Trinidad
         "-storepass", config[:keystorePass],
         "-keypass", config[:keystorePass]]
 
-      Trinidad::Tomcat::KeyTool.main(keytool_args.to_java(:string))
+      key_tool = Java::SunSecurityTools::KeyTool
+      key_tool.main key_tool_args.to_java(:string)
     end
     
     def trap_signals

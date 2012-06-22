@@ -17,11 +17,5 @@ module Trinidad
     include_package 'org.apache.naming.resources'
 
     java_import 'org.apache.catalina.connector.Connector'
-    java_import 'sun.security.tools.KeyTool'
-  end
-
-  module Rack
-    include_package 'org.jruby.rack'
-    include_package 'org.jruby.rack.rails'
   end
 end
