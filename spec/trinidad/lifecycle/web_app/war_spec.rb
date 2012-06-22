@@ -1,14 +1,15 @@
-require File.dirname(__FILE__) + '/../../spec_helper'
+require File.dirname(__FILE__) + '/../../../spec_helper'
 require 'fileutils'
 
-describe Trinidad::Lifecycle::War do
+describe Trinidad::Lifecycle::WebApp::War do
+  
   before do
     @context = Trinidad::Tomcat::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
-    @listener = Trinidad::Lifecycle::War.new(Trinidad::WebApp.new({}, {}))
+    @listener = Trinidad::Lifecycle::WebApp::War.new(Trinidad::WebApp.new({}, {}))
   end
 
   it "configures the war classloader" do
-    @listener.configure_class_loader(@context)
+    @listener.send :configure_class_loader, @context
     @context.loader.should_not be nil
   end
 
@@ -24,12 +25,19 @@ describe Trinidad::Lifecycle::War do
         :log => 'INFO',
         :environment => 'test'
       })
-      listener = Trinidad::Lifecycle::War.new(app)
-      listener.configure_logging(@context)
+      listener = Trinidad::Lifecycle::WebApp::War.new(app)
+      listener.send :configure_logging, @context
 
       File.exist?('apps_base/foo/WEB-INF/log').should be true
     ensure
       FileUtils.rm_rf('apps_base')
     end
+  end
+  
+end
+
+describe "Trinidad::Lifecycle::War" do
+  it "still works" do
+    Trinidad::Lifecycle::War.should == Trinidad::Lifecycle::WebApp::War
   end
 end

@@ -1,5 +1,6 @@
 module Trinidad
   class WarWebApp < WebApp
+    
     def context_path
       super.gsub(/\.war$/, '')
     end
@@ -13,7 +14,8 @@ module Trinidad
     end
 
     def define_lifecycle
-      Trinidad::Lifecycle::War.new(self)
+      Trinidad::Lifecycle::WebApp::War.new(self)
     end
+    
   end
 end

@@ -9,5 +9,6 @@ module Trinidad
     end
 
     def context_listener; 'org.jruby.rack.rails.RailsServletContextListener'; end
+    
   end
 end

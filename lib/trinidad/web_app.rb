@@ -98,12 +98,16 @@ module Trinidad
       File.expand_path(self[:monitor] || 'tmp/restart.txt', work_dir)
     end
 
-    def define_lifecycle
-      Trinidad::Lifecycle::Default.new(self)
-    end
-
     def generate_class_loader
       @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
+    end
+    
+    def context_listener
+      raise NotImplementedError.new "context_listener expected to be redefined in subclass"
+    end
+    
+    def define_lifecycle
+      Trinidad::Lifecycle::WebApp::Default.new(self)
     end
 
     protected

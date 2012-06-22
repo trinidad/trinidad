@@ -156,7 +156,8 @@ describe Trinidad::Server do
     server = Trinidad::Server.new
     app_context = server.tomcat.host.find_child('/')
 
-    app_context.find_lifecycle_listeners.map {|l| l.class.name }.should include('Trinidad::Lifecycle::Default')
+    app_context.find_lifecycle_listeners.map {|l| l.class.name }.
+      should include('Trinidad::Lifecycle::WebApp::Default')
   end
 
   it "loads application extensions from the root of the configuration" do

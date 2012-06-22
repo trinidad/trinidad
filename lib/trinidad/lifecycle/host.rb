@@ -1,16 +1,16 @@
 module Trinidad
   module Lifecycle
-    class Host
-      include Trinidad::Tomcat::LifecycleListener
-
+    class Host < Base
+      
       attr_reader :server, :app_holders
+      alias_method :contexts, :app_holders # #deprecated (<= 1.3.5)
 
       # #server current server instance
       # #app_holders deployed web application holders
       def initialize(server, *app_holders)
         app_holders.map! do |app_holder|
           if app_holder.is_a?(Hash) # backwards compatibility
-            WebApp::Holder.new(app_holder[:app], app_holder[:context])
+            Trinidad::WebApp::Holder.new(app_holder[:app], app_holder[:context])
           else
             app_holder
           end
@@ -18,23 +18,21 @@ module Trinidad
         @server, @app_holders = server, app_holders
       end
       
-      def lifecycleEvent(event)
-        case event.type
-        when Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT
-          init_monitors
-        when Trinidad::Tomcat::Lifecycle::PERIODIC_EVENT
-          check_monitors
-        end
+      # @see Trinidad::Lifecycle::Base#before_start
+      def before_start(event)
+        init_monitors(event.lifecycle)
       end
 
-      # #deprecated backwards (<= 1.3.5) compatibility
-      alias_method :contexts, :app_holders
-      
-      def tomcat; @server.tomcat; end
+      # @see Trinidad::Lifecycle::Base#periodic
+      def periodic(event)
+        check_monitors(event.lifecycle)
+      end
+
+      def tomcat; @server.tomcat; end # for backwards compatibility
       
       protected
       
-      def init_monitors
+      def init_monitors(context)
         app_holders.each do |app_holder|
           monitor = app_holder.monitor
           opts = 'w+'
@@ -49,7 +47,7 @@ module Trinidad
         end
       end
 
-      def check_monitors
+      def check_monitors(context)
         app_holders.each do |app_holder|
           # double check monitor, capistrano removes it temporarily
           unless File.exist?(monitor = app_holder.monitor)
@@ -88,24 +86,23 @@ module Trinidad
         new_context
       end
       
-      class Takeover # :nodoc
-        include Trinidad::Tomcat::LifecycleListener
+      class Takeover < Base # :nodoc
 
         def initialize(context)
           @old_context = context
         end
 
-        def lifecycleEvent(event)
-          if event.type == Trinidad::Tomcat::Lifecycle::AFTER_START_EVENT
-            new_context = event.lifecycle
-            new_context.remove_lifecycle_listener(self) # GC old context
-            
-            @old_context.stop
-            @old_context.destroy
-            # NOTE: name might not be changed once added to a parent
-            new_context.name = @old_context.name
-          end
+        def after_start(event)
+          new_context = event.lifecycle
+          new_context.remove_lifecycle_listener(self) # GC old context
+
+          @old_context.stop
+          @old_context.destroy
+          # NOTE: name might not be changed once added to a parent
+          new_context.name = @old_context.name
+          super
         end
+        
       end
       
     end
