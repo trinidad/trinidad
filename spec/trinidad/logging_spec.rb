@@ -1,5 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
-require 'ostruct'
+require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Logging do
   
@@ -33,8 +32,6 @@ describe Trinidad::Logging do
 end
 
 describe Trinidad::Logging::Formatter do
-
-  JUL = Java::JavaUtilLogging
   
   it "formats time (according to local time zone)" do
     time = Time.local(2011, 2, 5, 13, 45, 22)
@@ -92,4 +89,10 @@ describe Trinidad::Logging::Formatter do
     format "%+03d%02d", offset, (offset * 100) % 100
   end
   
+end
+
+describe "Trinidad::LogFormatter" do
+  it "still works" do
+    Trinidad::LogFormatter.should == Trinidad::Logging::Formatter
+  end
 end

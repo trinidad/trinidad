@@ -1,9 +1,9 @@
-require File.dirname(__FILE__) + '/../spec_helper'
-require File.dirname(__FILE__) + '/fakeapp'
-include FileUtils
-include FakeApp
+require File.expand_path('../spec_helper', File.dirname(__FILE__))
+require 'fileutils'
 
 describe Trinidad::Server do
+  include FileUtils
+  include FakeApp
   
   JSystem = java.lang.System
   JContext = javax.naming.Context

@@ -1,9 +1,8 @@
-require File.dirname(__FILE__) + '/../spec_helper'
-require File.dirname(__FILE__) + '/fakeapp'
-
-include FakeApp
+require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::CommandLineParser do
+  include FakeApp
+  
   subject { Trinidad::CommandLineParser }
 
   it "overrides classes option" do

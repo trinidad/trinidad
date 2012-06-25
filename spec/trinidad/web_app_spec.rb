@@ -1,9 +1,7 @@
-require File.dirname(__FILE__) + '/../spec_helper'
-require File.dirname(__FILE__) + '/fakeapp'
-
-include FakeApp
+require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::WebApp do
+  include FakeApp
   
   it "exposes configuration via [] and readers" do
     config = { :classes_dir => 'classes', :libs_dir => 'vendor' }

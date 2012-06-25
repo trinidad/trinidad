@@ -1,31 +1,34 @@
-require File.dirname(__FILE__) + '/../../../spec_helper'
-require File.dirname(__FILE__) + '/../../fakeapp'
+require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Lifecycle::WebApp::Default do
   include FakeApp
   
   before do
-    @mock = mock
-    @mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
-    @mock.stubs(:lifecycle).returns(Trinidad::Tomcat::StandardContext.new)
-
     @tomcat = Trinidad::Tomcat::Tomcat.new
     @tomcat.host.app_base = Dir.pwd
     @context = Trinidad::Tomcat::StandardContext.new
   end
 
   it "ignores the event when it's not BEFORE_START_EVENT" do
+    mock = mock('event')
+    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
+    mock.stubs(:lifecycle).returns(Trinidad::Tomcat::StandardContext.new)
+    
     listener = Trinidad::Lifecycle::WebApp::Default.new(nil)
-    @mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_STOP_EVENT)
+    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_STOP_EVENT)
     lambda {
-      listener.lifecycleEvent(@mock)
+      listener.lifecycleEvent(mock)
     }.should_not raise_error
   end
 
   it "tries to initialize the context when the event is BEFORE_START_EVENT" do
+    mock = mock('event')
+    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
+    mock.stubs(:lifecycle).returns(Trinidad::Tomcat::StandardContext.new)
+    
     listener = Trinidad::Lifecycle::WebApp::Default.new(nil)
     lambda {
-      listener.lifecycleEvent(@mock)
+      listener.lifecycleEvent(mock)
     }.should raise_error
   end
 
