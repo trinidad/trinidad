@@ -65,8 +65,7 @@ module Trinidad
           add_application_java_classes(class_loader)
 
           loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
-          loader.container = context
-          context.loader = loader
+          context.loader = loader # does loader.container = context
         end
 
         def add_application_jars(class_loader)

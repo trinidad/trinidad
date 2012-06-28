@@ -70,7 +70,7 @@ describe Trinidad::Logging do
     it "creates the log file according with the environment if it doesn't exist" do
       web_app = create_mock_web_app :context_path => '/app1'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       logger.info "hello world!" # file creation might be lazy ...
@@ -84,7 +84,7 @@ describe Trinidad::Logging do
       
       web_app = create_mock_web_app :context_path => '/app2'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       logger.warning "watch out!" # file creation might be lazy ...
@@ -102,7 +102,7 @@ describe Trinidad::Logging do
       
       web_app = create_mock_web_app :context_path => '/app3', :environment => 'staging'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       logger.warning "watch out!" # file creation might be lazy ...
@@ -126,7 +126,7 @@ describe Trinidad::Logging do
       
       web_app = create_mock_web_app :context_path => '/app4', :environment => 'staging'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       logger.warning "me-he-he-he" # file creation might be lazy ...
@@ -138,7 +138,7 @@ describe Trinidad::Logging do
     it 'uses same logger as ServletContext#log by default (unless logger name specified)' do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
 
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       
@@ -154,7 +154,7 @@ describe Trinidad::Logging do
     it "configures application logging once" do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/bar'
       context = create_mock_web_app_context web_app.context_path
-      context.start
+      #context.start
 
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       handlers = logger.handlers.to_a
@@ -166,7 +166,8 @@ describe Trinidad::Logging do
     it "delegates logs to console (root logger) in development" do
       web_app = create_mock_web_app :environment => 'development', :context_path => '/foo2'
       context = create_mock_web_app_context web_app
-      context.start
+      #context.start
+      Trinidad::Logging.configure_web_app(web_app, context)
       
       root_logger = JUL::Logger.getLogger('')
       output = java.io.ByteArrayOutputStream.new
@@ -191,7 +192,8 @@ describe Trinidad::Logging do
     it "does not delegate logs to console (root logger) in non-development" do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo3'
       context = create_mock_web_app_context web_app
-      context.start
+      #context.start
+      Trinidad::Logging.configure_web_app(web_app, context)
       
       root_logger = JUL::Logger.getLogger('')
       output = java.io.ByteArrayOutputStream.new
@@ -209,7 +211,7 @@ describe Trinidad::Logging do
       output.toString.should == ''
     end
     
-    it "accepts configured logger name (from descriptor)" do
+    it "accepts configured logger name (from descriptor)", :integration => true do
       FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/logging-test.web.xml"
       begin
         create_config_file custom_web_xml, '' +
@@ -280,7 +282,9 @@ describe Trinidad::Logging do
     end
     
     def create_mock_web_app_context(web_app_or_context_path = '/')
-      create_web_app_context(MOCK_WEB_APP_DIR, web_app_or_context_path)
+      context = create_web_app_context(MOCK_WEB_APP_DIR, web_app_or_context_path)
+      context.loader = org.apache.catalina.loader.WebappLoader.new
+      context
     end
 
     def create_web_app_context(context_dir, web_app_or_context_path = '/')
