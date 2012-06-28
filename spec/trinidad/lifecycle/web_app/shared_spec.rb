@@ -12,7 +12,7 @@ describe Trinidad::Lifecycle::WebApp::Shared do
     @options = {
         :web_app_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO'
     }
-    @web_app = Trinidad::RailsWebApp.new({}, @options)
+    @web_app = Trinidad::WebApp.create({}, @options)
     @listener = ListenerImpl.new(@web_app)
   end
 

@@ -1,4 +1,5 @@
 require 'jruby'
+require 'fileutils'
 
 module Trinidad
   module Logging
@@ -11,29 +12,32 @@ module Trinidad
     def self.configure(log_level = nil)
       return false if @@configured
       
-      root_logger = JUL::Logger.get_logger('')
+      root_logger = JUL::Logger.getLogger('')
       level = parse_log_level(log_level, :INFO)
 
       out_handler  = JUL::ConsoleHandler.new
-      out_handler.set_output_stream JRuby.runtime.out
+      out_handler.setOutputStream JRuby.runtime.out
+      out_handler.formatter = new_formatter
 
       err_handler  = JUL::ConsoleHandler.new
-      err_handler.set_output_stream JRuby.runtime.err
+      err_handler.setOutputStream JRuby.runtime.err
+      err_handler.formatter = new_formatter
+      err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
+        level : JUL::Level::WARNING # only >= WARNING on STDERR
       
-      root_logger.handlers.to_a.each do |handler|
-        root_logger.remove_handler(handler) if handler.is_a?(JUL::ConsoleHandler)
+      root_logger.synchronized do
+        root_logger.handlers.to_a.each do |handler|
+          root_logger.remove_handler(handler) if handler.is_a?(JUL::ConsoleHandler)
+        end
+
+        root_logger.add_handler(out_handler)
+        root_logger.add_handler(err_handler)
+        root_logger.level = level
       end
-      
-      root_logger.add_handler(out_handler)
-      root_logger.add_handler(err_handler)
-      root_logger.handlers.each do |handler|
-        handler.level = level
-        handler.formatter = new_formatter
-      end
-      root_logger.level = level
       adjust_tomcat_loggers
       
       @@configured = true
+      root_logger
     end
     
     # Force logging (re-)configuration.
@@ -45,22 +49,36 @@ module Trinidad
     
     # Configure logging for a web application.
     def self.configure_web_app(web_app, context)
-      level = parse_log_level(web_app.log, :INFO)
-
-      log_path = File.join(web_app.work_dir, 'log', "#{web_app.environment}.log")
-      log_file = java.io.File.new(log_path)
-
-      unless log_file.exists
-        log_file.parent_file.mkdirs
-        log_file.create_new_file
+      param_name, param_value = 'jruby.rack.logging', 'JUL'
+      # 1. delegate (jruby-rack) servlet log to JUL
+      if set_value = context.find_parameter(param_name)
+        return nil if set_value.upcase != param_value
+      else
+        context.add_parameter(param_name, param_value)
       end
-
-      logger = JUL::Logger.get_logger("")
-      file_handler = JUL::FileHandler.new(log_path, true)
-      logger.add_handler(file_handler)
-      file_handler.level = level
+      # 2. use Tomcat's JUL logger name (unless set) :
+      param_name = 'jruby.rack.logging.name'
+      unless logger_name = context.find_parameter(param_name)
+        # for a context path e.g. '/foo' most likely smt of the following :
+        # org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
+        context.add_parameter(param_name, logger_name = context.send(:logName))
+      end
+      configure # make sure 'global' logging if configured
+      
+      logger = JUL::Logger.getLogger(logger_name) # exclusive for web app
+      # avoid duplicate calls - do not configure our FileHandler twice :
+      return false if logger.handlers.find { |h| h.is_a?(FileHandler) }
+      level = parse_log_level(web_app.log, nil)
+      logger.level = level # inherits level from parent if nil
+      # delegate to root (console) output only in development mode :
+      logger.use_parent_handlers = ( web_app.environment == 'development' )
+      
+      prefix, suffix = web_app.environment, '.log' # {prefix}{date}{suffix}
+      file_handler = FileHandler.new(web_app.log_dir, prefix, suffix)
+      file_handler.rotatable = true # {prefix}{date}{suffix}
       file_handler.formatter = new_formatter
-      logger.level = level
+      logger.add_handler(file_handler)
+      logger
     end
     
     def self.new_formatter
@@ -76,7 +94,7 @@ module Trinidad
         log_level = { # try mapping common level names to JUL names
           'ERROR' => 'SEVERE', 'WARN' => 'WARNING', 'DEBUG' => 'FINE' 
         }[log_level]
-        log_level = default ? default.to_s.upcase : nil
+        log_level = default ? default.to_s.upcase : nil unless log_level
       end
       JUL::Level.parse(log_level) if log_level
     end
@@ -91,6 +109,80 @@ module Trinidad
       logger.level = JUL::Level::WARNING if logger
       logger = JUL::Logger.get_logger('org.apache.catalina.startup.ContextConfig')
       logger.level = JUL::Level::WARNING if logger
+    end
+    
+    # we'd achieve logging to a production.log file while rotating it (daily)
+    class FileHandler < Java::OrgApacheJuli::FileHandler # :nodoc
+      
+      field_reader :directory, :prefix, :suffix
+      field_accessor :rotatable, :bufferSize => :buffer_size
+      
+      # JULI::FileHandler internals :
+      field_accessor :date => :_date # current date string e.g. 2012-06-26
+      
+      def initialize(directory, prefix, suffix)
+        super(directory, prefix, suffix)
+        self._date = '' # to openWriter on first #publish(record)
+      end
+      
+      def openWriter
+        # NOTE: following code is heavily based on super's internals !
+        synchronized do
+          # we're normally in the lock here (from #publish) 
+          # thus we do not perform any more synchronization
+          prev_rotatable = self.rotatable
+          begin
+            self.rotatable = false
+            # thus current file name will be always {prefix}{suffix} :
+            # due super's `prefix + (rotatable ? _date : "") + suffix`
+            super
+          ensure
+            self.rotatable = prev_rotatable
+          end
+        end
+      end
+
+      def close
+        @_close = true
+        super
+        @_close = nil
+      end
+      
+      def closeWriter
+        super
+        # the additional trick here is to rotate the closed file
+        synchronized do
+          # we're normally in the lock here (from #publish) 
+          # thus we do not perform any more synchronization
+          dir = java.io.File.new(directory).getAbsoluteFile
+          log = java.io.File.new(dir, prefix + "" + suffix)
+          if log.exists
+            date = _date
+            if date.empty?
+              date = log.lastModified
+              # we're abuse Timestamp to get a date formatted !
+              # just like the super does internally (just in case)
+              date = java.sql.Timestamp.new(date).toString[0, 10]
+            end
+            today = java.lang.System.currentTimeMillis
+            today = java.sql.Timestamp.new(today).toString[0, 10]
+            return if date == today # no need to rotate just yet
+            to_file = java.io.File.new(dir, prefix + date + suffix)
+            if to_file.exists
+              file = java.io.RandomAccessFile.new(to_file, 'rw')
+              file.seek(file.length)
+              log_channel = java.io.FileInputStream.new(log).getChannel
+              log_channel.transferTo(0, log_channel.size, file.getChannel)
+              file.close
+              log_channel.close
+              log.delete
+            else
+              log.renameTo(to_file)
+            end
+          end
+        end if rotatable && ! @_close
+      end
+      
     end
     
     class Formatter < JUL::Formatter

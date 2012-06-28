@@ -196,9 +196,9 @@ describe Trinidad::Server do
 
   it "loads several applications if the option :apps_base is present" do
     begin
-      Dir.mkdir('apps_base')
-      cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
+      mkdir 'apps_base'
       cp_r MOCK_WEB_APP_DIR, 'apps_base/test1'
+      cp_r MOCK_WEB_APP_DIR, 'apps_base/test2'
 
       server = Trinidad::Server.new({ :apps_base => 'apps_base' })
       server.tomcat.host.find_children.should have(2).web_apps
@@ -209,7 +209,7 @@ describe Trinidad::Server do
 
   it "loads rack apps from the app_base directory" do
     begin
-      Dir.mkdir('apps_base')
+      mkdir 'apps_base'
       cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
 
       server = Trinidad::Server.new({ :apps_base => 'apps_base' })

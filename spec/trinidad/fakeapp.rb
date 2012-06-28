@@ -1,14 +1,14 @@
 require 'fakefs/safe'
 module FakeApp
   def create_default_config_file
-    @default ||= config_file 'config/trinidad.yml', <<-EOF
+    @default ||= create_config_file 'config/trinidad.yml', <<-EOF
 ---
   port: 8080
 EOF
   end
 
   def create_custom_config_file
-    @custom ||= config_file 'config/tomcat.yml', <<-EOF
+    @custom ||= create_config_file 'config/tomcat.yml', <<-EOF
 ---
   environment: production
   ajp:
@@ -18,14 +18,14 @@ EOF
   end
 
   def create_erb_config_file
-    @default ||= config_file 'config/trinidad.yml', <<-EOF
+    @default ||= create_config_file 'config/trinidad.yml', <<-EOF
 ---
   port: <%= 4100 + 4200 %>
 EOF
   end
 
   def create_rails_web_xml
-    @rails_web_xml ||= config_file 'config/web.xml', <<-EOF
+    @rails_web_xml ||= create_config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns="http://java.sun.com/xml/ns/j2ee"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -54,7 +54,7 @@ EOF
   end
 
   def create_rackup_web_xml
-    @rackup_web_xml ||= config_file 'config/web.xml', <<-EOF
+    @rackup_web_xml ||= create_config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app>
     <context-param>
@@ -86,7 +86,7 @@ EOF
   end
 
   def create_rackup_file(path = 'config')
-    @rackup ||= config_file File.join(path, 'config.ru'), <<-EOF
+    @rackup ||= create_config_file File.join(path, 'config.ru'), <<-EOF
 require 'rubygems'
 require 'sinatra'
 
@@ -95,7 +95,7 @@ EOF
   end
 
   def create_rails_web_xml_with_rack_servlet_commented_out
-    config_file 'config/web.xml', <<-EOF
+    create_config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app>
     <!--
@@ -119,7 +119,7 @@ EOF
   end
 
   def create_rackup_web_xml_with_jruby_runtime_parameters_commented_out
-    config_file 'config/web.xml', <<-EOF
+    create_config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app>
     <!--
@@ -152,7 +152,7 @@ EOF
   end
 
   def create_rails_web_xml_formatted_incorrectly
-    config_file 'config/web.xml', <<-EOF
+    create_config_file 'config/web.xml', <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app>
     <servlet>
@@ -174,21 +174,22 @@ EOF
   end
 
   def create_rails_environment(env = 'environment.rb')
-    config_file "config/#{env}", <<-EOF
+    create_config_file "config/#{env}", <<-EOF
     config.threadsafe!
 EOF
   end
 
   def create_rails_environment_non_threadsafe(env = 'environment.rb')
-    config_file "config/#{env}", <<-EOF
+    create_config_file "config/#{env}", <<-EOF
     # config.threadsafe!
 EOF
   end
 
-  private
-  def config_file(path, content)
+  protected
+  def create_config_file(path, content)
     dir = File.dirname(path)
     Dir.mkdir(dir) unless File.exist?(dir)
     File.open(path, 'w') {|io| io.write(content) }
   end
+  
 end

@@ -1,6 +1,7 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Logging do
+  include FakeApp
   
   JUL = Java::JavaUtilLogging
   
@@ -23,12 +24,279 @@ describe Trinidad::Logging do
     logger.level.should == JUL::Level::WARNING
     handlers = logger.handlers.select { |handler| handler.is_a?(JUL::ConsoleHandler) }
     handlers.size.should == 2
-    handlers.each { |handler| handler.level.should == logger.level }
-    handlers.each { |handler| handler.formatter.should be_a Trinidad::Logging::Formatter }
   end
   
   after { Trinidad.configuration = nil }
+
+  it "uses the specified log level when it's valid" do
+    Trinidad::Logging.configure!('WARNING')
+
+    logger = java.util.logging.Logger.getLogger("")
+    logger.level.to_s.should == 'WARNING'
+    
+    Trinidad::Logging.configure!('DEBUG')
+
+    logger = java.util.logging.Logger.getLogger("")
+    logger.level.to_s.should == 'FINE'
+  end
+
+  it "uses INFO as default log level when it's invalid" do
+    Trinidad::Logging.configure!('FOO')
+
+    logger = java.util.logging.Logger.getLogger("")
+    logger.level.to_s.should == 'INFO'
+  end
+
+  it "does not reconfigure twice if not forced ..." do
+    Trinidad::Logging.configure!('WARNING')
+    Trinidad::Logging.configure('SEVERE')
+
+    logger = java.util.logging.Logger.getLogger("")
+    logger.level.to_s.should == 'WARNING'
+  end
   
+  # web-app logger configuration :
+  
+  context "web-app" do
+    
+    let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
+    let(:context) { Trinidad::Tomcat::StandardContext.new }
+    
+    before { FileUtils.rm Dir.glob("#{MOCK_WEB_APP_DIR}/log/*") }
+    after do 
+      tomcat.stop if tomcat.server.state_name =~ /START/i
+    end
+    
+    it "creates the log file according with the environment if it doesn't exist" do
+      web_app = create_mock_web_app :context_path => '/app1'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      logger.info "hello world!" # file creation might be lazy ...
+      
+      File.exist?(File.join(MOCK_WEB_APP_DIR, 'log', 'production.log')).should be true
+      Dir.glob("#{MOCK_WEB_APP_DIR}/log/*").size.should == 1
+    end
+
+    it "appends the log file if it exists" do
+      File.open("#{MOCK_WEB_APP_DIR}/log/production.log", 'w') { |f| f << "42\n" }
+      
+      web_app = create_mock_web_app :context_path => '/app2'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      logger.warning "watch out!" # file creation might be lazy ...
+      
+      log_content = File.read("#{MOCK_WEB_APP_DIR}/log/production.log")
+      
+      log_content[0, 3].should == "42\n"
+      log_content[3..-1].should =~ /.*?WARNING.*?watch out!$/
+    end
+    
+    it "rotates an old log file" do
+      File.open("#{MOCK_WEB_APP_DIR}/log/staging.log", 'w') { |f| f << "old entry\n" }
+      yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
+      java.io.File.new("#{MOCK_WEB_APP_DIR}/log/staging.log").setLastModified(yesterday_ms)
+      
+      web_app = create_mock_web_app :context_path => '/app3', :environment => 'staging'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      logger.warning "watch out!" # file creation might be lazy ...
+      
+      log_content = File.read("#{MOCK_WEB_APP_DIR}/log/staging.log")
+      
+      log_content[0, 3].should_not == "old"
+      log_content.should =~ /.*?WARNING.*?watch out!$/
+      
+      y_date = yesterday.strftime '%Y-%m-%d'
+      File.exist?("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should be true
+      File.read("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should == "old entry\n"
+    end
+    
+    it "rotates and merges an old log file" do
+      File.open("#{MOCK_WEB_APP_DIR}/log/staging.log", 'w') { |f| f << "old entry\n" }
+      yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
+      y_date = yesterday.strftime '%Y-%m-%d'
+      java.io.File.new("#{MOCK_WEB_APP_DIR}/log/staging.log").setLastModified(yesterday_ms)
+      File.open("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log", 'w') { |f| f << "very old entry\n" }
+      
+      web_app = create_mock_web_app :context_path => '/app4', :environment => 'staging'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      logger.warning "me-he-he-he" # file creation might be lazy ...
+      
+      File.exist?("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should be true
+      File.read("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should == "very old entry\nold entry\n"
+    end
+    
+    it 'uses same logger as ServletContext#log by default (unless logger name specified)' do
+      web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      
+      context.getServletContext.log "szia!"
+      context.getServletContext.log "hola!", java.lang.RuntimeException.new
+      
+      log_content = File.read("#{MOCK_WEB_APP_DIR}/log/staging.log")
+      log_content.split("\n")[0].should =~ /^.*?INFO: szia!/
+      log_content.split("\n")[1].should =~ /^.*?SEVERE: hola!/
+      log_content.split("\n")[2..-1].join("\n").should =~ /java\.lang\.RuntimeException.*?/
+    end
+    
+    it "configures application logging once" do
+      web_app = create_mock_web_app :environment => 'staging', :context_path => '/bar'
+      context = create_mock_web_app_context web_app.context_path
+      context.start
+
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      handlers = logger.handlers.to_a
+
+      Trinidad::Logging.configure_web_app(web_app, context).should be false
+      JUL::Logger.getLogger(logger.name).handlers.to_a.should == handlers
+    end
+
+    it "delegates logs to console (root logger) in development" do
+      web_app = create_mock_web_app :environment => 'development', :context_path => '/foo2'
+      context = create_mock_web_app_context web_app
+      context.start
+      
+      root_logger = JUL::Logger.getLogger('')
+      output = java.io.ByteArrayOutputStream.new
+      #root_logger.handlers.to_a.each do |handler|
+      #  root_logger.removeHandler(handler) if handler.is_a?(JUL::ConsoleHandler)
+      #end
+      handler = JUL::StreamHandler.new
+      handler.setOutputStream(output)
+      handler.formatter = org.apache.juli.VerbatimFormatter.new
+      root_logger.addHandler(handler)
+
+      context.logger.info 'hello there 1' # a Log instance
+      logger = JUL::Logger.getLogger(context.send(:logName))
+      logger.warning 'red alert 1'
+
+      handler.flush
+
+      output.toString.split("\n")[0].should == 'hello there 1'
+      output.toString.split("\n")[1].should == 'red alert 1'
+    end
+
+    it "does not delegate logs to console (root logger) in non-development" do
+      web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo3'
+      context = create_mock_web_app_context web_app
+      context.start
+      
+      root_logger = JUL::Logger.getLogger('')
+      output = java.io.ByteArrayOutputStream.new
+      handler = JUL::StreamHandler.new
+      handler.setOutputStream(output)
+      handler.formatter = org.apache.juli.VerbatimFormatter.new
+      root_logger.addHandler(handler)
+
+      context.logger.info 'hello there 2' # a Log instance
+      logger = JUL::Logger.getLogger(context.send(:logName))
+      logger.warning 'red alert 2'
+
+      handler.flush
+
+      output.toString.should == ''
+    end
+    
+    it "accepts configured logger name (from descriptor)" do
+      FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/logging-test.web.xml"
+      begin
+        create_config_file custom_web_xml, '' +
+          '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<web-app>' +
+          '  <context-param>' +
+          '    <param-name>jruby.rack.logging.name</param-name>' +
+          '    <param-value>MyApp.Logger.Name</param-value>' +
+          '  </context-param>' +
+          '</web-app>'
+        web_app = Trinidad::WebApp.create({}, {
+          :context_path => '/',
+          :web_app_dir => MOCK_WEB_APP_DIR,
+          :default_web_xml => 'config/logging-test.web.xml',
+          :log => 'ALL'
+        })
+        context = create_mock_web_app_context web_app.context_path
+        context.setDefaultWebXml web_app.default_deployment_descriptor
+        context.start
+        
+        Trinidad::Logging.configure_web_app(web_app, context)
+
+        log_manager = JUL::LogManager.getLogManager
+        log_manager.getLoggerNames.to_a.should include('MyApp.Logger.Name')
+        
+        app_logger = JUL::Logger.getLogger('MyApp.Logger.Name')
+        app_logger.level.to_s.should == 'ALL'
+      ensure
+        FileUtils.rm custom_web_xml
+      end
+    end
+    
+    it "logs with a Rails application via Rails.logger", :integration => true do
+      FileUtils.rm Dir.glob("#{RAILS_WEB_APP_DIR}/log/*")
+      FileUtils.touch logging_test_rb = "#{RAILS_WEB_APP_DIR}/config/initializers/logging_test.rb"
+      begin
+        File.open(logging_test_rb, 'w') do |f| 
+          f << "Rails.logger.debug 'this should not be logged on production'\n"
+          f << "Rails.logger.info 'this should be logged ...'\n"
+        end
+        
+        web_app = Trinidad::WebApp.create({}, { 
+            :context_path => '/rails', 
+            :web_app_dir => RAILS_WEB_APP_DIR, 
+            :environment => 'production' }
+        )
+        context = create_web_app_context(RAILS_WEB_APP_DIR, web_app)
+        context.start
+        
+        log_content = File.read("#{RAILS_WEB_APP_DIR}/log/production.log")
+        # [jruby-rack] production.rb is config.threadsafe! :
+        log_content.should =~ /using a shared \(threadsafe!\) runtime/
+        log_content.should =~ /INFO: this should be logged .../
+        log_content.should_not =~ /this should not be logged on production/
+      ensure
+        FileUtils.rm logging_test_rb
+      end
+    end
+    
+    private
+    
+    def create_mock_web_app(config = {})
+      Trinidad::WebApp.create({}, { 
+          :context_path => '/', 
+          :web_app_dir => MOCK_WEB_APP_DIR, 
+          :environment => 'production' }.merge(config)
+      )
+    end
+    
+    def create_mock_web_app_context(web_app_or_context_path = '/')
+      create_web_app_context(MOCK_WEB_APP_DIR, web_app_or_context_path)
+    end
+
+    def create_web_app_context(context_dir, web_app_or_context_path = '/')
+      context_path, lifecycle = web_app_or_context_path, nil
+      if web_app_or_context_path.is_a?(Trinidad::WebApp)
+        context_path = web_app_or_context_path.context_path
+        lifecycle = web_app_or_context_path.define_lifecycle
+      end
+      context = tomcat.addWebapp(context_path, context_dir)
+      context_config = org.apache.catalina.startup.ContextConfig.new
+      context.addLifecycleListener context_config
+      context.addLifecycleListener lifecycle if lifecycle
+      context
+    end
+    
+  end
 end
 
 describe Trinidad::Logging::Formatter do
