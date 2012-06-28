@@ -17,11 +17,11 @@ module Trinidad
 
       out_handler  = JUL::ConsoleHandler.new
       out_handler.setOutputStream JRuby.runtime.out
-      out_handler.formatter = new_formatter
+      out_handler.formatter = console_formatter
 
       err_handler  = JUL::ConsoleHandler.new
       err_handler.setOutputStream JRuby.runtime.err
-      err_handler.formatter = new_formatter
+      err_handler.formatter = console_formatter
       err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
         level : JUL::Level::WARNING # only >= WARNING on STDERR
       
@@ -76,14 +76,20 @@ module Trinidad
       prefix, suffix = web_app.environment, '.log' # {prefix}{date}{suffix}
       file_handler = FileHandler.new(web_app.log_dir, prefix, suffix)
       file_handler.rotatable = true # {prefix}{date}{suffix}
-      file_handler.formatter = new_formatter
+      file_handler.formatter = web_app_formatter
       logger.add_handler(file_handler)
       logger
     end
     
-    def self.new_formatter
+    protected
+    
+    def self.console_formatter
+      MessageFormatter.new
+    end
+    
+    def self.web_app_formatter
       # format used by Rails "2012-06-13 16:42:21 +0200"
-      Formatter.new("yyyy-MM-dd HH:mm:ss Z")
+      DefaultFormatter.new("yyyy-MM-dd HH:mm:ss Z")
     end
     
     private
@@ -185,8 +191,54 @@ module Trinidad
       
     end
     
-    class Formatter < JUL::Formatter
+    # We're truly missing a #formatThrown exception helper method.
+    JUL::Formatter.class_eval do
+      
+      LINE_SEP = java.lang.System.getProperty("line.separator")
+      
+      protected
+      def formatThrown(record)
+        if record.thrown
+          writer = java.io.StringWriter.new(1024)
+          print_writer = java.io.PrintWriter.new(writer)
+          print_writer.println
+          record.thrown.printStackTrace(print_writer)
+          print_writer.close
+          return writer.toString
+        end
+      end
+      
+    end
+    
+    # A message formatter only prints the log message (and the thrown value).
+    class MessageFormatter < JUL::Formatter # :nodoc
+      
+      def format(record)
+        msg = formatMessage(record)
+        msg << formatThrown(record).to_s
+        # since we're going to print Rails.logger logs and they tend
+        # to already have the ending "\n" handle such cases nicely :
+        if web_app_path(record.getLoggerName)
+          (lns = LINE_SEP) == msg[-1, 1] ? msg : msg << lns
+        else
+          msg << LINE_SEP
+        end
+      end
+      
+      # e.g. org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
+      WEB_APP_LOGGER_NAME = /org\.apache\.catalina\.core\.ContainerBase.*?\[(\/.*?)\]$/
+      
+      private
+      def web_app_path(name)
+        ( match = (name || '').match(WEB_APP_LOGGER_NAME) ) && match[1]
+      end
+      
+    end
+    
+    # A formatter that formats application file logs (e.g. production.log).
+    class DefaultFormatter < JUL::Formatter # :nodoc
 
+      # Allows customizing the date format + the time zone to be used.
       def initialize(format = nil, time_zone = nil)
         super()
         @format = format ? 
@@ -207,7 +259,6 @@ module Trinidad
             @format.time_zone = time_zone
           end
         end if time_zone
-        @writer = java.io.StringWriter.new
       end
 
       JDate = Java::JavaUtil::Date
@@ -221,23 +272,10 @@ module Trinidad
 
         out = "#{timestamp} #{level}: #{message}"
         out << formatThrown(record).to_s
-        (lnb = "\n") == out[-1, 1] ? out : out << lnb
-      end
-
-      private
-
-      def formatThrown(record)
-        @writer.synchronized do
-          @writer.getBuffer.setLength(0)
-          print_writer = java.io.PrintWriter.new(@writer)
-          print_writer.println
-          record.thrown.printStackTrace(print_writer)
-          print_writer.close
-          return @writer.toString
-        end if record.thrown
+        (lns = "\n") == out[-1, 1] ? out : out << lns
       end
 
     end
   end
-  LogFormatter = Logging::Formatter # backwards compatibility
+  LogFormatter = Logging::DefaultFormatter # backwards compatibility
 end

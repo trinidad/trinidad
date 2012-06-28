@@ -303,7 +303,7 @@ describe Trinidad::Logging do
   end
 end
 
-describe Trinidad::Logging::Formatter do
+describe Trinidad::Logging::DefaultFormatter do
   
   it "formats time (according to local time zone)" do
     time = Time.local(2011, 2, 5, 13, 45, 22)
@@ -353,7 +353,7 @@ describe Trinidad::Logging::Formatter do
   private
   
   def new_formatter(*args)
-    Trinidad::Logging::Formatter.new(*args)
+    Trinidad::Logging::DefaultFormatter.new(*args)
   end
   
   def time_offset(time)
@@ -363,8 +363,46 @@ describe Trinidad::Logging::Formatter do
   
 end
 
+describe Trinidad::Logging::MessageFormatter do
+
+  it "logs message" do
+    record = JUL::LogRecord.new JUL::Level::SEVERE, nil
+    record.message = "Bazinga!"
+    
+    new_formatter.format(record).should == "Bazinga!\n"
+  end
+  
+  it "does not add new line to message for application logger" do
+    record = JUL::LogRecord.new JUL::Level::INFO, msg = "basza meg a zold tucsok\n"
+    record.millis = java.lang.System.current_time_millis
+    record.logger_name = 'org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/]'
+    
+    new_formatter.format(record).should == "basza meg a zold tucsok\n"
+  end
+  
+  it "prints thrown exception if present" do
+    record = JUL::LogRecord.new JUL::Level::SEVERE, nil
+    record.message = "Bazinga!"
+    record.thrown = java.lang.RuntimeException.new("42")
+    
+    formatter = new_formatter
+    formatter.format(record).should =~ /Bazinga!\n/
+    lines = formatter.format(record).split("\n")
+    lines[1].should == 'java.lang.RuntimeException: 42'
+    lines.size.should > 3
+    lines[2...-1].each { |line| line.should =~ /at .*?(.*?)/ } # at org.jruby.RubyProc.call(RubyProc.java:270)
+  end
+  
+  private
+  
+  def new_formatter
+    Trinidad::Logging::MessageFormatter.new
+  end
+  
+end
+
 describe "Trinidad::LogFormatter" do
   it "still works" do
-    Trinidad::LogFormatter.should == Trinidad::Logging::Formatter
+    Trinidad::LogFormatter.should == Trinidad::Logging::DefaultFormatter
   end
 end
