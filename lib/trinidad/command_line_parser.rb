@@ -1,6 +1,4 @@
 module Trinidad
-  require 'optparse'
-
   class CommandLineParser
     attr_reader :default_options
 
@@ -30,21 +28,16 @@ module Trinidad
     def load!(options)
       base_dir = options[:web_app_dir] || Dir.pwd
       config = options.delete(:config) || Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
-      if config and config = File.expand_path(config, base_dir)
+      if config && config = File.expand_path(config, base_dir)
         if yaml_configuration?(config)
-          require 'yaml'
-          require 'erb'
+          require 'yaml'; require 'erb'
           config_options = YAML.load(ERB.new(File.read(config)).result(binding))
-          options.deep_merge!(config_options.symbolize!)
         end
       end
 
-      Trinidad.configure(options)
-      if ruby_configuration?(config)
-        load config
-      end
-
-      options
+      outcome = Trinidad.configure(options, config_options)
+      load config if ruby_configuration?(config)
+      outcome
     end
     alias_method :load_configuration, :load!
 
@@ -57,76 +50,77 @@ module Trinidad
     end
 
     def options_parser
+      require 'optparse'
       @parser ||= OptionParser.new do |opts|
         opts.banner = 'Trinidad server default options:'
         opts.separator ''
 
-        opts.on('-d', '--dir WEB_APP_DIRECTORY', 'Web app directory path',
+        opts.on('-d', '--dir WEB_APP_DIRECTORY', 'web app directory path',
             "default: #{Dir.pwd}") do |v|
           default_options[:web_app_dir] = v
         end
 
-        opts.on('-e', '--env ENVIRONMENT', 'Rails environment',
+        opts.on('-e', '--env ENVIRONMENT', '(rails) environment',
             "default: #{default_options[:environment]}") do |v|
           default_options[:environment] = v
         end
 
-        opts.on('-p', '--port PORT', 'Port to bind to',
+        opts.on('-p', '--port PORT', 'port to bind to',
             "default: #{default_options[:port]}") do |v|
           default_options[:port] = v
         end
 
-        opts.on('-c', '--context CONTEXT_PATH', 'The application context path',
+        opts.on('-c', '--context CONTEXT_PATH', 'application context path',
             "default: #{default_options[:context_path]}") do |v|
           default_options[:context_path] = v
         end
 
-        opts.on('--lib', '--jars LIBS_DIR', 'Directory containing jars used by the application',
+        opts.on('--lib', '--jars LIBS_DIR', 'directory containing jars used by the application',
             "default: #{default_options[:libs_dir]}") do |v|
           default_options[:libs_dir] = v
         end
 
-        opts.on('--classes', '--classes CLASSES_DIR', 'Directory containing classes used by the application',
+        opts.on('--classes', '--classes CLASSES_DIR', 'directory containing classes used by the application',
             "default: #{default_options[:classes_dir]}") do |v|
           default_options[:classes_dir] = v
         end
 
-        opts.on('-s', '--ssl [SSL_PORT]', 'Enable secure socket layout',
+        opts.on('-s', '--ssl [SSL_PORT]', 'enable secure socket layout',
             "default port: 8443") do |v|
           ssl_port = v.nil? ? 8443 : v.to_i
           default_options[:ssl] = {:port => ssl_port}
         end
 
-        opts.on('-a', '--ajp [AJP_PORT]', 'Enable ajp connections',
+        opts.on('-a', '--ajp [AJP_PORT]', 'enable ajp connections',
             "default port: 8009") do |v|
           ajp_port = v.nil? ? 8009 : v.to_i
           default_options[:ajp] = {:port => ajp_port}
         end
 
-        opts.on('-f', '--config [CONFIG_FILE]', 'Configuration file',
+        opts.on('-f', '--config [CONFIG_FILE]', 'configuration file',
             "default: config/trinidad.yml") do |file|
           default_options[:config] = file || 'config/trinidad.yml'
         end
 
-        opts.on('-r', '--rackup [RACKUP_FILE]', 'Rackup configuration file',
+        opts.on('-r', '--rackup [RACKUP_FILE]', 'rackup configuration file',
             'default: config.ru') do |v|
           default_options[:rackup] = v || 'config.ru'
         end
 
-        opts.on('--public', '--public DIRECTORY', 'Public directory', 'default: public') do |v|
+        opts.on('--public', '--public DIRECTORY', 'public directory', 'default: public') do |v|
           default_options[:public] = v
         end
 
-        opts.on('-t', '--threadsafe', 'Threadsafe mode') do
+        opts.on('-t', '--threadsafe', 'thread-safe mode') do
           default_options[:jruby_min_runtimes] = 1
           default_options[:jruby_max_runtimes] = 1
         end
 
-        opts.on('--address', '--address ADDRESS', 'Trinidad host address', 'default: localhost') do |v|
+        opts.on('--address', '--address ADDRESS', 'host address', 'default: localhost') do |v|
           default_options[:address] = v
         end
 
-        opts.on('-g', '--log LEVEL', 'Log level', 'default: INFO') do |v|
+        opts.on('-g', '--log LEVEL', 'log level', 'default: INFO') do |v|
           default_options[:log] = v
         end
 
@@ -148,12 +142,13 @@ module Trinidad
         opts.on('--monitor' '--monitor MONITOR_FILE', 'monitor file for hot deployments') do |monitor|
           default_options[:monitor] = monitor
         end
-
+        
         opts.on('-h', '--help', 'display the help') do
           puts opts
           exit
         end
       end
     end
+    
   end
 end

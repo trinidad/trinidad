@@ -221,7 +221,7 @@ module Trinidad
     private
     
     def add_default_web_app!(config)
-      if (!config[:web_apps] && !config[:apps_base] && !config[:hosts])
+      if !config[:web_apps] && !config[:apps_base] && !config[:hosts]
         default_app = {
           :context_path => config[:context_path],
           :web_app_dir => config[:web_app_dir] || Dir.pwd,

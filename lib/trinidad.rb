@@ -3,7 +3,6 @@ require 'java'
 require 'jruby-rack'
 
 require 'trinidad/version'
-require 'trinidad/core_ext'
 require 'trinidad/extensions'
 require 'trinidad/configuration'
 require 'trinidad/command_line_parser'
