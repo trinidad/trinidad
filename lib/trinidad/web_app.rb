@@ -32,7 +32,8 @@ module Trinidad
     end
     
     %w{ context_path web_app_dir libs_dir classes_dir default_web_xml async_supported 
-        jruby_min_runtimes jruby_max_runtimes jruby_compat_version rackup log }.each do |method|
+        jruby_min_runtimes jruby_max_runtimes jruby_compat_version rackup log 
+        reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
 

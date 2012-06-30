@@ -64,51 +64,21 @@ module Trinidad
         end
       end
 
+      autoload :RestartReload, 'trinidad/lifecycle/host/restart_reload'
+      autoload :RollingReload, 'trinidad/lifecycle/host/rolling_reload'
+      
+      RELOAD_STRATEGIES = {
+        :default => :RestartReload,
+        :restart => :RestartReload,
+        :rolling => :RollingReload,
+      }
+      
       def reload_application!(app_holder)
-        app_holder.context = takeover_application_context(app_holder)
-
-        Thread.new do
-          begin
-            app_holder.context.start
-          ensure
-            app_holder.unlock
-          end
-        end
-        false # not yet reloaded do not release lock
-      end
-      
-      private
-      
-      def takeover_application_context(app_holder)
-        web_app, old_context = app_holder.web_app, app_holder.context
-        
-        web_app.generate_class_loader # use new class loader for application
-        no_host = org.apache.catalina.Host.impl {} # do not add to parent yet
-        new_context = server.add_web_app(web_app, no_host)
-        new_context.add_lifecycle_listener(Takeover.new(old_context))
-
-        old_context.parent.add_child new_context # add to parent TODO starts!
-
-        new_context
-      end
-      
-      class Takeover < Base # :nodoc
-
-        def initialize(context)
-          @old_context = context
-        end
-
-        def after_start(event)
-          new_context = event.lifecycle
-          new_context.remove_lifecycle_listener(self) # GC old context
-
-          @old_context.stop
-          @old_context.destroy
-          # NOTE: name might not be changed once added to a parent
-          new_context.name = @old_context.name
-          super
-        end
-        
+        strategy = (app_holder.web_app.reload_strategy || :default).to_sym
+        strategy = RELOAD_STRATEGIES[ strategy ]
+        strategy = strategy ? self.class.const_get(strategy) : RestartReload
+        strategy.instance_method(:initialize).arity != 0 ?
+          strategy.new(server).reload!(app_holder) : strategy.new.reload!(app_holder)
       end
       
     end
