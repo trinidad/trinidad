@@ -32,8 +32,8 @@ module Trinidad
     end
     
     %w{ context_path web_app_dir libs_dir classes_dir default_web_xml async_supported 
-        jruby_min_runtimes jruby_max_runtimes rackup log }.each do |method_name|
-      class_eval "def #{method_name}; self[:'#{method_name}']; end"
+        jruby_min_runtimes jruby_max_runtimes jruby_compat_version rackup log }.each do |method|
+      class_eval "def #{method}; self[:'#{method}']; end"
     end
 
     def public_root; self[:public] || 'public'; end
@@ -55,11 +55,11 @@ module Trinidad
 
     def init_params
       @params ||= {}
-      add_parameter_unless_exist 'jruby.min.runtimes', jruby_min_runtimes.to_s
-      add_parameter_unless_exist 'jruby.max.runtimes', jruby_max_runtimes.to_s
-      add_parameter_unless_exist 'jruby.initial.runtimes', jruby_min_runtimes.to_s
+      add_parameter_unless_exist 'jruby.min.runtimes', jruby_min_runtimes
+      add_parameter_unless_exist 'jruby.max.runtimes', jruby_max_runtimes
+      add_parameter_unless_exist 'jruby.initial.runtimes', jruby_min_runtimes
+      add_parameter_unless_exist 'jruby.compat.version', jruby_compat_version || RUBY_VERSION
       add_parameter_unless_exist 'public.root', File.join('/', public_root)
-      add_parameter_unless_exist 'jruby.compat.version', RUBY_VERSION
       @params
     end
 
@@ -97,7 +97,7 @@ module Trinidad
     def monitor
       File.expand_path(self[:monitor] || 'tmp/restart.txt', work_dir)
     end
-
+    
     def generate_class_loader
       @class_loader = org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
@@ -110,13 +110,11 @@ module Trinidad
       Trinidad::Lifecycle::WebApp::Default.new(self)
     end
 
-    protected
+    private
     
     def add_parameter_unless_exist(param_name, param_value)
-      @params[param_name] = param_value unless web_context_param(param_name)
+      @params[param_name] = param_value.to_s unless web_context_param(param_name)
     end
-
-    private
     
     def web_xml
       return nil if @web_xml == false
@@ -125,8 +123,8 @@ module Trinidad
           require 'rexml/document'
           REXML::Document.new(File.read(default_deployment_descriptor))
         rescue REXML::ParseException => e
-          logger = java.util.logging.Logger.getLogger('')
-          logger.warning "invalid deployment descriptor:[#{default_deployment_descriptor}]\n #{e.message}"
+          log = Trinidad::Logging::LogFactory.getLog('')
+          log.warn "invalid deployment descriptor:[#{default_deployment_descriptor}]\n #{e.message}"
           false
         end unless default_deployment_descriptor.nil?
     end
@@ -183,9 +181,7 @@ module Trinidad
       attr_reader :web_app
       attr_accessor :context
       
-      def monitor
-        web_app.monitor
-      end
+      def monitor; web_app.monitor; end
       
       attr_accessor :monitor_mtime
       

@@ -5,6 +5,7 @@ module Trinidad
   module Logging
     
     JUL = Java::JavaUtilLogging
+    LogFactory = Java::OrgApacheJuliLogging::LogFactory
     
     @@configured = nil
     
