@@ -3,6 +3,8 @@ require File.expand_path('../spec_helper', File.dirname(__FILE__))
 describe Trinidad::CommandLineParser do
   include FakeApp
   
+  before { Trinidad.configuration = nil }
+  
   subject { Trinidad::CommandLineParser }
 
   it "overrides classes option" do
@@ -60,37 +62,37 @@ describe Trinidad::CommandLineParser do
     args = '--ssl'.split
 
     options = subject.parse(args)
-    options[:ssl].should == {:port => 8443}
+    options[:ssl].should == { :port => 8443 }
   end
 
   it "adds custom ssl port to options" do
     args = '--ssl 8843'.split
 
     options = subject.parse(args)
-    options[:ssl].should == {:port => 8843}
+    options[:ssl].should == { :port => 8843 }
   end
 
   it "adds ajp connection with default port to options" do
     args = '--ajp'.split
 
     options = subject.parse(args)
-    options[:ajp].should == {:port => 8009}
+    options[:ajp].should == { :port => 8009 }
   end
 
   it "adds ajp connection with coustom port to options" do
-    args = '--ajp 8099'.split
+    args = '--ajp 9099'.split
 
     options = subject.parse(args)
-    options[:ajp].should == {:port => 8099}
+    options[:ajp].should == { :port => 9099 }
   end
 
   it "merges ajp options from the config file" do
     FakeFS do
       create_custom_config_file
-      args = "--ajp 8099 -f config/tomcat.yml".split
+      args = "--ajp 9999 -f config/tomcat.yml".split
 
       options = subject.parse(args)
-      options[:ajp][:port].should == 8099
+      options[:ajp][:port].should == 9999
       options[:ajp][:secure].should == true
     end
   end
