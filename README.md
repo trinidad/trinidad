@@ -145,11 +145,12 @@ Context with name [/] has completed rolling
 ```
 
 It also prints warnings and error messages on error output, while application 
-specific log messages (e.g. logs from `Rails.logger`) go into the expected file 
-location at *log/{environment}.log*. 
+specific log messages (e.g. logs from `Rails.logger`) always go into the expected
+file location at *log/{environment}.log*. 
 
-Application logging performs daily rolling out of the box and only prints 
-messages from an application to the console while it runs in development mode.
+Application logging performs daily file rolling out of the box and only prints 
+messages to the console while it runs in development mode, that means you won't
+see any application specific output on the console say in production !
 
 Please note that these logging details as well as the logging format will be 
 configurable with *trinidad.yml/.rb* within the next **1.4.x** release.
@@ -170,10 +171,10 @@ Since version **1.4.0** Trinidad supports 2 reload strategies :
 
 * **rolling** "zero-downtime" (asynchronous) reloading strategy similar to 
   Passenger's rolling reloads. This has been the default since **1.1.0** up till
-  Trinidad version **1.3.0**. If you use this you should account that while 
-  rolling memory requirements for the JVM might increase quite a lot since 
-  requests are being served and there's 2 versions of your application loaded at 
-  the same time.
+  the **1.3.x** line. If you use this you should account that your JVM memory
+  requirements might increase quite a lot (esp. if you reload under heavy loads)
+  since requests are being served while there's another version of the
+  application being loaded.
 
 Configure the reload strategy per web application or globally e.g. :
 
