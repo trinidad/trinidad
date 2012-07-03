@@ -90,7 +90,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   
   it "adds context parameters from the web app" do
     listener = rails_web_app_listener({ :jruby_min_runtimes => 1 })
-    listener.send :configure_init_params, @context
+    listener.send :configure_context_params, @context
 
     @context.find_parameter('jruby.min.runtimes').should == '1'
   end
@@ -176,12 +176,12 @@ describe Trinidad::Lifecycle::WebApp::Default do
   private
   
   def rails_web_app_listener(config)
-    web_app = Trinidad::RailsWebApp.new(config, {})
+    web_app = Trinidad::RailsWebApp.new(config, nil)
     Trinidad::Lifecycle::WebApp::Default.new(web_app)
   end
 
   def rackup_web_app_listener(config)
-    web_app = Trinidad::RackupWebApp.new(config, {})
+    web_app = Trinidad::RackupWebApp.new(config, nil)
     Trinidad::Lifecycle::WebApp::Default.new(web_app)
   end
   

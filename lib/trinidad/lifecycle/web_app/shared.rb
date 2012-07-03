@@ -6,7 +6,7 @@ module Trinidad
       module Shared
 
         attr_reader :web_app
-        alias_method :webapp, :web_app # #deprecated
+        alias_method :webapp, :web_app
 
         def initialize(web_app)
           @web_app = web_app

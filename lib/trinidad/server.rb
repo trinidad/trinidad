@@ -106,7 +106,7 @@ module Trinidad
     end
 
     def add_web_app(web_app, host = nil)
-      host ||= web_app.app_config[:host] || @tomcat.host
+      host ||= web_app.config[:host] || @tomcat.host
       app_context = @tomcat.addWebapp(host, web_app.context_path, web_app.web_app_dir)
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
       app_context.add_lifecycle_listener(web_app.define_lifecycle)
@@ -135,14 +135,12 @@ module Trinidad
     end
     
     def create_from_web_apps
-      if @config[:web_apps]
-        @config[:web_apps].map do |name, app_config|
-          app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name.to_s}")
-          app_config[:web_app_dir]  ||= Dir.pwd
-
-          create_web_app(app_config)
-        end
-      end
+      @config[:web_apps].map do |name, app_config|
+        app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name}")
+        app_config[:web_app_dir]  ||= Dir.pwd
+        
+        create_web_app(app_config)
+      end if @config[:web_apps]
     end
 
     def create_from_apps_base
@@ -151,20 +149,18 @@ module Trinidad
           apps_base = host.app_base
 
           apps_path = Dir.glob(File.join(apps_base, '*')).
-            select {|path| !(path =~ /tomcat\.\d+$/) }
+            select { |path| !(path =~ /tomcat\.\d+$/) }
 
-          apps_path.reject! {|path| apps_path.include?(path + '.war') }
+          apps_path.reject! { |path| apps_path.include?(path + '.war') }
 
           apps_path.map do |path|
-            if (File.directory?(path) || path =~ /\.war$/)
+            if File.directory?(path) || path =~ /\.war$/
               name = File.basename(path)
-              app_config = {
-                :context_path => (name == 'default' ? '' : "/#{name.to_s}"),
+              create_web_app({
+                :context_path => (name.to_s == 'default' ? '' : "/#{name}"),
                 :web_app_dir  => File.expand_path(path),
                 :host         => host
-              }
-
-              create_web_app(app_config)
+              })
             end
           end
         end.flatten
@@ -172,7 +168,7 @@ module Trinidad
     end
 
     def create_web_app(app_config)
-      web_app = WebApp.create(@config, app_config)
+      web_app = WebApp.create(app_config, config)
       WebApp::Holder.new(web_app, add_web_app(web_app))
     end
     

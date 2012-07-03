@@ -4,7 +4,8 @@ module Trinidad
     class Host < Base
       
       attr_reader :server, :app_holders
-      alias_method :contexts, :app_holders # #deprecated (<= 1.3.5)
+       # @deprecated (<= 1.3.5)
+      alias_method :contexts, :app_holders
 
       # #server current server instance
       # #app_holders deployed web application holders

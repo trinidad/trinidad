@@ -207,14 +207,14 @@ describe Trinidad::Server do
     end
   end
 
-  it "loads rack apps from the app_base directory" do
+  it "loads rack apps from the apps_base directory" do
     begin
       mkdir 'apps_base'
       cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
 
       server = Trinidad::Server.new({ :apps_base => 'apps_base' })
       listeners = find_listeners(server)
-      listeners.first.webapp.should be_instance_of(Trinidad::RackupWebApp)
+      listeners.first.webapp.should be_a(Trinidad::RackupWebApp)
     ensure
       rm_rf 'apps_base'
     end

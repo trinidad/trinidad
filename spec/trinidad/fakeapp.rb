@@ -188,7 +188,7 @@ EOF
   protected
   def create_config_file(path, content)
     dir = File.dirname(path)
-    Dir.mkdir(dir) unless File.exist?(dir)
+    FileUtils.mkdir_p(dir) unless File.exist?(dir)
     File.open(path, 'w') {|io| io.write(content) }
   end
   

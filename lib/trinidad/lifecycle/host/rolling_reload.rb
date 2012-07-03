@@ -14,7 +14,7 @@ module Trinidad
         logger = self.class.logger
         logger.info "Context with name [#{old_context.name}] has started rolling"
 
-        web_app.generate_class_loader # use new class loader for application
+        web_app.reset! # force a new class loader + re-read state (from config)
         no_host = org.apache.catalina.Host.impl {} # do not add to parent yet
         new_context = @server.add_web_app(web_app, no_host)
         new_context.add_lifecycle_listener(Takeover.new(old_context))

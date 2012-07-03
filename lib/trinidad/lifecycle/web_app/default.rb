@@ -11,14 +11,14 @@ module Trinidad
             configure_rack_servlet(context)
             configure_rack_listener(context)
           end
-          configure_init_params(context)
+          configure_context_params(context)
           configure_context_loader(context)
         end
 
         protected
         
         def configure_deployment_descriptor(context)
-          if descriptor = web_app.default_deployment_descriptor
+          if descriptor = web_app.deployment_descriptor
             listeners = context.findLifecycleListeners
             context_config = listeners && listeners.find do |listener|
               listener.is_a?(Trinidad::Tomcat::ContextConfig)
@@ -36,27 +36,29 @@ module Trinidad
 
         def configure_rack_servlet(context)
           wrapper = context.create_wrapper
-          if web_app.servlet[:instance]
-            wrapper.servlet = web_app.servlet[:instance]
+          if web_app.rack_servlet[:instance]
+            wrapper.servlet = web_app.rack_servlet[:instance]
           else
-            wrapper.servlet_class = web_app.servlet[:class]
-            wrapper.async_supported = web_app.servlet[:async_supported]
+            wrapper.servlet_class = web_app.rack_servlet[:class]
+            wrapper.async_supported = web_app.rack_servlet[:async_supported]
           end
-          wrapper.name = web_app.servlet[:name]
+          wrapper.name = web_app.rack_servlet[:name]
 
           context.add_child(wrapper)
           context.add_servlet_mapping('/*', wrapper.name)
         end
 
         def configure_rack_listener(context)
-          context.addApplicationListener(web_app.rack_listener) unless web_app.servlet[:instance]
+          context.addApplicationListener(web_app.rack_listener) unless web_app.rack_servlet[:instance]
         end
 
-        def configure_init_params(context)
-          web_app.init_params.each do |name, value|
+        def configure_context_params(context)
+          web_app.context_params.each do |name, value|
             context.addParameter(name, value)
           end
         end
+        # @deprecated use {#configure_context_params}
+        alias_method :configure_init_params, :configure_context_params
 
         def configure_context_loader(context)
           class_loader = web_app.class_loader
