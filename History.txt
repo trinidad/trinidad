@@ -1,3 +1,33 @@
+== Trinidad 1.4.0.RC (2012-07-03)
+
+* requires latest Tomcat 7.0.28 (jars 1.0.5) due context reloading fix
+* requires latest jruby-rack 1.1.7 due delegating RackLogger to JUL
+* Trinidad::WebApp API revisited some changes are non-backwards compatible !
+* enable running multiple applications with different ruby versions (using the 
+  jruby_compat_version configuration option)
+* allow arbitrary keys to be stored with Trinidad::Configuration
+* changed Trinidad::Lifecycle::Base to be a (ruby-like) base lifecycle listener
+  skeleton implementation, thus removed all web app specifics from the class
+  (include Trinidad::Lifecycle::WebApp::Shared to gain the same functionality)
+* removed unused Trinidad::Rack module and KeyTool from Trinidad::Tomcat
+* reinvented server/application logging with Trinidad::Logging :
+  - refactored Trinidad's global logging configuration with JUL
+  - application logs into log/env.log by default with daily rolling
+  - console logs are now less chatty and only print logs from applications 
+    running in development mode (configuration to come in a later release)
+  - make sure Trinidad's custom log formatter prints thrown exceptions
+  - use local timestamps with (file) log formatter by default
+* Trinidad::Server#add_web_app for code re-use during rolling redeploys
+* refactored application (monitor based `touch 'tmp/restart.txt'`) reloading
+  - bring back synchronous context reloading and make it default
+  - "zero downtime" async rolling reload is still supported and configurable via 
+    the reload_strategy: rolling configuration option
+  - updated the context restart code - hot deploys should now work reliably (#75)
+  - moved Trinidad::Lifecycle::Host under Trinidad::Lifecycle::WebApp::Host
+  - Trinidad::Lifecycle::Host now accepts a server instance instead of a tomcat
+  - introduced Trinidad::WebApp::Holder to be used instead of bare Hash
+* add async_supported attribute for servlet (3.0) configuration
+
 == Trinidad_jars 1.0.5 (2012-07-03)
 
 * Upgrade to Tomcat 7.0.28

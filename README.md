@@ -131,12 +131,58 @@ Trinidad.configure do |config|
 end
 ```
 
+### Logging
+
+As you might notice on your first `trinidad` the server uses standard output :
+
+```
+kares@theborg:~/workspace/trinidad/MegaUpload$ trinidad -p 8000 -e staging
+Initializing ProtocolHandler ["http-bio-8000"]
+Starting Servlet Engine: Apache Tomcat/7.0.28
+Starting ProtocolHandler ["http-bio-8000"]
+Context with name [/] has started rolling
+Context with name [/] has completed rolling
+```
+
+It also prints warnings and error messages on error output, while application 
+specific log messages (e.g. logs from `Rails.logger`) go into the expected file 
+location at *log/{environment}.log*. 
+
+Application logging performs daily rolling out of the box and only prints 
+messages from an application to the console while it runs in development mode.
+
+Please note that these logging details as well as the logging format will be 
+configurable with *trinidad.yml/.rb* within the next **1.4.x** release.
+
 ## Hot Deployment
 
-Although the early versions of Trinidad used an extension to reload applications 
-monitorizing a file, since Trinidad **1.1.0** this feature is baked in. 
-When the file *tmp/restart.txt* is modified, the server reloads the application 
-the file belongs. The monitored file can be customized with the `monitor` option.
+Trinidad supports monitoring a file to reload applications, when the file 
+*tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt`), the server reloads 
+the application the file belongs. 
+The file monitor can be customized with the `monitor` configuration option.
+
+Since version **1.4.0** Trinidad supports 2 reload strategies :
+
+* **restart** (default) synchronous reloading (exposed by Tomcat). This strategy
+  pauses incoming requests while it reloads the application and than serves them
+  once ready (or timeouts if it takes too long). It has been chosen as the default
+  strategy since **1.4.0** due it's more predictable memory requirements.
+
+* **rolling** "zero-downtime" (asynchronous) reloading strategy similar to 
+  Passenger's rolling reloads. This has been the default since **1.1.0** up till
+  Trinidad version **1.3.0**. If you use this you should account that while 
+  rolling memory requirements for the JVM might increase quite a lot since 
+  requests are being served and there's 2 versions of your application loaded at 
+  the same time.
+
+Configure the reload strategy per web application or globally e.g. :
+
+```yml
+---
+  port: 8080
+  environment: production
+  reload_strategy: rolling
+```
 
 ## Virtual Hosts
 
