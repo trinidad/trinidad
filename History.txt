@@ -1,3 +1,8 @@
+== Trinidad_jars 1.0.5 (2012-07-03)
+
+* Upgrade to Tomcat 7.0.28
+* Patched org.apache.juli.FileHandler to allow daily rolling customization
+
 == Trinidad_jars 1.0.4 (2012-06-14)
 
 * Upgrade to Tomcat 7.0.27
