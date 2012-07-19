@@ -90,8 +90,17 @@ module Trinidad
     # a Hash like #symbolize helper
     def self.symbolize_options(options, deep = true)
       new_options = options.class.new
-      options.each do |key, value|
-        if deep && options_like?(value)
+      options.each do |key, value|    
+        if deep && value.is_a?(Array)
+          new_options[key.to_sym] = []
+          value.each do |v|
+            if options_like?(v)
+              new_options[key.to_sym] << symbolize_options(v, deep) 
+            else
+              new_options[key.to_sym] << value
+            end
+          end
+        elsif deep && options_like?(value)
           new_options[key.to_sym] = symbolize_options(value, deep)
         else
           new_options[key.to_sym] = value
