@@ -49,9 +49,17 @@ describe Trinidad::Configuration do
     config2 = { 
       'port' => 2000,
       'environment' => 'production',
-      'http' => { :'connectionTimeout' => '30000', 'bufferSize' => 1025 }
+      'http' => { :'connectionTimeout' => '30000', 'bufferSize' => 1025 },
+      'web_apps' => { 'default' => { 'extensions' => { 'mysql_dbpool' => [
+              {'driver' => 'foo',
+                'host' => 'foo.net'
+              },
+              {'driver' => 'bar',
+                'host' => 'bar.net'
+              },       
+            ]}}}
     }
-    
+ 
     config = Trinidad.configure!(config1, config2)
     config[:port].should == 2000
     config['address'].should == 'local.host'
@@ -61,6 +69,13 @@ describe Trinidad::Configuration do
       :bufferSize => 1025,
       :connectionTimeout => '30000'
     }
+    config[:web_apps][:default][:extensions][:mysql_dbpool].should == [
+      {:driver => 'foo',
+        :host => 'foo.net'
+      },
+      {:driver => 'bar',
+        :host => 'bar.net'
+      }
+    ]
   end
-  
 end
