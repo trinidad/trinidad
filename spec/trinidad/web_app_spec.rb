@@ -383,4 +383,46 @@ describe Trinidad::WebApp do
     end
   end
   
+  it "parses (context-param) xml values correctly" do
+    FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/custom.web.xml"
+    begin
+      create_config_file custom_web_xml, '' +
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<web-app>' +
+        '  <context-param>' +
+        '    <param-name>jruby.initial.runtimes</param-name>' +
+        '    <param-value>1</param-value>' +
+        '  </context-param>' +
+        '  <filter>' +
+        '    <filter-name>RackFilter</filter-name>' +
+        '    <filter-class>org.jruby.rack.RackFilter</filter-class>' +
+        '  </filter>' +
+        '  <listener>' +
+        '    <listener-class>org.jruby.rack.rails.RailsServletContextListener</listener-class>' +
+        '  </listener>' +
+        '' +
+        '  <context-param>' +
+        '    <param-name>jruby.rack.logging.name</param-name>' +
+        '    <param-value>/root</param-value>' +
+        '  </context-param>' +
+        '</web-app>'
+      web_app = Trinidad::WebApp.create({}, {
+        :context_path => '/',
+        :web_app_dir => MOCK_WEB_APP_DIR,
+        :default_web_xml => 'config/custom.web.xml'
+      })
+      
+      web_app.web_xml_context_param('jruby.rack.logging').should be nil
+      web_app.web_xml_context_param('jruby.rack.logging.name').should == '/root'
+      
+      web_app.web_xml_filter?('org.jruby.rack.RackFilter').should be true
+      web_app.web_xml_filter?('org.jruby.rack.Rack').should be false
+      
+      web_app.web_xml_listener?('org.jruby.rack.rails').should be false
+      web_app.web_xml_listener?('org.jruby.rack.rails.RailsServletContextListener').should be true
+    ensure
+      FileUtils.rm custom_web_xml
+    end
+  end
+  
 end

@@ -147,29 +147,31 @@ module Trinidad
       config[:web_app_dir] ||= default_config[:web_app_dir] || Dir.pwd
     end
     
+    public
+    
     def web_xml_servlet?(servlet_class, servlet_name = nil)
       !!( web_xml_doc && (
-          web_xml_doc.root.elements["/web-app/servlet[contains(servlet-class, '#{servlet_class}')]"]
+          web_xml_doc.root.elements["/web-app/servlet[servlet-class = '#{servlet_class}']"]
         )
       )
     end
 
     def web_xml_filter?(filter_class)
       !!( web_xml_doc && (
-          web_xml_doc.root.elements["/web-app/filter[contains(filter-class, '#{filter_class}')]"]
+          web_xml_doc.root.elements["/web-app/filter[filter-class = '#{filter_class}']"]
         )
       )
     end
     
     def web_xml_listener?(listener_class)
       !!( web_xml_doc &&
-          web_xml_doc.root.elements["/web-app/listener[contains(listener-class, '#{listener_class}')]"]
+          web_xml_doc.root.elements["/web-app/listener[listener-class = '#{listener_class}']"]
       )
     end
     
     def web_xml_context_param(name)
       if web_xml_doc && 
-          param = web_xml_doc.root.elements["/web-app/context-param[contains(param-name, '#{name}')]"]
+          param = web_xml_doc.root.elements["/web-app/context-param[param-name = '#{name}']"]
         param.elements['param-value'].text
       end
     end
