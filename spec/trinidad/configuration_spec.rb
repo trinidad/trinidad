@@ -49,15 +49,7 @@ describe Trinidad::Configuration do
     config2 = { 
       'port' => 2000,
       'environment' => 'production',
-      'http' => { :'connectionTimeout' => '30000', 'bufferSize' => 1025 },
-      'web_apps' => { 'default' => { 'extensions' => { 'mysql_dbpool' => [
-              {'driver' => 'foo',
-                'host' => 'foo.net'
-              },
-              {'driver' => 'bar',
-                'host' => 'bar.net'
-              },       
-            ]}}}
+      'http' => { :'connectionTimeout' => '30000', 'bufferSize' => 1025 }
     }
  
     config = Trinidad.configure!(config1, config2)
@@ -69,13 +61,32 @@ describe Trinidad::Configuration do
       :bufferSize => 1025,
       :connectionTimeout => '30000'
     }
-    config[:web_apps][:default][:extensions][:mysql_dbpool].should == [
-      {:driver => 'foo',
-        :host => 'foo.net'
-      },
-      {:driver => 'bar',
-        :host => 'bar.net'
+  end
+  
+  it "(deep) symbolizes nested arrays of hashes on configure" do
+    config1 = { :port => 1000 }
+    config2 = {
+      'web_apps' => { 
+        'default' => { 
+          'extensions' => { 
+            'mysql_dbpool' => [
+              { 'driver' => 'foo', 'host' => 'foo.net' },
+              { 'driver' => 'bar', 'host' => 'bar.net' },
+              42
+            ]
+          }
+        }
       }
+    }
+ 
+    config = Trinidad.configure!(config1, config2)
+    config[:web_apps].should_not be nil
+    config[:web_apps][:default][:extensions].should_not be nil
+    config[:web_apps][:default][:extensions][:mysql_dbpool].should == [
+      { :driver => 'foo', :host => 'foo.net' },
+      { :driver => 'bar', :host => 'bar.net' },
+      42
     ]
   end
+  
 end

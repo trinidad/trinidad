@@ -91,14 +91,10 @@ module Trinidad
     def self.symbolize_options(options, deep = true)
       new_options = options.class.new
       options.each do |key, value|    
-        if deep && value.is_a?(Array)
-          new_options[key.to_sym] = []
+        if deep && value.is_a?(Array) # YAML::Omap is an Array
+          array = new_options[key.to_sym] = value.class.new
           value.each do |v|
-            if options_like?(v)
-              new_options[key.to_sym] << symbolize_options(v, deep) 
-            else
-              new_options[key.to_sym] << value
-            end
+            array << ( options_like?(v) ? symbolize_options(v, deep)  : v )
           end
         elsif deep && options_like?(value)
           new_options[key.to_sym] = symbolize_options(value, deep)
