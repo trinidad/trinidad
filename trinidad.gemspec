@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
   s.files = `git ls-files`.split("\n").sort.
     reject { |file| file =~ /^\./ }. # .gitignore, .travis.yml
     reject { |file| file =~ /^spec\// }. # spec/**/*.spec
+    reject { |file| file =~ /^src\// }. # src/* patched into tomcat-core.jar
     # reject trinidad_jars.gemspec files :
     reject { |file| file == 'trinidad_jars.gemspec' || 
                     file == 'lib/trinidad/jars.rb'  || 

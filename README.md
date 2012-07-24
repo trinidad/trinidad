@@ -155,6 +155,13 @@ see any application specific output on the console say in production !
 Please note that these logging details as well as the logging format will be 
 configurable with *trinidad.yml/.rb* within the next **1.4.x** release.
 
+If you plan to use a slice of Java with your JRuby and require a logger, consider 
+using `ServletContext#log`. By default it is setup in a way that logging with 
+`ServletContext` ends up in the same location as the Rails log. 
+If this is not enough you can still configure a Java logging library e.g. SLF4J,
+just make sure you tell Trinidad to use it as well, if needed, using the 
+**jruby.rack.logging** context parameter in *web.xml*.
+
 ## Hot Deployment
 
 Trinidad supports monitoring a file to reload applications, when the file 

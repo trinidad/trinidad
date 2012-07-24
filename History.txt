@@ -1,5 +1,8 @@
-== Trinidad 1.4.0.RC (2012-07-03)
+== Trinidad 1.4.0 (2012-07-24)
 
+* fix incorrect context-param parsing and only configure logging when 
+  deployment descriptor did not specified jruby.rack.logging param (#76)
+* deep symbolize_options should account for arrays of hashes (#80)
 * requires latest Tomcat 7.0.28 (jars 1.0.5) due context reloading fix
 * requires latest jruby-rack 1.1.7 due delegating RackLogger to JUL
 * Trinidad::WebApp API revisited some changes are non-backwards compatible !
