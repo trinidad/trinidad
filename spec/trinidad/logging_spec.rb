@@ -210,6 +210,33 @@ describe Trinidad::Logging do
 
       output.toString.should == ''
     end
+
+    it "does not configure logger if descriptor specified non JUL logging" do
+      FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/logging-test.web.xml"
+      begin
+        create_config_file custom_web_xml, '' +
+          '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<web-app>' +
+          '  <context-param>' +
+          '    <param-name>jruby.rack.logging</param-name>' +
+          '    <param-value>stdout</param-value>' +
+          '  </context-param>' +
+          '</web-app>'
+        web_app = Trinidad::WebApp.create({}, {
+          :context_path => '/',
+          :web_app_dir => MOCK_WEB_APP_DIR,
+          :default_web_xml => 'config/logging-test.web.xml',
+          :log => 'ALL'
+        })
+        context = create_mock_web_app_context web_app.context_path
+        context.setDefaultWebXml web_app.default_deployment_descriptor
+        
+        outcome = Trinidad::Logging.configure_web_app(web_app, context)
+        outcome.should be nil
+      ensure
+        FileUtils.rm custom_web_xml
+      end
+    end
     
     it "accepts configured logger name (from descriptor)", :integration => true do
       FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/logging-test.web.xml"

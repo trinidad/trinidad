@@ -52,14 +52,14 @@ module Trinidad
     def self.configure_web_app(web_app, context)
       param_name, param_value = 'jruby.rack.logging', 'JUL'
       # 1. delegate (jruby-rack) servlet log to JUL
-      if set_value = context.find_parameter(param_name)
+      if set_value = web_app_context_param(web_app, context, param_name)
         return nil if set_value.upcase != param_value
       else
         context.add_parameter(param_name, param_value)
       end
       # 2. use Tomcat's JUL logger name (unless set) :
       param_name = 'jruby.rack.logging.name'
-      unless logger_name = context.find_parameter(param_name)
+      unless logger_name = web_app_context_param(web_app, context, param_name)
         # for a context path e.g. '/foo' most likely smt of the following :
         # org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
         context.add_parameter(param_name, logger_name = context.send(:logName))
@@ -116,6 +116,10 @@ module Trinidad
       logger.level = JUL::Level::WARNING if logger
       logger = JUL::Logger.get_logger('org.apache.catalina.startup.ContextConfig')
       logger.level = JUL::Level::WARNING if logger
+    end
+    
+    def self.web_app_context_param(web_app, context, name)
+      context.find_parameter(name) || web_app.web_xml_context_param(name)
     end
     
     # we'd achieve logging to a production.log file while rotating it (daily)
