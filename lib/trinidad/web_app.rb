@@ -179,7 +179,7 @@ module Trinidad
     private
     
     def web_xml_doc
-      return @web_xml_doc || nil if ! @web_xml_doc.nil?
+      return @web_xml_doc || nil unless @web_xml_doc.nil?
       if deployment_descriptor
         begin
           require 'rexml/document'
@@ -200,14 +200,32 @@ module Trinidad
       web_app_dir = config[:web_app_dir] || 
         (default_config && default_config[:web_app_dir]) || Dir.pwd
       config_ru = (default_config && default_config[:rackup]) || 'config.ru'
-      # Check for rackup (but still use config/environment.rb for Rails 3)
+      # check for rackup (but still use config/environment.rb for rails 3)
       if File.exists?(File.join(web_app_dir, config_ru)) && 
-          ! File.exists?(File.join(web_app_dir, 'config/environment.rb'))
+          ! rails?(config, default_config) # do not :rackup a rails app
         config[:rackup] = config_ru
       end
       config[:rackup] || ! Dir[File.join(web_app_dir, 'WEB-INF/**/config.ru')].empty?
     end
-
+    
+    def self.rails?(config, default_config = nil)
+      web_app_dir = config[:web_app_dir] || 
+        (default_config && default_config[:web_app_dir]) || Dir.pwd
+      # standart Rails 3.x `class Application < Rails::Application`
+      if File.exists?(application = File.join(web_app_dir, 'config/application.rb'))
+        application_rb = File.read(application)
+        return true if application_rb =~ /^[^#]*Rails::Application/
+      end
+      if File.exists?(environment = File.join(web_app_dir, 'config/environment.rb'))
+        environment_rb = File.read(environment)
+        # customized Rails 3.x, expect a `Rails::Application` subclass
+        return true if environment_rb =~ /^[^#]*Rails::Application/
+        # plain-old Rails 2.3 `RAILS_GEM_VERSION = '2.3.14'` ...
+        return true if environment_rb =~ /^[^#]*RAILS_GEM_VERSION/
+      end
+      false
+    end
+    
     def self.war?(config, default_config = nil)
       config[:context_path] && config[:context_path][-4..-1] == '.war'
     end
