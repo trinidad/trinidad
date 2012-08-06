@@ -278,9 +278,10 @@ describe Trinidad::Server do
 
     host_listeners = server.tomcat.host.find_lifecycle_listeners.
       select {|listener| listener.instance_of?(Trinidad::Lifecycle::Host)}
-
+    
     host_listeners.should have(1).listener
-    host_listeners.first.contexts.should have(2).applications
+    listener = host_listeners[0]
+    listener.app_holders.should have(2).applications
   end
 
   it "autoconfigures rack when config.ru is present in the app directory" do
@@ -294,8 +295,7 @@ describe Trinidad::Server do
 
   it "creates several hosts when they are set in the configuration" do
     server = Trinidad::Server.new({:hosts => {
-      'foo' => 'localhost',
-      'lol' => 'lolhost'
+      'foo' => 'localhost', :'lol' => 'lololhost'
     }})
 
     server.tomcat.engine.find_children.should have(2).hosts
@@ -304,11 +304,11 @@ describe Trinidad::Server do
   it "adds aliases to the hosts when we provide an array of host names" do
     server = Trinidad::Server.new({:hosts => {
       'foo' => ['localhost', 'local'],
-      'lol' => ['lolhost', 'lol']
+      'lol' => ['lololhost', 'lol']
     }})
 
     hosts = server.tomcat.engine.find_children
-    hosts.map {|h| h.aliases}.flatten.should == ['lol', 'local']
+    hosts.map { |h| h.aliases }.flatten.should == ['lol', 'local']
   end
 
   it "doesn't add any alias when we only provide the host name" do
@@ -318,7 +318,7 @@ describe Trinidad::Server do
     }})
 
     hosts = server.tomcat.engine.find_children
-    hosts.map {|h| h.aliases}.flatten.should be_empty
+    hosts.map { |h| h.aliases }.flatten.should == []
   end
 
   it "creates several hosts when they are set in the web_apps configuration" do
@@ -330,7 +330,7 @@ describe Trinidad::Server do
         },
         :mock2 => {
           :web_app_dir => 'bar/mock2',
-          :hosts       => 'lolhost'
+          :hosts       => 'lololhost'
         }
       }
     })
@@ -354,6 +354,8 @@ describe Trinidad::Server do
     server.tomcat.engine.find_children.should have(1).hosts
   end
 
+  private
+  
   def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
     context = server.tomcat.host.find_children.first
     context.find_lifecycle_listeners.select do |listener|
@@ -367,4 +369,5 @@ describe Trinidad::Server do
     children[0].path.should == '/'
     children[0]
   end
+  
 end

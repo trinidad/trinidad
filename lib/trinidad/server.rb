@@ -1,13 +1,13 @@
 module Trinidad
   class Server
-    attr_reader :tomcat, :config
+    attr_reader :config, :tomcat, :web_apps
 
     def initialize(config = Trinidad.configuration)
       load_config(config)
       configure_logging(@config[:log])
       load_tomcat_server
-      apps = create_web_apps
-      load_host_monitor(apps)
+      @web_apps = create_web_apps
+      load_host_monitor(@web_apps)
     end
 
     def load_config(config)
@@ -114,7 +114,7 @@ module Trinidad
     end
     
     def start
-      trap_signals if @config[:trap]
+      trap_signals if trap?
 
       @tomcat.start
       @tomcat.server.await
@@ -122,16 +122,24 @@ module Trinidad
 
     def stop
       @tomcat.stop
-      @tomcat.destroy
     end
 
+    def stop!
+      stop
+      @tomcat.destroy
+    end
+    
     protected
     
+    def trap?
+      !!@config[:trap]
+    end
+    
     def create_web_apps
-      apps = []
-      apps << create_from_web_apps
+      apps = [ create_from_web_apps ]
       apps << create_from_apps_base
-      apps.flatten.compact
+      apps.flatten!; apps.compact!
+      apps
     end
     
     def create_from_web_apps
@@ -232,9 +240,8 @@ module Trinidad
     def generate_default_keystore(config)
       keystore_file = java.io.File.new(config[:keystoreFile])
 
-      if (!keystore_file.parent_file.exists &&
-              !keystore_file.parent_file.mkdir)
-          raise "Unable to create keystore folder: " + keystore_file.parent_file.canonical_path
+      if ! keystore_file.parent_file.exists && ! keystore_file.parent_file.mkdir
+          raise "Unable to create keystore folder: #{keystore_file.parent_file.canonical_path}"
       end
 
       key_tool_args = ["-genkey",
@@ -252,8 +259,9 @@ module Trinidad
     end
     
     def trap_signals
-      trap('INT') { stop }
-      trap('TERM') { stop }
+      trap('INT') { stop! }
+      trap('TERM') { stop! }
     end
+    
   end
 end
