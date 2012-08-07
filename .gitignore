@@ -11,3 +11,4 @@ nbproject
 META-INF
 .rvmrc
 Gemfile.lock
+spec/web_app_mock/restart.txt

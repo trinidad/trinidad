@@ -167,8 +167,8 @@ describe Trinidad::Server do
     end
     server = Trinidad::Server.new
 
-    app_context = server.tomcat.host.find_child('/')
-    app_context.doc_base.should == 'foo_app_extension'
+    context = server.tomcat.host.find_child('/')
+    context.doc_base.should == 'foo_web_app_extension'
   end
 
   it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do

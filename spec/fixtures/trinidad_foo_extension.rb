@@ -1,14 +1,19 @@
 module Trinidad
   module Extensions
+    
     class FooWebAppExtension < WebAppExtension
-      def configure(tomcat, app_context)
-        app_context.doc_base = 'foo_app_extension' if app_context
+      def configure(context)
+        if context && context.is_a?(Trinidad::Tomcat::Context)
+          context.doc_base = 'foo_web_app_extension'
+        end
       end
     end
 
     class FooServerExtension < ServerExtension
       def configure(tomcat)
-        @options
+        if tomcat && tomcat.is_a?(Trinidad::Tomcat::Tomcat)
+          options[:foo] = 'foo_server_extension'
+        end
       end
     end
 
@@ -19,5 +24,6 @@ module Trinidad
         end
       end
     end
+    
   end
 end
