@@ -1,3 +1,18 @@
+== Trinidad 1.4.1 (2012-08-17)
+
+* make sure file logging rotates correctly when file handler attempts rolling 
+  after midnight (#81)
+* refined (backwards-compatible) extension API 
+  - options attr reader 
+  - override_tomcat? no longer needed simply return a tomcat duck 
+  - expose camelize + symbolize helpers
+  - WebAppExtension should only get a single context argument on configure
+* better rails (2.3/3.x) detection with environment.rb
+* minor server updates 
+  - expose configured web_apps 
+  - add a trap? helper (for easier overrides) 
+  - introduce a stop! for stopping and destroying a the server
+
 == Trinidad 1.4.0 (2012-07-24)
 
 * fix incorrect context-param parsing and only configure logging when 
