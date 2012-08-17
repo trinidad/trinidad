@@ -135,6 +135,31 @@ describe Trinidad::Logging do
       File.read("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should == "very old entry\nold entry\n"
     end
     
+    it "rotates when logging date changes" do
+      File.open("#{MOCK_WEB_APP_DIR}/log/production.log", 'w') { |f| f << "old entry\n" }
+      yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
+      java.io.File.new("#{MOCK_WEB_APP_DIR}/log/production.log").setLastModified(yesterday_ms)
+      
+      web_app = create_mock_web_app :context_path => '/app5'
+      context = create_mock_web_app_context web_app.context_path
+      #context.start
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      file_handler = logger.handlers.find { |handler| handler.is_a?(org.apache.juli.FileHandler) }
+      file_handler._date = yesterday.strftime '%Y-%m-%d' # FileHandler internals
+      file_handler.open # make sure file is open (smt was logged previously)
+      logger.warning "watch out!" # should switch to today
+      
+      log_content = File.read("#{MOCK_WEB_APP_DIR}/log/production.log")
+      
+      log_content[0, 3].should_not == "old"
+      log_content.should =~ /.*?WARNING.*?watch out!$/
+      
+      y_date = yesterday.strftime '%Y-%m-%d'
+      File.exist?("#{MOCK_WEB_APP_DIR}/log/production#{y_date}.log").should be true
+      File.read("#{MOCK_WEB_APP_DIR}/log/production#{y_date}.log").should == "old entry\n"
+    end
+    
     it 'uses same logger as ServletContext#log by default (unless logger name specified)' do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo'
       context = create_mock_web_app_context web_app.context_path

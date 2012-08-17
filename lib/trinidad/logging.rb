@@ -160,7 +160,8 @@ module Trinidad
       end
       
       def closeWriter
-        super
+        date = _date
+        super # sets `date = null`
         # the additional trick here is to rotate the closed file
         synchronized do
           # we're normally in the lock here (from #publish) 
@@ -168,11 +169,10 @@ module Trinidad
           dir = java.io.File.new(directory).getAbsoluteFile
           log = java.io.File.new(dir, prefix + "" + suffix)
           if log.exists
-            date = _date
-            if date.empty?
+            if ! date || date.empty?
               date = log.lastModified
-              # we're abuse Timestamp to get a date formatted !
-              # just like the super does internally (just in case)
+              # we abuse Timestamp to get a date formatted !
+              # just like super does internally (just in case)
               date = java.sql.Timestamp.new(date).toString[0, 10]
             end
             today = java.lang.System.currentTimeMillis
