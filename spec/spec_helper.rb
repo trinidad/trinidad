@@ -8,6 +8,11 @@ end
 
 RSpec.configure do |config|
   config.mock_with :mocha
+  config.backtrace_clean_patterns = [
+    #/org\/jruby.*?\.java$/,
+    /spec\/spec_helper\.rb/,
+    /lib\/rspec\/(core|expectations|matchers|mocks)/
+  ]
 end
 
 $:.unshift(File.dirname(__FILE__) + '/../lib')

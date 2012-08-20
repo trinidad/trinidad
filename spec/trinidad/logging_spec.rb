@@ -69,7 +69,7 @@ describe Trinidad::Logging do
     
     it "creates the log file according with the environment if it doesn't exist" do
       web_app = create_mock_web_app :context_path => '/app1'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -83,7 +83,7 @@ describe Trinidad::Logging do
       File.open("#{MOCK_WEB_APP_DIR}/log/production.log", 'w') { |f| f << "42\n" }
       
       web_app = create_mock_web_app :context_path => '/app2'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -101,7 +101,7 @@ describe Trinidad::Logging do
       java.io.File.new("#{MOCK_WEB_APP_DIR}/log/staging.log").setLastModified(yesterday_ms)
       
       web_app = create_mock_web_app :context_path => '/app3', :environment => 'staging'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -125,7 +125,7 @@ describe Trinidad::Logging do
       File.open("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log", 'w') { |f| f << "very old entry\n" }
       
       web_app = create_mock_web_app :context_path => '/app4', :environment => 'staging'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -141,7 +141,7 @@ describe Trinidad::Logging do
       java.io.File.new("#{MOCK_WEB_APP_DIR}/log/production.log").setLastModified(yesterday_ms)
       
       web_app = create_mock_web_app :context_path => '/app5'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -162,7 +162,7 @@ describe Trinidad::Logging do
     
     it 'uses same logger as ServletContext#log by default (unless logger name specified)' do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/foo'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
 
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -178,7 +178,7 @@ describe Trinidad::Logging do
     
     it "configures application logging once" do
       web_app = create_mock_web_app :environment => 'staging', :context_path => '/bar'
-      context = create_mock_web_app_context web_app.context_path
+      context = create_mock_web_app_context web_app
       #context.start
 
       logger = Trinidad::Logging.configure_web_app(web_app, context)
@@ -253,7 +253,7 @@ describe Trinidad::Logging do
           :default_web_xml => 'config/logging-test.web.xml',
           :log => 'ALL'
         })
-        context = create_mock_web_app_context web_app.context_path
+        context = create_mock_web_app_context web_app
         context.setDefaultWebXml web_app.default_deployment_descriptor
         
         outcome = Trinidad::Logging.configure_web_app(web_app, context)
@@ -280,7 +280,7 @@ describe Trinidad::Logging do
           :default_web_xml => 'config/logging-test.web.xml',
           :log => 'ALL'
         })
-        context = create_mock_web_app_context web_app.context_path
+        context = create_mock_web_app_context web_app
         context.setDefaultWebXml web_app.default_deployment_descriptor
         context.start
         
@@ -333,21 +333,16 @@ describe Trinidad::Logging do
       )
     end
     
-    def create_mock_web_app_context(web_app_or_context_path = '/')
-      context = create_web_app_context(MOCK_WEB_APP_DIR, web_app_or_context_path)
+    def create_mock_web_app_context(web_app)
+      context = create_web_app_context(MOCK_WEB_APP_DIR, web_app)
       context.loader = org.apache.catalina.loader.WebappLoader.new
       context
     end
 
-    def create_web_app_context(context_dir, web_app_or_context_path = '/')
-      context_path, lifecycle = web_app_or_context_path, nil
-      if web_app_or_context_path.is_a?(Trinidad::WebApp)
-        context_path = web_app_or_context_path.context_path
-        lifecycle = web_app_or_context_path.define_lifecycle
-      end
+    def create_web_app_context(context_dir, web_app)
+      context_path = web_app.context_path
       context = tomcat.addWebapp(context_path, context_dir)
-      context_config = org.apache.catalina.startup.ContextConfig.new
-      context.addLifecycleListener lifecycle ? lifecycle : context_config
+      context.addLifecycleListener web_app.define_lifecycle
       context
     end
     
