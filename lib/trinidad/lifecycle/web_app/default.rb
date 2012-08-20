@@ -17,6 +17,8 @@ module Trinidad
 
         protected
         
+        @@_add_context_config = true # due backward compatibility
+        
         def configure_deployment_descriptor(context)
           if descriptor = web_app.deployment_descriptor
             listeners = context.findLifecycleListeners
@@ -24,9 +26,13 @@ module Trinidad
               listener.is_a?(Trinidad::Tomcat::ContextConfig)
             end
 
-            unless context_config
-              context_config = Trinidad::Tomcat::ContextConfig.new
-              context.addLifecycleListener(context_config)
+            if context_config.nil?
+              if @@_add_context_config
+                context_config = Trinidad::Tomcat::ContextConfig.new
+                context.addLifecycleListener(context_config)
+              else
+                raise "initialized context is missing a ContextConfig listener"
+              end
             end
 
             context_config.setDefaultWebXml(descriptor)

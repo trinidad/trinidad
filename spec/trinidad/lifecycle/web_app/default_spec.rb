@@ -2,13 +2,15 @@ require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Lifecycle::WebApp::Default do
   include FakeApp
-  
-  before do
-    @tomcat = Trinidad::Tomcat::Tomcat.new
-    @tomcat.host.app_base = Dir.pwd
-    @context = Trinidad::Tomcat::StandardContext.new
-  end
 
+  let(:tomcat) do
+    tomcat = Trinidad::Tomcat::Tomcat.new
+    tomcat.host.app_base = Dir.pwd
+    tomcat
+  end
+  
+  let(:context) { Trinidad::Tomcat::StandardContext.new }
+  
   it "ignores the event when it's not BEFORE_START_EVENT" do
     mock = mock('event')
     mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
@@ -34,7 +36,8 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "doesn't load a default web xml when the deployment descriptor is not provided" do
     listener = rails_web_app_listener({})
-    listener.send(:configure_deployment_descriptor, @context).should be nil
+    context = web_app_context(listener.web_app)
+    listener.send(:configure_deployment_descriptor, context).should be nil
   end
 
   it "loads a default web xml when the deployment descriptor is provided" do
@@ -45,15 +48,16 @@ describe Trinidad::Lifecycle::WebApp::Default do
         :web_app_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
-
+      context = web_app_context(listener.web_app)
+      
       expected_xml = File.join(Dir.pwd, 'config/web.xml')
 
-      listener.send(:configure_deployment_descriptor, @context).should == expected_xml
+      listener.send(:configure_deployment_descriptor, context).should == expected_xml
 
-      @context.find_lifecycle_listeners.
+      context.find_lifecycle_listeners.
         map {|l| l.class.name }.should include('Java::OrgApacheCatalinaStartup::ContextConfig')
 
-      context_configs = @context.find_lifecycle_listeners.select do |listener|
+      context_configs = context.find_lifecycle_listeners.select do |listener|
         listener.class.name == 'Java::OrgApacheCatalinaStartup::ContextConfig'
       end
       context_configs.size.should == 1
@@ -63,36 +67,38 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "adds the rack servlet and the mapping for /*" do
     listener = rails_web_app_listener({})
-    listener.send :configure_rack_servlet, @context
+    listener.send :configure_rack_servlet, context
 
-    servlet = @context.find_child('RackServlet')
+    servlet = context.find_child('RackServlet')
     servlet.should_not be nil
     servlet.servlet_class.should == 'org.jruby.rack.RackServlet'
 
-    @context.find_servlet_mapping('/*').should == 'RackServlet'
+    context.find_servlet_mapping('/*').should == 'RackServlet'
   end
 
   it "configures the rack context listener from the web app" do
     listener = rackup_web_app_listener({})
-    listener.send :configure_rack_listener, @context
+    context = web_app_context(listener.web_app)
+    listener.send :configure_rack_listener, context
 
-    @context.find_application_listeners.to_a.
+    context.find_application_listeners.to_a.
       should include('org.jruby.rack.RackServletContextListener')
   end
 
   it "configures the rails context listener from the web app" do
     listener = rails_web_app_listener({})
-    listener.send :configure_rack_listener, @context
+    context = web_app_context(listener.web_app)
+    listener.send :configure_rack_listener, context
 
-    @context.find_application_listeners.to_a.
+    context.find_application_listeners.to_a.
       should include('org.jruby.rack.rails.RailsServletContextListener')
   end
   
   it "adds context parameters from the web app" do
     listener = rails_web_app_listener({ :jruby_min_runtimes => 1 })
-    listener.send :configure_context_params, @context
+    listener.send :configure_context_params, context
 
-    @context.find_parameter('jruby.min.runtimes').should == '1'
+    context.find_parameter('jruby.min.runtimes').should == '1'
   end
 
   it "ignores parameters already present in the deployment descriptor" do
@@ -101,7 +107,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
       :web_app_dir => MOCK_WEB_APP_DIR,
       :default_web_xml => 'config/web.xml'
     })
-    context = @tomcat.add_webapp('/', Dir.pwd)
+    context = tomcat.add_webapp('/', Dir.pwd)
     listener.stubs(:configure_logging)
     listener.configure(context)
 
@@ -152,15 +158,15 @@ describe Trinidad::Lifecycle::WebApp::Default do
     listener.send :add_application_java_classes, web_app.class_loader
 
     lambda {
-      web_app.class_loader.find_class('HelloTomcat').should_not be_nil
+      web_app.class_loader.find_class('HelloTomcat').should_not be nil
     }.should_not raise_error
   end
 
   it "creates a WebappLoader with the JRuby class loader" do
     listener = rackup_web_app_listener({})
-    listener.send :configure_context_loader, @context
+    listener.send :configure_context_loader, context
 
-    @context.loader.should be_a(Java::OrgApacheCatalinaLoader::WebappLoader)
+    context.loader.should be_a(Java::OrgApacheCatalinaLoader::WebappLoader)
   end
 
   it "loads the default application from the current directory using the rackup file if :web_apps is not present" do
@@ -168,12 +174,39 @@ describe Trinidad::Lifecycle::WebApp::Default do
       :web_app_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
-    listener.send :configure_init_params, @context
+    context = web_app_context(listener.web_app)
+    listener.send :configure_init_params, context
 
-    @context.find_parameter('rackup.path').should == "config.ru"
+    context.find_parameter('rackup.path').should == "config.ru"
+  end
+  
+  it "has 2 child servlets by default when context starts", :integration => true do
+    begin
+      listener = rackup_web_app_listener({
+        :web_app_dir => MOCK_WEB_APP_DIR, 
+        :rackup => 'config.ru'
+      })
+      context = web_app_context(listener.web_app)
+      context.addLifecycleListener listener
+      context.find_children.to_a.should == []
+      context.start
+
+      context.find_children.size.should == 2
+      wrapper1 = context.find_children[0]
+      wrapper1.should be_a org.apache.catalina.core.StandardWrapper
+      wrapper1.getServletClass.should == 'org.jruby.rack.RackServlet'
+      
+      wrapper2 = context.find_children[1]
+      wrapper2.should be_a org.apache.catalina.core.StandardWrapper
+      wrapper2.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    end
   end
   
   private
+  
+  def web_app_context(web_app)
+    tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
+  end
   
   def rails_web_app_listener(config)
     web_app = Trinidad::RailsWebApp.new(config, nil)

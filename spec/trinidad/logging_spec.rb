@@ -347,8 +347,7 @@ describe Trinidad::Logging do
       end
       context = tomcat.addWebapp(context_path, context_dir)
       context_config = org.apache.catalina.startup.ContextConfig.new
-      context.addLifecycleListener context_config
-      context.addLifecycleListener lifecycle if lifecycle
+      context.addLifecycleListener lifecycle ? lifecycle : context_config
       context
     end
     
