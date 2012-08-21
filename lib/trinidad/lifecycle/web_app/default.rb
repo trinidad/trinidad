@@ -14,7 +14,13 @@ module Trinidad
           configure_context_params(context)
           configure_context_loader(context)
         end
-
+        
+        def before_init(event)
+          super
+          set_context_xml event.lifecycle
+          # AFTER_INIT_EVENT ContextConfig#init() will pick this up
+        end
+        
         protected
         
         @@_add_context_config = true # due backward compatibility
@@ -91,6 +97,23 @@ module Trinidad
 
           resources_dir = File.join(web_app.web_app_dir, web_app.classes_dir)
           class_loader.addURL(java.io.File.new(resources_dir).to_url)
+        end
+        
+        def set_context_xml(context)
+          # behave similar to a .war - checking /META-INF/context.xml on CP
+          context_xml = web_app.context_xml
+          context_xml = 'META-INF/context.xml' if context_xml.nil?
+          if context_xml
+            # NOTE: make it absolute to ContextConfig to not use a baseDir :
+            unless java.io.File.new(context_xml).isAbsolute
+              if web_app.classes_dir
+                context_xml = File.join(web_app.classes_dir, context_xml)
+              end
+              context_xml = 
+                File.expand_path(File.join(web_app.web_app_dir, context_xml))
+            end
+            context.setDefaultContextXml(context_xml)
+          end
         end
         
       end

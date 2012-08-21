@@ -20,14 +20,15 @@ module Trinidad
       config.has_key?(key) ? config[key] : default_config[key]
     end
     
-    %w{ context_path web_app_dir libs_dir classes_dir async_supported 
-        jruby_min_runtimes jruby_max_runtimes jruby_compat_version rackup log 
-        reload_strategy }.each do |method|
+    %w{ context_path web_app_dir libs_dir classes_dir
+        jruby_min_runtimes jruby_max_runtimes jruby_compat_version
+        rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
     
     def web_xml; self[:web_xml] || self[:default_web_xml]; end
     def default_web_xml; self[:default_web_xml]; end
+    def context_xml; self[:context_xml] || self[:default_context_xml]; end
     
     def public_root; self[:public] || 'public'; end
     def environment; self[:environment] || 'development'; end
@@ -66,7 +67,8 @@ module Trinidad
 
     def deployment_descriptor
       @deployment_descriptor ||= if web_xml
-        file = File.expand_path(File.join(work_dir, web_xml))
+        # absolute ?
+        file = File.expand_path(File.join(web_app_dir, web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -74,7 +76,7 @@ module Trinidad
     # @deprecated use {#deployment_descriptor}
     def default_deployment_descriptor
       @default_deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(work_dir, default_web_xml))
+        file = File.expand_path(File.join(web_app_dir, default_web_xml))
         File.exist?(file) ? file : nil
       end
     end

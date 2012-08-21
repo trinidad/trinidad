@@ -202,10 +202,43 @@ describe Trinidad::Lifecycle::WebApp::Default do
     end
   end
   
+  it "loads context.xml for application from META-INF", :integration => true do
+    begin
+      web_app = Trinidad::WebApp.create({}, { 
+          :context_path => '/rails', 
+          :web_app_dir => RAILS_WEB_APP_DIR, 
+          :classes_dir => 'lib/classes', # contains META-INF/context.xml
+          :environment => 'production' }
+      )
+      #logger = java.util.logging.Logger.getLogger('org.apache.catalina.startup.ContextConfig')
+      #logger.level = java.util.logging.Level::ALL
+      #console_handler  = java.util.logging.ConsoleHandler.new
+      #console_handler.level = java.util.logging.Level::ALL
+      #logger.addHandler(console_handler)
+      
+      context = tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
+      context.addLifecycleListener web_app.define_lifecycle
+      context.start
+      
+      context.getDefaultContextXml.should == File.join(RAILS_WEB_APP_DIR, 'lib/classes/META-INF/context.xml')
+      context.getSessionCookieName.should == 'TRINICOOKIE'
+      
+      valves = context.pipeline.valves.to_a
+      valves.find { |valve| valve.is_a?(Java::OrgApacheCatalinaValves::AccessLogValve) }.should_not be nil
+      
+      params = context.getServletContext.getInitParameterNames.to_a
+      params.should include('theOldParameter')
+      context.getServletContext.getInitParameter('theZenParameter').should == '42'
+      
+      #logger.level = java.util.logging.Level::INFO
+      #logger.removeHandler(console_handler)
+    end
+  end
+  
   private
   
   def web_app_context(web_app)
-    tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
+    tomcat.addWebapp(web_app.context_path || '/', web_app.web_app_dir)
   end
   
   def rails_web_app_listener(config)
