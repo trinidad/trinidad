@@ -40,15 +40,15 @@ module Trinidad
     end
 
     def ssl_enabled?
-      @config[:ssl] && !@config[:ssl].empty?
+      !! @config[:ssl] && ! @config[:ssl].empty?
     end
 
     def ajp_enabled?
-      @config[:ajp] && !@config[:ajp].empty?
+      !! @config[:ajp] && ! @config[:ajp].empty?
     end
 
     def http_configured?
-      (@config[:http] && !@config[:http].empty?) || @config[:address] != 'localhost'
+      (!! @config[:http] && ! @config[:http].empty?) || @config[:address] != 'localhost'
     end
     
     def add_ajp_connector
@@ -107,10 +107,10 @@ module Trinidad
 
     def add_web_app(web_app, host = nil)
       host ||= web_app.config[:host] || @tomcat.host
-      app_context = @tomcat.addWebapp(host, web_app.context_path, web_app.web_app_dir)
-      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, app_context)
-      app_context.add_lifecycle_listener(web_app.define_lifecycle)
-      app_context
+      context = @tomcat.addWebapp(host, web_app.context_path, web_app.web_app_dir)
+      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
+      context.add_lifecycle_listener(web_app.define_lifecycle)
+      context
     end
     
     def start

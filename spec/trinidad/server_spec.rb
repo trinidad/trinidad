@@ -16,7 +16,7 @@ describe Trinidad::Server do
   end
 
   it "always uses symbols as configuration keys" do
-    Trinidad.configure {|c| c.port = 4000 }
+    Trinidad.configure { |c| c.port = 4000 }
     server = Trinidad::Server.new
     server.config[:port].should == 4000
   end
@@ -30,12 +30,12 @@ describe Trinidad::Server do
 
   it "disables ssl when config param is nil" do
     server = Trinidad::Server.new
-    server.ssl_enabled?.should be_false
+    server.ssl_enabled?.should be false
   end
 
   it "disables ajp when config param is nil" do
     server = Trinidad::Server.new
-    server.ajp_enabled?.should be_false
+    server.ajp_enabled?.should be false
   end
 
   it "enables ssl when config param is a number" do
@@ -43,8 +43,8 @@ describe Trinidad::Server do
       server = Trinidad::Server.new({:ssl => {:port => 8443},
         :web_app_dir => MOCK_WEB_APP_DIR})
 
-      server.ssl_enabled?.should be_true
-      File.exist?('ssl').should be_true
+      server.ssl_enabled?.should be true
+      File.exist?('ssl').should be true
     ensure
       rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
     end
@@ -111,7 +111,7 @@ describe Trinidad::Server do
 
   it "uses the default HttpConnector when http is not configured" do
     server = Trinidad::Server.new
-    server.http_configured?.should be_false
+    server.http_configured?.should be false
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11Protocol'
   end
@@ -121,7 +121,7 @@ describe Trinidad::Server do
       :web_app_dir => MOCK_WEB_APP_DIR,
       :http => {:nio => true}
     })
-    server.http_configured?.should be_true
+    server.http_configured?.should be true
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11NioProtocol'
     server.tomcat.connector.protocol.should == 'org.apache.coyote.http11.Http11NioProtocol'
@@ -181,7 +181,7 @@ describe Trinidad::Server do
       },
       :web_app_dir => MOCK_WEB_APP_DIR})
 
-    File.exist?('ssl').should be_false
+    File.exist?('ssl').should be false
   end
 
   it "uses localhost as host name by default" do
