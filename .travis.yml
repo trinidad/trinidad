@@ -7,3 +7,5 @@ rvm:
   - jruby-18mode
   - jruby-19mode
   - jruby-head
+before_install:
+  - export JRUBY_OPTS="--server -Xcext.enabled=false -Xcompile.invokedynamic=false"
