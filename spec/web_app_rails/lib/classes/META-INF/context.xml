@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context 
+  sessionCookieName="TRINICOOKIE" swallowOutput="true"
+  cacheMaxSize="5120" unloadDelay="3500" >
+  <Valve className="org.apache.catalina.valves.AccessLogValve"
+         prefix="access_log." directory="log" pattern="common"/>
+  <Parameter name="theZenParameter" value="42" override="true"/>
+  <Parameter name="theOldParameter" value="24" override="false"/>
+  <Environment name="maxTries" value="8" type="java.lang.Integer"/>
+</Context>
