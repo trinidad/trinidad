@@ -202,6 +202,7 @@ describe Trinidad::WebApp do
     app.rack_servlet.should_not be nil
     app.rack_servlet[:name].should == 'RackServlet'
     app.rack_servlet[:class].should == 'org.jruby.rack.RackServlet'
+    app.rack_servlet[:mapping].should == '/*'
   end
 
   it "adds async_supported to servlet config (false by default)" do
@@ -363,13 +364,15 @@ describe Trinidad::WebApp do
       :servlet => {
         :class => 'org.jruby.trinidad.FakeServlet',
         :name => 'FakeServlet',
-        :async_supported => true
+        :async_supported => true,
+        :mapping => '/fake'
       }
     })
 
     app.servlet[:class].should == 'org.jruby.trinidad.FakeServlet'
     app.servlet[:name].should == 'FakeServlet'
     app.servlet[:async_supported].should == true
+    app.servlet[:mapping].should == '/fake'
   end
 
   it "is a war application if the context path ends with .war" do

@@ -116,6 +116,7 @@ module Trinidad
             :class => servlet_class, :name => servlet_name,
             :async_supported => !! ( servlet_config.has_key?(:async_supported) ? 
                 servlet_config[:async_supported] : async_supported ),
+            :mapping => servlet_config[:mapping] || '/*',
             :instance => servlet_config[:instance]
           }
         else

@@ -54,19 +54,21 @@ module Trinidad
             wrapper.servlet_class = web_app.rack_servlet[:class]
             wrapper.async_supported = web_app.rack_servlet[:async_supported]
           end
-          wrapper.name = web_app.rack_servlet[:name]
+          name = wrapper.name = web_app.rack_servlet[:name]
 
           context.add_child(wrapper)
-          context.add_servlet_mapping('/*', wrapper.name)
+          context.add_servlet_mapping(web_app.rack_servlet[:mapping], name)
         end
 
         def configure_rack_listener(context)
-          context.addApplicationListener(web_app.rack_listener) unless web_app.rack_servlet[:instance]
+          unless web_app.rack_servlet[:instance]
+            context.add_application_listener(web_app.rack_listener)
+          end
         end
 
         def configure_context_params(context)
           web_app.context_params.each do |name, value|
-            context.addParameter(name, value)
+            context.add_parameter(name, value)
           end
         end
         # @deprecated use {#configure_context_params}
