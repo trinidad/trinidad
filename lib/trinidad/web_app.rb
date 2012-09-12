@@ -216,21 +216,33 @@ module Trinidad
         (default_config && default_config[:web_app_dir]) || Dir.pwd
       # standart Rails 3.x `class Application < Rails::Application`
       if File.exists?(application = File.join(web_app_dir, 'config/application.rb'))
-        application_rb = File.read(application)
-        return true if application_rb =~ /^[^#]*Rails::Application/
+        return true if file_line_match?(application, /^[^#]*Rails::Application/)
       end
       if File.exists?(environment = File.join(web_app_dir, 'config/environment.rb'))
-        environment_rb = File.read(environment)
-        # customized Rails 3.x, expect a `Rails::Application` subclass
-        return true if environment_rb =~ /^[^#]*Rails::Application/
-        # plain-old Rails 2.3 `RAILS_GEM_VERSION = '2.3.14'` ...
-        return true if environment_rb =~ /^[^#]*RAILS_GEM_VERSION/
+        return true if file_line_match?(environment) do |line|
+          # customized Rails 3.x, expects a `Rails::Application` subclass
+          # or a plain-old Rails 2.3 with `RAILS_GEM_VERSION = '2.3.14'`
+          line =~ /^[^#]*Rails::Application/ || line =~ /^[^#]*RAILS_GEM_VERSION/
+        end
       end
       false
     end
     
     def self.war?(config, default_config = nil)
       config[:context_path] && config[:context_path][-4..-1] == '.war'
+    end
+    
+    private
+    
+    def self.file_line_match?(path, pattern = nil)
+      File.open(path) do |file|
+        if block_given?
+          file.each_line { |line| return true if yield(line) }
+        else
+          file.each_line { |line| return true if line =~ pattern }
+        end
+      end
+      false
     end
     
     class Holder
@@ -334,7 +346,7 @@ module Trinidad
     end
 
     def self.threadsafe_match?(file)
-      File.exist?(file) && File.readlines(file).any? { |l| l =~ /^[^#]*threadsafe!/ }
+      File.exist?(file) && file_line_match?(file, /^[^#]*threadsafe!/)
     end
     
   end
