@@ -38,7 +38,7 @@ namespace :tomcat do
   
   TARGET_DIR = File.expand_path('../../target', __FILE__)
   
-  desc "Updates Tomcat to a given version e.g. `rake tomcat:update[7.0.26]`"
+  desc "Updates Tomcat to a given version e.g. `rake tomcat:update[7.0.30]`"
   task :update, :version do |_, args|
     Rake::Task['tomcat:fetch'].invoke(version = args[:version])
     Rake::Task['tomcat:patch'].invoke
@@ -49,7 +49,8 @@ namespace :tomcat do
     file.gsub!(/TOMCAT_VERSION = '(.+)'/, "TOMCAT_VERSION = '#{version}'")
     File.open(path, 'w') { |io| io.write(file) }
     
-    puts "DONE - Tomcat's version has been updated succesfully, please build Trinidad again."
+    puts "DONE - Tomcat's version has been updated to #{version} succesfully !\n"
+    puts "`export trinidad_jars=true && bundle install` to use the local trinidad_jars gem with bundler"
   end
 
   task :compile do

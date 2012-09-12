@@ -1,3 +1,25 @@
+== Trinidad .NEXT (2012-xx-xx)
+
+Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
+
+ - Rails 3.1+ `render stream: true` support with HTTP chunked encoding
+ - initial compatibility with Rails master (getting torwards 4.0.0.beta)
+ - all Rack applications now support pooling runtimes (not just Rails)
+ - better and more predictable application pool initialization
+ - support for fully leveraging the Servlet API for parameters/cookies
+   this is useful for Java integration cases when a servlet/filter consumes
+   the input stream before Rails (e.g. valves such as AccessLogValve).
+   it is an experimental feature that might change in the future and 
+   currently requires setting 'jruby.rack.handler.env' param to 'servlet'
+
+== Trinidad_jars 1.0.7 (2012-09-12)
+
+* Tomcat 7.0.30 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
+== Trinidad_jars 1.0.6 (2012-08-21)
+
+* Tomcat 7.0.29 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
 == Trinidad 1.4.1 (2012-08-17)
 
 * make sure file logging rotates correctly when file handler attempts rolling 
