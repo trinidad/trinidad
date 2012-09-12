@@ -6,9 +6,8 @@ pkg
 target
 ssl
 log
+restart.txt
 nbproject
+catalog.xml
 .idea
-META-INF
-.rvmrc
 Gemfile.lock
-spec/web_app_mock/restart.txt

@@ -1,6 +1,6 @@
 == Trinidad
 
-Copyright (c) 2009-2012 David Calavera
+Copyright (c) 2012 Team Trinidad and contributors http://github.com/trinidad
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -21,7 +21,8 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-== Additional Bundled Software
+== Tomcat
 
-Apache Tomcat is licensed according to the terms of Apache License, Version 2.0 (current). 
+Apache Tomcat (Copyright 1999-2012 The Apache Software Foundation) 
+is licensed under the Apache License, Version 2.0.
 See http://www.apache.org/licenses/LICENSE-2.0 for details.

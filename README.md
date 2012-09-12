@@ -162,6 +162,20 @@ If this is not enough you can still configure a Java logging library e.g. SLF4J,
 just make sure you tell Trinidad to use it as well, if needed, using the 
 **jruby.rack.logging** context parameter in *web.xml*.
 
+### Context Configuration
+
+For slightly advanced (and "dirty" XML :)) application configuration Trinidad 
+also supports the exact same *context.xml* format as Tomcat. Each web app is 
+represented as a context instance and might be configured as such. You do not 
+need to repeat configuring the same parameters you have already setup with the 
+Trinidad configuration. This is meant to be mostly for those familiar with 
+Tomcat internals.
+Currently the application's *context.xml* is expected to be located on the 
+class-path under your *[classes]/META-INF* directory.
+
+Context Doc: http://tomcat.apache.org/tomcat-7.0-doc/config/context.html
+
+
 ## Hot Deployment
 
 Trinidad supports monitoring a file to reload applications, when the file 
@@ -239,18 +253,27 @@ end
 Trinidad allows to extend itself with more (not just Tomcat) features, 
 here is a list of the available extensions that are "officially supported":
 
-* Database Connection Pooling: http://github.com/trinidad/trinidad_dbpool_extension
-* Daemonize Trinidad, based on Akuma: http://github.com/trinidad/trinidad_daemon_extension
-* Init Services (for Unix and Windows), based on Commons Daemon: http://github.com/trinidad/trinidad_init_services
-* Logging, enhance Trinidad's logging system: http://github.com/trinidad/trinidad_logging_extension
-* Application and Server Lifecycle Management: http://github.com/trinidad/trinidad_lifecycle_extension
-* Trinidad's Management Console and REST API: http://github.com/trinidad/trinidad_sandbox_extension
-* Scheduler, based on Quartz: http://github.com/trinidad/trinidad_scheduler_extension
-* Valves - components inserted into the request pipeline (e.g. Access Log): http://github.com/trinidad/trinidad_valve_extension
+* Database Connection Pooling: 
+  http://github.com/trinidad/trinidad_dbpool_extension
+* Daemonize Trinidad, based on Akuma: 
+  http://github.com/trinidad/trinidad_daemon_extension
+* Init Services (for Unix and Windows), based on Commons Daemon: 
+  http://github.com/trinidad/trinidad_init_services
+* Logging, enhance Trinidad's logging system: 
+  http://github.com/trinidad/trinidad_logging_extension
+* Application and Server Lifecycle Management: 
+  http://github.com/trinidad/trinidad_lifecycle_extension
+* Trinidad's Management Console and REST API: 
+  http://github.com/trinidad/trinidad_sandbox_extension
+* Scheduler, based on Quartz: 
+  http://github.com/trinidad/trinidad_scheduler_extension
+* Valves - components inserted into the request pipeline (e.g. Access Log): 
+  http://github.com/trinidad/trinidad_valve_extension
 
 You can find further information on how to write extensions in the wiki: 
 http://wiki.github.com/trinidad/trinidad/extensions
 
 ## Copyright
 
-Copyright (c) 2011-2012 David Calavera. See LICENSE for details.
+Copyright (c) 2012 [Team Trinidad](https://github.com/trinidad). 
+See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
