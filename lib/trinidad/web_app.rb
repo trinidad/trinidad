@@ -114,7 +114,8 @@ module Trinidad
              ! web_xml_filter?('org.jruby.rack.RackFilter')
           {
             :class => servlet_class, :name => servlet_name,
-            :async_supported => !! servlet_config[:async_supported],
+            :async_supported => !! ( servlet_config.has_key?(:async_supported) ? 
+                servlet_config[:async_supported] : async_supported ),
             :instance => servlet_config[:instance]
           }
         else

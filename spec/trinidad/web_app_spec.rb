@@ -203,6 +203,16 @@ describe Trinidad::WebApp do
     app.rack_servlet[:name].should == 'RackServlet'
     app.rack_servlet[:class].should == 'org.jruby.rack.RackServlet'
   end
+
+  it "adds async_supported to servlet config (false by default)" do
+    app = Trinidad::WebApp.create({}, {})
+    app.rack_servlet[:async_supported].should == false
+  end
+
+  it "configures async_supported from trinidad's configuration" do
+    app = Trinidad::WebApp.create({ :async_supported => true })
+    app.rack_servlet[:async_supported].should == true
+  end
   
   it "uses rack_listener as the default listener when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({})
@@ -543,6 +553,31 @@ describe Trinidad::WebApp do
     ensure
       FileUtils.rm custom_web_xml
     end
+  end
+  
+  let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
+  
+  private
+  
+  def custom_context(web_app)
+    context = CustomContext.new
+    context.setName(web_app.context_path)
+    context.setPath(web_app.context_path)
+    context.setDocBase(web_app.context_dir)
+    context.addLifecycleListener(Trinidad::Tomcat::Tomcat::DefaultWebXmlListener.new)
+    context.addLifecycleListener(ctxCfg = Trinidad::Tomcat::ContextConfig.new)
+    ctxCfg.setDefaultWebXml(tomcat.noDefaultWebXmlPath)
+    tomcat.getHost().addChild(context)
+    context
+  end
+  
+  class CustomContext < Java::OrgApacheCatalinaCore::StandardContext
+
+    def addChild(container)
+      raise java.lang.IllegalArgumentException.new('add_child')
+      super
+    end
+
   end
   
 end
