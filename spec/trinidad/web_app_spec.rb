@@ -223,6 +223,7 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({
       :jruby_min_runtimes => 1,
       :jruby_max_runtimes => 1,
+      :jruby_compat_version => '1.9',
       :public => 'foo',
       :environment => :production
     })
@@ -230,6 +231,7 @@ describe Trinidad::WebApp do
     params = app.init_params  
     params['jruby.min.runtimes'].should == '1'
     params['jruby.max.runtimes'].should == '1'
+    params['jruby.compat.version'].should == '1.9'
     params['public.root'].should == '/foo'
     params['rails.env'].should == 'production'
     params['rails.root'].should == '/'

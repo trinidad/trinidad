@@ -78,11 +78,11 @@ module Trinidad
     
     %w{ port address environment context_path
         libs_dir classes_dir default_web_xml
-        jruby_min_runtimes jruby_max_runtimes
+        jruby_min_runtimes jruby_max_runtimes jruby_compat_version
         rackup servlet public hosts
         http ajp ssl extensions
         apps_base web_apps web_app_dir
-        monitor log trap }.each do |method|
+        monitor reload_strategy log trap }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
       class_eval "def #{method}=(value); self[:'#{method}'] = value; end"
     end
