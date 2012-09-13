@@ -6,6 +6,7 @@ module Trinidad
         
         def configure(context)
           super
+          configure_default_servlet(context)
           deployment_descriptor = configure_deployment_descriptor(context)
           unless deployment_descriptor
             configure_rack_servlet(context)
@@ -57,7 +58,7 @@ module Trinidad
           name = wrapper.name = web_app.rack_servlet[:name]
 
           context.add_child(wrapper)
-          context.add_servlet_mapping(web_app.rack_servlet[:mapping], name)
+          add_servlet_mapping(context, web_app.rack_servlet[:mapping], name)
         end
 
         def configure_rack_listener(context)
@@ -115,6 +116,52 @@ module Trinidad
                 File.expand_path(File.join(web_app.web_app_dir, context_xml))
             end
             context.setDefaultContextXml(context_xml)
+          end
+        end
+        
+        def configure_default_servlet(context)
+          default = Trinidad::WebApp::DEFAULT_SERVLET_NAME
+          default_wrapper = context.find_child(default)
+          case default_servlet = web_app.default_servlet
+          when true
+            # nothing to do leave default as is
+          when false
+            # use the one from web.xml - remove what Tomcat set-up
+            remove_servlet_mapping(context, default)
+            context.remove_child(default_wrapper)
+            false
+          else
+            name = default_servlet[:name] || default
+            servlet = default_servlet[:instance]
+            servlet_class = default_servlet[:class]
+
+            if servlet || servlet_class
+              wrapper = context.create_wrapper
+              wrapper.servlet = servlet if servlet
+              wrapper.servlet_class = servlet_class if servlet_class
+              wrapper.name = name
+              context.remove_child(default_wrapper)
+              context.add_child(wrapper) # the new 'default' servlet
+            else
+              wrapper = nil
+              # we do not remove but only "update" the default :
+            end
+            # NOTE: we keep the root mapping / should not hurt ?
+            if mapping = default_servlet[:mapping]
+              add_servlet_mapping(context, mapping, name)
+              # else keep the servlet mapping as is ...
+            end
+            wrapper
+          end
+        end
+        
+        private
+        
+        def add_servlet_mapping(context, mapping, name)
+          if mapping.is_a?(String) || mapping.is_a?(Symbol) 
+            context.add_servlet_mapping(mapping.to_s, name)
+          else
+            mapping.each { |m| add_servlet_mapping(context, m, name) }
           end
         end
         

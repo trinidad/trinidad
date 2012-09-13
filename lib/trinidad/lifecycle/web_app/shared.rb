@@ -37,17 +37,33 @@ module Trinidad
           context.remove_welcome_file('index.htm')
           context.remove_welcome_file('index.html')
 
-          jsp_servlet = context.find_child('jsp')
-          context.remove_child(jsp_servlet) if jsp_servlet
-
-          context.remove_servlet_mapping('*.jspx')
-          context.remove_servlet_mapping('*.jsp')
+          if jsp_wrapper = context.find_child('jsp')
+            remove_servlet_mapping(context, 'jsp')
+            context.remove_child(jsp_wrapper)
+          end
 
           context.process_tlds = false
           context.xml_validation = false
         end
+
+        # Remove all servlet mappings for given (servlet) name.
+        def remove_servlet_mapping(context, name)
+          find_servlet_mapping(context, name).each do
+            |pattern| context.remove_servlet_mapping(pattern)
+          end
+        end
+        
+        # Find all servlet mappings for given (servlet) name.
+        def find_servlet_mapping(context, name)
+          name_mapping = []
+          context.find_servlet_mappings.each do |pattern|
+            mapping_for = context.find_servlet_mapping(pattern)
+            name_mapping << pattern if mapping_for == name
+          end
+          name_mapping
+        end
         
       end
-    end 
+    end
   end
 end

@@ -225,7 +225,7 @@ describe Trinidad::WebApp do
     end
   end
 
-  it "uses rack_servlet as the default servlet when a deployment descriptor is not provided" do
+  it "uses RackServlet with /* when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({}, {})
     app.rack_servlet.should_not be nil
     app.rack_servlet[:name].should == 'RackServlet'
@@ -243,7 +243,7 @@ describe Trinidad::WebApp do
     app.rack_servlet[:async_supported].should == true
   end
   
-  it "uses rack_listener as the default listener when a deployment descriptor is not provided" do
+  it "configured RailsServletContextListener when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({})
     app.rack_listener.should == 'org.jruby.rack.rails.RailsServletContextListener'
   end
@@ -604,6 +604,66 @@ describe Trinidad::WebApp do
       web_app.web_xml_servlet?('org.kares.missing.ServletClass', 'custom-servlet').should be true
     ensure
       FileUtils.rm custom_web_xml
+    end
+  end
+  
+  it "'keeps' default servlet (by default)" do
+    FakeFS do
+      create_rails_web_xml
+
+      app = Trinidad::WebApp.create({
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.default_servlet.should be true # true - keep as is
+    end
+  end
+
+  it "'removes' default servlet when a deployment descriptor provides a default named servlet" do
+    FileUtils.touch custom_web_xml = "extended-web.xml"
+    begin
+      FakeFS do
+        create_config_file custom_web_xml, '' +
+          '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<web-app>' +
+          '  <servlet>' +
+          '    <servlet-class>org.kares.Servlet42</servlet-class>' +
+          '    <servlet-name>default</servlet-name>' +
+          '    <async-supported>false</async-supported>' +
+          '  </servlet>' +
+          '  <servlet-mapping>' +
+          '    <url-pattern>/</url-pattern>' +
+          '    <servlet-name>default</servlet-name>' +
+          '  </servlet-mapping>' +
+          '</web-app>'
+
+        app = Trinidad::WebApp.create({
+          :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
+        })
+        app.default_servlet.should be false # false - remove default
+      end
+    ensure
+      FileUtils.rm custom_web_xml
+    end
+  end
+  
+  it "returns default servlet setup when configured" do
+    FakeFS do
+      create_rails_web_xml
+
+      app = Trinidad::WebApp.create({
+        :default_servlet => {
+          :class => 'org.kares.DefaultServlet',
+          :mapping => [ '/', '/assets' ]
+        },
+        :web_app_dir => Dir.pwd,
+        :default_web_xml => 'config/web.xml'
+      })
+      app.default_servlet.should be_a Hash
+      app.default_servlet.should == {
+        :class => 'org.kares.DefaultServlet',
+        :mapping => [ '/', '/assets' ]
+      }
     end
   end
   

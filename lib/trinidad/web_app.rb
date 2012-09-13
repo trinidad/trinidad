@@ -103,23 +103,64 @@ module Trinidad
       vars.each { |var| instance_variable_set(var, nil) }
     end
     
+    DEFAULT_SERVLET_CLASS = nil # by default we resolve by it's name
+    DEFAULT_SERVLET_NAME = 'default'
+    
+    # Returns a servlet config for the DefaultServlet. 
+    # This servlet is setup for each and every Tomcat context and is named 
+    # 'default' and mapped to '/' we allow fine tunning of this servlet.
+    # Return values should be interpreted as follows :
+    #  true - do nothing leave the servlet as set-up (by default)
+    #  false - remove the set-up default (e.g. configured in web.xml)
+    def default_servlet
+      return @default_servlet unless @default_servlet.nil?
+      @default_servlet ||= begin
+        if ! web_xml_servlet?(nil, DEFAULT_SERVLET_NAME)
+          default_servlet = self[:default_servlet]
+          if default_servlet.is_a?(javax.servlet.Servlet)
+            { :instance => default_servlet }
+          else
+            default_servlet || true
+          end
+        else
+          false # configured in web.xml thus remove the (default) "default"
+        end
+      end
+    end
+    
+    RACK_SERVLET_CLASS = 'org.jruby.rack.RackServlet'
+    RACK_SERVLET_NAME = 'RackServlet' # in-case of a "custom" RackServlet class
+    RACK_FILTER_CLASS = 'org.jruby.rack.RackFilter'
+    
+    # Returns a config for the RackServlet or nil if no need to set-up one.
+    # (to be used for dispatching to this Rack / Rails web application)
     def rack_servlet
       return nil if @rack_servlet == false
       @rack_servlet ||= begin
-        servlet_config = self[:servlet] || {}
-        servlet_class = servlet_config[:class] || 'org.jruby.rack.RackServlet'
-        servlet_name = servlet_config[:name] || 'RackServlet'
+        rack_servlet = self[:rack_servlet] || self[:servlet] || {}
+        servlet_class = rack_servlet[:class] || RACK_SERVLET_CLASS
+        servlet_name = rack_servlet[:name] || RACK_SERVLET_NAME
 
-        if ! web_xml_servlet?(servlet_class, servlet_name) && 
-             ! web_xml_filter?('org.jruby.rack.RackFilter')
-          {
-            :class => servlet_class, :name => servlet_name,
-            :async_supported => !! ( servlet_config.has_key?(:async_supported) ? 
-                servlet_config[:async_supported] : async_supported ),
-            :mapping => servlet_config[:mapping] || '/*',
-            :instance => servlet_config[:instance]
-          }
+        rack_configured = web_xml_servlet?(servlet_class, servlet_name) || 
+          web_xml_filter?(RACK_FILTER_CLASS)
+        
+        if ! rack_configured
+          if rack_servlet.is_a?(javax.servlet.Servlet)
+            { :instance => rack_servlet }
+          else
+            {
+              :class => servlet_class, :name => servlet_name,
+              :async_supported => !! ( rack_servlet.has_key?(:async_supported) ? 
+                  rack_servlet[:async_supported] : async_supported ),
+              :mapping => rack_servlet[:mapping] || '/*',
+              :instance => rack_servlet[:instance]
+            }
+          end
         else
+          if ! rack_servlet.empty?
+            logger.info "ignoring :rack_servlet configuration for " + 
+                        "#{context_path} due #{deployment_descriptor}"
+          end
           false # no need to setup a rack servlet
         end
       end || nil
@@ -200,12 +241,15 @@ module Trinidad
           require 'rexml/document'
           @web_xml_doc = REXML::Document.new(File.read(deployment_descriptor))
         rescue REXML::ParseException => e
-          log = Trinidad::Logging::LogFactory.getLog('')
-          log.warn "invalid deployment descriptor:[#{deployment_descriptor}]\n #{e.message}"
+          logger.warn "invalid deployment descriptor:[#{deployment_descriptor}]\n #{e.message}"
           @web_xml_doc = false
         end
         @web_xml_doc || nil
       end
+    end
+    
+    def logger
+      @logger ||= Trinidad::Logging::LogFactory.getLog('')
     end
     
     protected

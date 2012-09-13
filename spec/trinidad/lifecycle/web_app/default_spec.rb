@@ -113,7 +113,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     context.find_parameter('jruby.max.runtimes').should be nil
     context.start
-    context.find_parameter('jruby.max.runtimes').should == '8'
+    context.find_parameter('jruby.max.runtimes').should == '4'
   end
 
   it "doesn't load classes into a jar when the libs directory is not present" do
@@ -180,28 +180,6 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.find_parameter('rackup.path').should == "config.ru"
   end
   
-  it "has 2 child servlets by default when context starts", :integration => true do
-    begin
-      listener = rackup_web_app_listener({
-        :web_app_dir => MOCK_WEB_APP_DIR, 
-        :rackup => 'config.ru'
-      })
-      context = web_app_context(listener.web_app)
-      context.addLifecycleListener listener
-      context.find_children.to_a.should == []
-      context.start
-
-      context.find_children.size.should == 2
-      wrapper1 = context.find_children[0]
-      wrapper1.should be_a org.apache.catalina.core.StandardWrapper
-      wrapper1.getServletClass.should == 'org.jruby.rack.RackServlet'
-      
-      wrapper2 = context.find_children[1]
-      wrapper2.should be_a org.apache.catalina.core.StandardWrapper
-      wrapper2.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
-    end
-  end
-  
   it "loads context.xml for application from META-INF", :integration => true do
     begin
       web_app = Trinidad::WebApp.create({}, { 
@@ -235,7 +213,139 @@ describe Trinidad::Lifecycle::WebApp::Default do
     end
   end
   
+  it "has 2 child servlets mapped by default when context starts", :integration => true do
+    listener = rackup_web_app_listener({
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.find_children.to_a.should == []
+    context.start
+
+    context.find_children.size.should == 2
+    wrapper1 = context.find_children[0]
+    wrapper1.should be_a org.apache.catalina.core.StandardWrapper
+    wrapper1.getServletClass.should == 'org.jruby.rack.RackServlet'
+    wrapper1.name.should == 'RackServlet'
+    context.findServletMapping('/*').should == 'RackServlet'
+
+    wrapper2 = context.find_children[1]
+    wrapper2.should be_a org.apache.catalina.core.StandardWrapper
+    wrapper2.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+  end
+  
+  it "keeps DefaultServlet when option is true", :integration => true do
+    listener = rackup_web_app_listener({
+      :default_servlet => true,
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = default_wrapper(context)
+    wrapper.name.should == 'default'
+    wrapper.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    context.findServletMapping('/').should == 'default'
+  end
+
+  it "re-configures DefaultServlet when default in web.xml", :integration => true do
+    FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/default-web.xml"
+    begin
+      create_config_file custom_web_xml, '' +
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<web-app>' +
+        '  <servlet>' +
+        '    <servlet-class>org.apache.catalina.servlets.CGIServlet</servlet-class>' +
+        '    <servlet-name>default</servlet-name>' +
+        '  </servlet>' +
+        '  <servlet-mapping>' +
+        '    <url-pattern>/default</url-pattern>' +
+        '    <servlet-name>default</servlet-name>' +
+        '  </servlet-mapping>' +
+        '</web-app>'
+
+      listener = rackup_web_app_listener({
+        :web_xml => 'default-web.xml',
+        :web_app_dir => MOCK_WEB_APP_DIR, 
+        :rackup => 'config.ru'
+      })
+      context = web_app_context(listener.web_app)
+      context.addLifecycleListener listener
+      context.start
+
+      wrapper = default_wrapper(context)
+      wrapper.name.should == 'default'
+      wrapper.getServletClass.should == 'org.apache.catalina.servlets.CGIServlet'
+      context.findServletMapping('/default').should == 'default'
+      
+      context.find_children.find do |wrapper|
+        wrapper.getServletClass == 'org.apache.catalina.servlets.DefaultServlet'
+      end.should be nil
+    ensure
+      FileUtils.rm custom_web_xml
+    end
+  end
+  
+  class DefaultServlet < org.apache.catalina.servlets.DefaultServlet
+    field_accessor :input, :output, :debug
+    
+    def initialize
+      super
+      self.output = self.input = 4224
+    end
+  end
+  
+  it "allows overriding DefaultServlet with (configured) servlet instance", :integration => true do
+    listener = rackup_web_app_listener({
+      :default_servlet => servlet = DefaultServlet.new,
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = default_wrapper(context)
+    wrapper.name.should == 'default'
+    wrapper.getServletClass.should_not == 'org.apache.catalina.servlets.DefaultServlet'
+    wrapper.getServlet.should be servlet
+    context.findServletMapping('/').should == 'default'
+    servlet.input.should == 4224
+    
+    context.find_children.find do |wrapper|
+      wrapper.getServletClass == 'org.apache.catalina.servlets.DefaultServlet'
+    end.should be nil
+  end
+  
+  it "allows overriding DefaultServlet with servlet and custom mapping", :integration => true do
+    listener = rackup_web_app_listener({
+      :default_servlet => { :instance => servlet = DefaultServlet.new, :mapping => [ '/static1', '/static2' ] },
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = default_wrapper(context)
+    wrapper.name.should == 'default'
+    wrapper.getServlet.should be servlet
+    context.findServletMapping('/').should == 'default'
+    context.findServletMapping('/static1').should == 'default'
+    context.findServletMapping('/static2').should == 'default'
+  end
+  
   private
+  
+  def default_wrapper(context)
+    context.find_children.size.should >= 1
+    context.find_children.find do |wrapper|
+      wrapper.name == 'default'
+    end
+  end
   
   def web_app_context(web_app)
     tomcat.addWebapp(web_app.context_path || '/', web_app.web_app_dir)
