@@ -49,16 +49,18 @@ module Trinidad
 
         def configure_rack_servlet(context)
           wrapper = context.create_wrapper
-          if web_app.rack_servlet[:instance]
-            wrapper.servlet = web_app.rack_servlet[:instance]
+          rack_servlet = web_app.rack_servlet
+          if rack_servlet[:instance]
+            wrapper.servlet = rack_servlet[:instance]
           else
-            wrapper.servlet_class = web_app.rack_servlet[:class]
-            wrapper.async_supported = web_app.rack_servlet[:async_supported]
+            wrapper.servlet_class = rack_servlet[:class]
+            wrapper.async_supported = rack_servlet[:async_supported]
+            add_init_params wrapper, rack_servlet[:init_params]
           end
-          name = wrapper.name = web_app.rack_servlet[:name]
+          name = wrapper.name = rack_servlet[:name]
 
           context.add_child(wrapper)
-          add_servlet_mapping(context, web_app.rack_servlet[:mapping], name)
+          add_servlet_mapping(context, rack_servlet[:mapping], name)
         end
 
         def configure_rack_listener(context)
@@ -134,17 +136,20 @@ module Trinidad
             name = default_servlet[:name] || default
             servlet = default_servlet[:instance]
             servlet_class = default_servlet[:class]
+            init_params = default_servlet[:init_params]
 
             if servlet || servlet_class
               wrapper = context.create_wrapper
               wrapper.servlet = servlet if servlet
               wrapper.servlet_class = servlet_class if servlet_class
               wrapper.name = name
+              add_init_params(wrapper, init_params)
               context.remove_child(default_wrapper)
               context.add_child(wrapper) # the new 'default' servlet
             else
               wrapper = nil
               # we do not remove but only "update" the default :
+              add_init_params(default_wrapper, init_params)
             end
             # NOTE: we keep the root mapping / should not hurt ?
             if mapping = default_servlet[:mapping]
@@ -162,6 +167,14 @@ module Trinidad
             context.add_servlet_mapping(mapping.to_s, name)
           else
             mapping.each { |m| add_servlet_mapping(context, m, name) }
+          end
+        end
+
+        def add_init_params(wrapper, params)
+          return unless params
+          params.each do |param, value|
+            val = value.to_s unless value.nil?
+            wrapper.add_init_parameter(param.to_s, val)
           end
         end
         

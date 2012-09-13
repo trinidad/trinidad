@@ -138,30 +138,30 @@ module Trinidad
       return nil if @rack_servlet == false
       @rack_servlet ||= begin
         rack_servlet = self[:rack_servlet] || self[:servlet] || {}
-        servlet_class = rack_servlet[:class] || RACK_SERVLET_CLASS
-        servlet_name = rack_servlet[:name] || RACK_SERVLET_NAME
-
-        rack_configured = web_xml_servlet?(servlet_class, servlet_name) || 
-          web_xml_filter?(RACK_FILTER_CLASS)
         
-        if ! rack_configured
-          if rack_servlet.is_a?(javax.servlet.Servlet)
-            { :instance => rack_servlet }
-          else
-            {
-              :class => servlet_class, :name => servlet_name,
-              :async_supported => !! ( rack_servlet.has_key?(:async_supported) ? 
-                  rack_servlet[:async_supported] : async_supported ),
-              :mapping => rack_servlet[:mapping] || '/*',
-              :instance => rack_servlet[:instance]
-            }
-          end
+        if rack_servlet.is_a?(javax.servlet.Servlet)
+          { :instance => rack_servlet, :name => RACK_SERVLET_NAME, :mapping => '/*' }
         else
-          if ! rack_servlet.empty?
-            logger.info "ignoring :rack_servlet configuration for " + 
-                        "#{context_path} due #{deployment_descriptor}"
+          servlet_class = rack_servlet[:class] || RACK_SERVLET_CLASS
+          servlet_name = rack_servlet[:name] || RACK_SERVLET_NAME
+          
+          if ! web_xml_servlet?(servlet_class, servlet_name) &&
+              ! web_xml_filter?(RACK_FILTER_CLASS)
+            {
+              :instance => rack_servlet[:instance],
+              :class => servlet_class, :name => servlet_name,
+              :init_params => rack_servlet[:init_params],
+              :async_supported => !! ( rack_servlet.has_key?(:async_supported) ?
+                  rack_servlet[:async_supported] : async_supported ),
+              :mapping => rack_servlet[:mapping] || '/*'
+            }
+          else
+            if ! rack_servlet.empty?
+              logger.info "ignoring :rack_servlet configuration for " +
+                          "#{context_path} due #{deployment_descriptor}"
+            end
+            false # no need to setup a rack servlet
           end
-          false # no need to setup a rack servlet
         end
       end || nil
     end

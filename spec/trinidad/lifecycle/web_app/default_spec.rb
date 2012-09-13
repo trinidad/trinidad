@@ -235,9 +235,9 @@ describe Trinidad::Lifecycle::WebApp::Default do
     wrapper2.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
   end
   
-  it "keeps DefaultServlet when option is true", :integration => true do
+  it "allows overriding the RackServlet", :integration => true do
     listener = rackup_web_app_listener({
-      :default_servlet => true,
+      :rack_servlet => servlet = org.jruby.rack.RackServlet.new,
       :web_app_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
@@ -245,10 +245,28 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.addLifecycleListener listener
     context.start
 
-    wrapper = default_wrapper(context)
+    wrapper = find_wrapper(context, 'RackServlet')
+    wrapper.name.should == 'RackServlet'
+    wrapper.getServlet.should be servlet
+    context.findServletMapping('/*').should == 'RackServlet'
+  end
+  
+  it "keeps DefaultServlet (optionally adds init params)", :integration => true do
+    listener = rackup_web_app_listener({
+      :default_servlet => { :init_params => { :debug => 1, '_flag' => true } },
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = find_wrapper(context, 'default')
     wrapper.name.should == 'default'
     wrapper.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
     context.findServletMapping('/').should == 'default'
+    wrapper.findInitParameter('debug').should == '1'
+    wrapper.findInitParameter('_flag').should == 'true'
   end
 
   it "re-configures DefaultServlet when default in web.xml", :integration => true do
@@ -276,7 +294,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
       context.addLifecycleListener listener
       context.start
 
-      wrapper = default_wrapper(context)
+      wrapper = find_wrapper(context, 'default')
       wrapper.name.should == 'default'
       wrapper.getServletClass.should == 'org.apache.catalina.servlets.CGIServlet'
       context.findServletMapping('/default').should == 'default'
@@ -308,7 +326,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.addLifecycleListener listener
     context.start
 
-    wrapper = default_wrapper(context)
+    wrapper = find_wrapper(context, 'default')
     wrapper.name.should == 'default'
     wrapper.getServletClass.should_not == 'org.apache.catalina.servlets.DefaultServlet'
     wrapper.getServlet.should be servlet
@@ -330,7 +348,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.addLifecycleListener listener
     context.start
 
-    wrapper = default_wrapper(context)
+    wrapper = find_wrapper(context, 'default')
     wrapper.name.should == 'default'
     wrapper.getServlet.should be servlet
     context.findServletMapping('/').should == 'default'
@@ -340,10 +358,10 @@ describe Trinidad::Lifecycle::WebApp::Default do
   
   private
   
-  def default_wrapper(context)
+  def find_wrapper(context, name)
     context.find_children.size.should >= 1
     context.find_children.find do |wrapper|
-      wrapper.name == 'default'
+      wrapper.name == name
     end
   end
   
