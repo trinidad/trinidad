@@ -96,7 +96,7 @@ module Trinidad
     end
 
     # Reset the hold web application state so it gets re-initialized.
-    # Please note that the received configuration object are not cleared.
+    # Please note that the configuration objects are not cleared.
     def reset!
       vars = instance_variables.map(&:to_sym) 
       vars = vars - [ :'@config', :'@default_config' ]
@@ -153,29 +153,40 @@ module Trinidad
     
     public
     
+    # Returns true if there's a servlet with the given servlet-class name 
+    # configured or if the optional name second argument is given it also
+    # checks for a servlet with the given name.
     def web_xml_servlet?(servlet_class, servlet_name = nil)
-      !!( web_xml_doc && (
-          web_xml_doc.root.elements["/web-app/servlet[servlet-class = '#{servlet_class}']"]
-        )
-      )
+      return nil unless web_xml_doc
+      if servlet_class
+        servlet_xpath = "/web-app/servlet[servlet-class = '#{servlet_class}']"  
+        return true if web_xml_doc.root.elements[servlet_xpath] # else try name
+      end
+      if servlet_name
+        servlet_xpath = "/web-app/servlet[servlet-name = '#{servlet_name}']"
+        return !! web_xml_doc.root.elements[servlet_xpath]
+      end
+      
+      return false if servlet_class || servlet_name
+      raise ArgumentError, "nor servlet_class nor servlet_name given"
     end
 
+    # Returns true if a filter definition with a given filter-class is found.
     def web_xml_filter?(filter_class)
-      !!( web_xml_doc && (
-          web_xml_doc.root.elements["/web-app/filter[filter-class = '#{filter_class}']"]
-        )
-      )
+      return nil unless web_xml_doc
+      !! web_xml_doc.root.elements["/web-app/filter[filter-class = '#{filter_class}']"]
     end
     
+    # Returns true if a listener definition with a given listener-class is found.
     def web_xml_listener?(listener_class)
-      !!( web_xml_doc &&
-          web_xml_doc.root.elements["/web-app/listener[listener-class = '#{listener_class}']"]
-      )
+      return nil unless web_xml_doc
+      !! web_xml_doc.root.elements["/web-app/listener[listener-class = '#{listener_class}']"]
     end
     
+    # Returns a param-value for a context-param with a given param-name.
     def web_xml_context_param(name)
-      if web_xml_doc && 
-          param = web_xml_doc.root.elements["/web-app/context-param[param-name = '#{name}']"]
+      return nil unless web_xml_doc
+      if param = web_xml_doc.root.elements["/web-app/context-param[param-name = '#{name}']"]
         param.elements['param-value'].text
       end
     end

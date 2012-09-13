@@ -158,6 +158,34 @@ describe Trinidad::WebApp do
     end
   end
 
+  it "ignores rack_servlet when a deployment descriptor provides a RackServlet named servlet" do
+    FileUtils.touch custom_web_xml = "extended-web.xml"
+    begin
+      FakeFS do
+        create_config_file custom_web_xml, '' +
+          '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<web-app>' +
+          '  <servlet>' +
+          '    <servlet-class>org.kares.jruby.rack.ExtendedServlet</servlet-class>' +
+          '    <servlet-name>RackServlet</servlet-name>' +
+          '    <async-supported>true</async-supported>' +
+          '  </servlet>' +
+          '  <servlet-mapping>' +
+          '    <url-pattern>/*</url-pattern>' +
+          '    <servlet-name>RackServlet</servlet-name>' +
+          '  </servlet-mapping>' +
+          '</web-app>'
+
+        app = Trinidad::WebApp.create({
+          :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
+        })
+        app.rack_servlet.should be nil
+      end
+    ensure
+      FileUtils.rm custom_web_xml
+    end
+  end
+  
   it "ignores rack_listener when a deployment descriptor already provides it" do
     FakeFS do
       create_rails_web_xml
@@ -540,6 +568,18 @@ describe Trinidad::WebApp do
         '    <param-name>jruby.rack.logging.name</param-name>' +
         '    <param-value>/root</param-value>' +
         '  </context-param>' +
+        '' +
+        '  <servlet>' +
+        '    <load-on-startup>2</load-on-startup>' +
+        '    <servlet-name>custom-servlet</servlet-name>' +
+        '    <servlet-class>org.kares.jruby.CustomServlet</servlet-class>' +
+        '    <async-supported>true</async-supported>' +
+        '  </servlet>' +
+        '  <servlet-mapping>' +
+        '    <url-pattern>/_custom</url-pattern>' +
+        '    <url-pattern>*.custom</url-pattern>' +
+        '    <servlet-name>custom-servlet</servlet-name>' +
+        '  </servlet-mapping>' +
         '</web-app>'
       web_app = Trinidad::WebApp.create({}, {
         :context_path => '/',
@@ -555,6 +595,13 @@ describe Trinidad::WebApp do
       
       web_app.web_xml_listener?('org.jruby.rack.rails').should be false
       web_app.web_xml_listener?('org.jruby.rack.rails.RailsServletContextListener').should be true
+      
+      web_app.web_xml_servlet?('org.jruby.rack.RackServlet').should be false
+      web_app.web_xml_servlet?(nil, 'RackServlet').should be false
+      web_app.web_xml_servlet?('org.kares.jruby.CustomServlet').should be true
+      web_app.web_xml_servlet?(nil, 'custom-servlet').should be true
+      # NOTE: class not found but if name given assumes there's a "replacement" servlet :
+      web_app.web_xml_servlet?('org.kares.missing.ServletClass', 'custom-servlet').should be true
     ensure
       FileUtils.rm custom_web_xml
     end
