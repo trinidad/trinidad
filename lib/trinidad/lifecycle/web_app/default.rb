@@ -134,27 +134,20 @@ module Trinidad
             context.remove_child(default_wrapper)
             false
           else
-            name = default_servlet[:name] || default
-            servlet = default_servlet[:instance]
-            servlet_class = default_servlet[:class]
-            load_on_startup = default_servlet[:load_on_startup]
-            init_params = default_servlet[:init_params]
-
-            if servlet || servlet_class
+            wrapper, name = default_wrapper, default
+            if servlet = default_servlet[:instance]
               wrapper = context.create_wrapper
-              wrapper.name = name
-              wrapper.servlet = servlet if servlet
-              wrapper.servlet_class = servlet_class if servlet_class
-              wrapper.load_on_startup = ( load_on_startup || 
-                  default_wrapper.load_on_startup ).to_i
-              add_init_params(wrapper, init_params)
+              wrapper.name = name = default_servlet[:name] || default
+              wrapper.servlet = servlet
               context.remove_child(default_wrapper)
               context.add_child(wrapper) # the new 'default' servlet
-            else
-              wrapper = nil
-              # we do not remove but only "update" the default :
-              add_init_params(default_wrapper, init_params)
+            elsif servlet_class = default_servlet[:class]
+              wrapper.servlet_class = servlet_class
             end
+            # do not remove wrapper but only "update" the default :
+            wrapper.load_on_startup = ( default_servlet[:load_on_startup] || 
+                default_wrapper.load_on_startup ).to_i
+            add_init_params(wrapper, default_servlet[:init_params])
             # NOTE: we keep the root mapping / should not hurt ?
             if mapping = default_servlet[:mapping]
               add_servlet_mapping(context, mapping, name)
