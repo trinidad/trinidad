@@ -15,7 +15,7 @@ module Trinidad
         end
         
         def configure(context)
-          super
+          super # TODO assuming warbler .war !
           configure_class_loader(context)
         end
 
@@ -32,7 +32,7 @@ module Trinidad
         def expand_war_app(context)
           unless File.exist?(context.doc_base)
             host = context.parent
-            war_file = java.io.File.new(web_app.web_app_dir)
+            war_file = java.io.File.new(web_app.root_dir)
             war = java.net.URL.new("jar:" + war_file.toURI.toURL.to_s + "!/")
             path_name = File.basename(context.doc_base)
 
@@ -42,7 +42,7 @@ module Trinidad
         
         def remove_war_app(context)
           require 'fileutils'
-          FileUtils.rm_rf web_app.web_app_dir.gsub(/\.war$/, '')
+          FileUtils.rm_rf web_app.root_dir.gsub(/\.war$/, '')
         end
         
       end

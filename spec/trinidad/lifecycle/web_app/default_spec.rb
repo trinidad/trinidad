@@ -104,7 +104,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "ignores parameters already present in the deployment descriptor" do
     listener = rails_web_app_listener({
       :jruby_max_runtimes => 1,
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :default_web_xml => 'config/web.xml'
     })
     context = tomcat.add_webapp('/', Dir.pwd)
@@ -128,7 +128,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "loads classes into a jar when the libs directory is provided" do
     listener = rails_web_app_listener({
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :libs_dir => 'lib'
     })
     web_app = listener.web_app
@@ -151,7 +151,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "loads java classes when the classes directory is provided" do
     listener = rackup_web_app_listener({
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :classes_dir => 'classes'
     })
     web_app = listener.web_app
@@ -215,7 +215,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   
   it "has 2 child servlets mapped by default when context starts", :integration => true do
     listener = rackup_web_app_listener({
-      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :root_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -238,7 +238,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "allows overriding the RackServlet", :integration => true do
     listener = rackup_web_app_listener({
       :rack_servlet => servlet = org.jruby.rack.RackServlet.new,
-      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :root_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -319,7 +319,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "allows overriding DefaultServlet with (configured) servlet instance", :integration => true do
     listener = rackup_web_app_listener({
       :default_servlet => servlet = DefaultServlet.new,
-      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :root_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -341,7 +341,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "allows overriding DefaultServlet with servlet and custom mapping", :integration => true do
     listener = rackup_web_app_listener({
       :default_servlet => { :instance => servlet = DefaultServlet.new, :mapping => [ '/static1', '/static2' ] },
-      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :root_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -366,7 +366,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
   
   def web_app_context(web_app)
-    tomcat.addWebapp(web_app.context_path || '/', web_app.web_app_dir)
+    tomcat.addWebapp(web_app.context_path || '/', web_app.root_dir)
   end
   
   def rails_web_app_listener(config)

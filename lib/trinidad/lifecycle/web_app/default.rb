@@ -91,7 +91,7 @@ module Trinidad
         def add_application_jars(class_loader)
           return unless web_app.libs_dir
 
-          resources_dir = File.join(web_app.web_app_dir, web_app.libs_dir, '**', '*.jar')
+          resources_dir = File.join(web_app.root_dir, web_app.libs_dir, '**', '*.jar')
 
           Dir[resources_dir].each do |resource|
             class_loader.addURL(java.io.File.new(resource).to_url)
@@ -101,7 +101,7 @@ module Trinidad
         def add_application_java_classes(class_loader)
           return unless web_app.classes_dir
 
-          resources_dir = File.join(web_app.web_app_dir, web_app.classes_dir)
+          resources_dir = File.join(web_app.root_dir, web_app.classes_dir)
           class_loader.addURL(java.io.File.new(resources_dir).to_url)
         end
         
@@ -116,7 +116,7 @@ module Trinidad
                 context_xml = File.join(web_app.classes_dir, context_xml)
               end
               context_xml = 
-                File.expand_path(File.join(web_app.web_app_dir, context_xml))
+                File.expand_path(File.join(web_app.root_dir, context_xml))
             end
             context.setDefaultContextXml(context_xml)
           end

@@ -20,7 +20,7 @@ module Trinidad
       config.has_key?(key) ? config[key] : default_config[key]
     end
     
-    %w{ context_path web_app_dir libs_dir classes_dir
+    %w{ context_path libs_dir classes_dir
         jruby_min_runtimes jruby_max_runtimes jruby_compat_version
         rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
@@ -32,7 +32,9 @@ module Trinidad
     
     def public_root; self[:public] || 'public'; end
     def environment; self[:environment] || 'development'; end
-    def work_dir; self[:work_dir] || web_app_dir; end
+    def root_dir; self[:root_dir] || self[:web_app_dir]; end
+    alias_method :web_app_dir, :root_dir # is getting deprecated soon
+    def work_dir; self[:work_dir] || root_dir; end # deprecate not used ?!
     def log_dir; self[:log_dir] || File.join(work_dir, 'log'); end
     
     def extensions
@@ -68,7 +70,7 @@ module Trinidad
     def deployment_descriptor
       @deployment_descriptor ||= if web_xml
         # absolute ?
-        file = File.expand_path(File.join(web_app_dir, web_xml))
+        file = File.expand_path(File.join(root_dir, web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -76,7 +78,7 @@ module Trinidad
     # @deprecated use {#deployment_descriptor}
     def default_deployment_descriptor
       @default_deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(web_app_dir, default_web_xml))
+        file = File.expand_path(File.join(root_dir, default_web_xml))
         File.exist?(file) ? file : nil
       end
     end
@@ -190,7 +192,7 @@ module Trinidad
     end
     
     def complete_config!
-      config[:web_app_dir] ||= default_config[:web_app_dir] || Dir.pwd
+      config[:root_dir] ||= self.class.root_dir(config, default_config)
     end
     
     public
@@ -257,25 +259,23 @@ module Trinidad
     
     def self.rackup?(config, default_config = nil)
       return true if config.has_key?(:rackup)
-      web_app_dir = config[:web_app_dir] || 
-        (default_config && default_config[:web_app_dir]) || Dir.pwd
+      root_dir = root_dir(config, default_config)
       config_ru = (default_config && default_config[:rackup]) || 'config.ru'
       # check for rackup (but still use config/environment.rb for rails 3)
-      if File.exists?(File.join(web_app_dir, config_ru)) && 
+      if File.exists?(File.join(root_dir, config_ru)) && 
           ! rails?(config, default_config) # do not :rackup a rails app
         config[:rackup] = config_ru
       end
-      config[:rackup] || ! Dir[File.join(web_app_dir, 'WEB-INF/**/config.ru')].empty?
+      config[:rackup] || ! Dir[File.join(root_dir, 'WEB-INF/**/config.ru')].empty?
     end
     
     def self.rails?(config, default_config = nil)
-      web_app_dir = config[:web_app_dir] || 
-        (default_config && default_config[:web_app_dir]) || Dir.pwd
+      root_dir = root_dir(config, default_config)
       # standart Rails 3.x `class Application < Rails::Application`
-      if File.exists?(application = File.join(web_app_dir, 'config/application.rb'))
+      if File.exists?(application = File.join(root_dir, 'config/application.rb'))
         return true if file_line_match?(application, /^[^#]*Rails::Application/)
       end
-      if File.exists?(environment = File.join(web_app_dir, 'config/environment.rb'))
+      if File.exists?(environment = File.join(root_dir, 'config/environment.rb'))
         return true if file_line_match?(environment) do |line|
           # customized Rails 3.x, expects a `Rails::Application` subclass
           # or a plain-old Rails 2.3 with `RAILS_GEM_VERSION = '2.3.14'`
@@ -290,6 +290,14 @@ module Trinidad
     end
     
     private
+    
+    def self.root_dir(config, default_config)
+      # for backwards compatibility accepts the :web_app_dir "alias"
+      config[:root_dir] || config[:web_app_dir] || 
+        ( default_config && 
+          ( default_config[:root_dir] || default_config[:web_app_dir] ) ) ||
+            Dir.pwd
+    end
     
     def self.file_line_match?(path, pattern = nil)
       File.open(path) do |file|
@@ -389,7 +397,7 @@ module Trinidad
     def complete_config!
       super
       # detect threadsafe! in config/environments/environment.rb :
-      if self.class.threadsafe?(web_app_dir, environment)
+      if self.class.threadsafe?(root_dir, environment)
         config[:jruby_min_runtimes] = 1
         config[:jruby_max_runtimes] = 1
       end
@@ -416,11 +424,11 @@ module Trinidad
     end
 
     def work_dir
-      File.join(web_app_dir.gsub(/\.war$/, ''), 'WEB-INF')
+      File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
     end
 
     def monitor
-      File.expand_path(web_app_dir)
+      File.expand_path(root_dir)
     end
 
     def define_lifecycle
