@@ -153,6 +153,7 @@ module Trinidad
               :init_params => rack_servlet[:init_params],
               :async_supported => !! ( rack_servlet.has_key?(:async_supported) ?
                   rack_servlet[:async_supported] : async_supported ),
+              :load_on_startup => ( rack_servlet[:load_on_startup] || 2 ).to_i,
               :mapping => rack_servlet[:mapping] || '/*'
             }
           else

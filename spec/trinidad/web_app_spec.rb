@@ -233,7 +233,12 @@ describe Trinidad::WebApp do
     app.rack_servlet[:mapping].should == '/*'
   end
 
-  it "adds async_supported to servlet config (false by default)" do
+  it "sets to load RackServlet on startup by default" do
+    app = Trinidad::WebApp.create({}, {})
+    app.rack_servlet[:load_on_startup].should == 2
+  end
+  
+  it "adds async_supported to rack_servlet config (false by default)" do
     app = Trinidad::WebApp.create({}, {})
     app.rack_servlet[:async_supported].should == false
   end

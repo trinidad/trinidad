@@ -55,6 +55,7 @@ module Trinidad
           else
             wrapper.servlet_class = rack_servlet[:class]
             wrapper.async_supported = rack_servlet[:async_supported]
+            wrapper.load_on_startup = rack_servlet[:load_on_startup]
             add_init_params wrapper, rack_servlet[:init_params]
           end
           name = wrapper.name = rack_servlet[:name]
@@ -136,13 +137,16 @@ module Trinidad
             name = default_servlet[:name] || default
             servlet = default_servlet[:instance]
             servlet_class = default_servlet[:class]
+            load_on_startup = default_servlet[:load_on_startup]
             init_params = default_servlet[:init_params]
 
             if servlet || servlet_class
               wrapper = context.create_wrapper
+              wrapper.name = name
               wrapper.servlet = servlet if servlet
               wrapper.servlet_class = servlet_class if servlet_class
-              wrapper.name = name
+              wrapper.load_on_startup = ( load_on_startup || 
+                  default_wrapper.load_on_startup ).to_i
               add_init_params(wrapper, init_params)
               context.remove_child(default_wrapper)
               context.add_child(wrapper) # the new 'default' servlet
