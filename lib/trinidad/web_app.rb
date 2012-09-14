@@ -20,7 +20,7 @@ module Trinidad
       config.has_key?(key) ? config[key] : default_config[key]
     end
     
-    %w{ context_path libs_dir classes_dir
+    %w{ context_path root_dir libs_dir classes_dir
         jruby_min_runtimes jruby_max_runtimes jruby_compat_version
         rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
@@ -32,20 +32,27 @@ module Trinidad
     
     def public_root; self[:public] || 'public'; end
     def environment; self[:environment] || 'development'; end
-    def root_dir; self[:root_dir] || self[:web_app_dir]; end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
-    def work_dir; self[:work_dir] || root_dir; end # deprecate not used ?!
-    def log_dir; self[:log_dir] || File.join(work_dir, 'log'); end
+    
+    # by a "Rails" convention defaults to '[RAILS_ROOT]/log'
+    def log_dir
+      @log_dir ||= self[:log_dir] || File.join(root_dir, 'log')
+    end
+    
+    # by (a "Rails") convention use '[RAILS_ROOT]/tmp'
+    def work_dir
+      @work_dir ||= self[:work_dir] || File.join(root_dir, 'tmp')
+    end
+    
+    def monitor
+      File.expand_path(self[:monitor] || 'restart.txt', work_dir)
+    end
     
     def extensions
       @extensions ||= begin
         extensions = default_config[:extensions] || {}
         extensions.merge(config[:extensions] || {})
       end
-    end
-    
-    def monitor
-      File.expand_path(self[:monitor] || 'tmp/restart.txt', work_dir)
     end
 
     def context_params
@@ -423,8 +430,12 @@ module Trinidad
       super.gsub(/\.war$/, '')
     end
 
+    def log_dir
+      @log_dir ||= self[:log_dir] || File.join(work_dir, 'log')
+    end
+    
     def work_dir
-      File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
+      @work_dir ||= File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
     end
 
     def monitor

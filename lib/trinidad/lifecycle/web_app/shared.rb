@@ -20,6 +20,7 @@ module Trinidad
 
         # Configure the web application before it's started.
         def configure(context)
+          set_work_dir(context)
           remove_defaults(context)
           configure_logging(context)
         end
@@ -29,7 +30,13 @@ module Trinidad
         def configure_logging(context)
           Trinidad::Logging.configure_web_app(web_app, context)
         end
-
+        
+        def set_work_dir(context)
+          if web_app.work_dir
+            context.work_dir = web_app.work_dir
+          end
+        end
+        
         private
 
         def remove_defaults(context)

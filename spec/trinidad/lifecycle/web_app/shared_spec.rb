@@ -10,7 +10,7 @@ describe Trinidad::Lifecycle::WebApp::Shared do
     Trinidad::Tomcat::Tomcat.init_webapp_defaults(@context)
 
     @options = {
-        :web_app_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO'
+        :root_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO'
     }
     @web_app = Trinidad::WebApp.create({}, @options)
     @listener = ListenerImpl.new(@web_app)
@@ -44,6 +44,17 @@ describe Trinidad::Lifecycle::WebApp::Shared do
     @listener.lifecycleEvent(event)
   end
 
+  it "sets up work dir on configure" do
+    @listener.expects(:set_work_dir)
+    @listener.configure(@context)
+  end
+
+  it "sets up work dir" do
+    @listener.send :set_work_dir, @context
+    @context.work_dir.should == "#{MOCK_WEB_APP_DIR}/tmp"
+    @context.work_path.should == "#{MOCK_WEB_APP_DIR}/tmp"
+  end
+  
   private
   
   def configure_logging(level)

@@ -415,8 +415,8 @@ describe Trinidad::WebApp do
   end
 
   it "uses the application directory as working directory" do
-    app = Trinidad::WebApp.create({ :web_app_dir => 'foo' })
-    app.work_dir.should == 'foo'
+    app = Trinidad::WebApp.create({ :root_dir => 'foo' })
+    app.work_dir.should == 'foo/tmp'
   end
 
   it "removes the war extension from the context path if it's a war application" do
@@ -447,29 +447,35 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({}, { :web_app_dir => MOCK_WEB_APP_DIR })
     app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
     
-    app = Trinidad::WebApp.create({ :web_app_dir => MOCK_WEB_APP_DIR }, nil)
+    app = Trinidad::WebApp.create({ :root_dir => MOCK_WEB_APP_DIR }, nil)
     app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
   end
 
-  it "accepts a monitor file as configuration parameter" do
+  it "accepts a monitor file (relalive to work_dir) as configuration parameter" do
     app = Trinidad::WebApp.create({
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
+      :monitor => 'foo.txt'
+    })
+    app.monitor.should == File.expand_path('tmp/foo.txt', MOCK_WEB_APP_DIR)
+    
+    app = Trinidad::WebApp.create({
+      :root_dir => MOCK_WEB_APP_DIR,
+      :work_dir => MOCK_WEB_APP_DIR,
       :monitor => 'foo.txt'
     })
     app.monitor.should == File.expand_path('foo.txt', MOCK_WEB_APP_DIR)
   end
-
+  
   it "uses the war file to monitorize an application packed as a war" do
     app = Trinidad::WebApp.create({
-      :context_path => 'foo.war',
-      :web_app_dir => 'foo.war'
+      :root_dir => 'foo.war', :context_path => 'foo.war',
     })
     app.monitor.should == File.expand_path('foo.war')
   end
 
   it "is threadsafe when min and max runtimes are 1" do
     app = Trinidad::WebApp.create({}, {
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :jruby_min_runtimes => 1,
       :jruby_max_runtimes => 1
     })
@@ -479,7 +485,7 @@ describe Trinidad::WebApp do
 
   it "is not threadsafe when min and max runtimes are not 1" do
     app = Trinidad::WebApp.create({}, {
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :jruby_min_runtimes => 1,
       :jruby_max_runtimes => 2
     })
@@ -496,7 +502,7 @@ describe Trinidad::WebApp do
       FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
       app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
+        :root_dir => Dir.pwd,
         :environment => 'staging',
         :jruby_min_runtimes => 1,
         :jruby_max_runtimes => 2
