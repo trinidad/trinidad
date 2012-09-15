@@ -81,28 +81,23 @@ module Trinidad
         def configure_context_loader(context)
           class_loader = web_app.class_loader
 
-          add_application_jars(class_loader)
           add_application_java_classes(class_loader)
+          add_application_jars(class_loader) # classes takes precedence !
 
           loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
           context.loader = loader # does loader.container = context
         end
 
         def add_application_jars(class_loader)
-          return unless web_app.libs_dir
-
-          resources_dir = File.join(web_app.root_dir, web_app.libs_dir, '**', '*.jar')
-
-          Dir[resources_dir].each do |resource|
-            class_loader.addURL(java.io.File.new(resource).to_url)
+          return unless lib_dir = web_app.java_lib_dir
+          Dir[ File.join(lib_dir, "**/*.jar") ].each do |jar|
+            class_loader.addURL java.io.File.new(jar).to_url
           end
         end
 
         def add_application_java_classes(class_loader)
-          return unless web_app.classes_dir
-
-          resources_dir = File.join(web_app.root_dir, web_app.classes_dir)
-          class_loader.addURL(java.io.File.new(resources_dir).to_url)
+          return unless classes_dir = web_app.java_classes_dir
+          class_loader.addURL java.io.File.new(classes_dir).to_url
         end
         
         def set_context_xml(context)
@@ -111,12 +106,12 @@ module Trinidad
           context_xml = 'META-INF/context.xml' if context_xml.nil?
           if context_xml
             # NOTE: make it absolute to ContextConfig to not use a baseDir :
-            unless java.io.File.new(context_xml).isAbsolute
-              if web_app.classes_dir
-                context_xml = File.join(web_app.classes_dir, context_xml)
+            unless java.io.File.new(context_xml).absolute?
+              if web_app.java_classes_dir
+                context_xml = File.join(web_app.java_classes_dir, context_xml)
+              else
+                context_xml = File.expand_path(context_xml, web_app.root_dir)
               end
-              context_xml = 
-                File.expand_path(File.join(web_app.root_dir, context_xml))
             end
             context.setDefaultContextXml(context_xml)
           end

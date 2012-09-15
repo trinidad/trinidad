@@ -185,7 +185,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
       web_app = Trinidad::WebApp.create({}, { 
           :context_path => '/rails', 
           :web_app_dir => RAILS_WEB_APP_DIR, 
-          :classes_dir => 'lib/classes', # contains META-INF/context.xml
+          :java_classes => 'lib/classes', # contains META-INF/context.xml
           :environment => 'production' }
       )
       #logger = java.util.logging.Logger.getLogger('org.apache.catalina.startup.ContextConfig')

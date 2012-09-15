@@ -20,23 +20,21 @@ module Trinidad
       config.has_key?(key) ? config[key] : default_config[key]
     end
     
-    %w{ context_path root_dir libs_dir classes_dir
+    %w{ context_path root_dir
         jruby_min_runtimes jruby_max_runtimes jruby_compat_version
         rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
-    
-    def web_xml; self[:web_xml] || self[:default_web_xml]; end
-    def default_web_xml; self[:default_web_xml]; end
-    def context_xml; self[:context_xml] || self[:default_context_xml]; end
-    
-    def public_root; self[:public] || 'public'; end
-    def environment; self[:environment] || 'development'; end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
+    # NOTE: should be set to application root (base) directory thus
+    # JRuby-Rack correctly resolves relative paths for the context!
+    def doc_base; self[:doc_base] || root_dir; end
     
-    # by a "Rails" convention defaults to '[RAILS_ROOT]/log'
-    def log_dir
-      @log_dir ||= self[:log_dir] || File.join(root_dir, 'log')
+    def environment; self[:environment] || 'development'; end # TODO check web.xml
+    def public_root; self[:public] || 'public'; end # TODO check web.xml
+    
+    def public_dir
+      @public_dir ||= File.expand_path(public_root, root_dir)
     end
     
     # by (a "Rails") convention use '[RAILS_ROOT]/tmp'
@@ -44,9 +42,56 @@ module Trinidad
       @work_dir ||= self[:work_dir] || File.join(root_dir, 'tmp')
     end
     
+    # by a "Rails" convention defaults to '[RAILS_ROOT]/log'
+    def log_dir
+      @log_dir ||= self[:log_dir] || File.join(root_dir, 'log')
+    end
+    
     def monitor
       File.expand_path(self[:monitor] || 'restart.txt', work_dir)
     end
+    
+    def context_xml; self[:context_xml] || self[:default_context_xml]; end
+    def web_xml; self[:web_xml] || self[:default_web_xml]; end
+    def default_web_xml; self[:default_web_xml]; end
+    
+    def java_lib
+      # accepts #deprecated :libs_dir syntax
+      self[:java_lib] || self[:libs_dir] || 'lib/java'
+    end
+    
+    def java_classes
+      # accepts #deprecated :classes_dir syntax
+      self[:java_classes] || self[:classes_dir] || File.join(java_lib, 'classes')
+    end
+    
+    def java_lib_dir
+      @java_lib_dir ||= self[:java_lib_dir] || begin
+        if lib = java_lib
+          lib_file = java.io.File.new(lib)
+          if lib_file.absolute?
+            lib_file.absolute_path
+          else
+            File.expand_path(lib, root_dir)
+          end
+        end
+      end
+    end
+    alias_method :libs_dir, :java_lib_dir # #deprecated
+    
+    def java_classes_dir
+      @java_classes_dir ||= self[:java_classes_dir] || begin
+        if classes = java_classes
+          classes_file = java.io.File.new(classes)
+          if classes_file.absolute?
+            classes_file.absolute_path
+          else
+            File.expand_path(classes, root_dir)
+          end
+        end
+      end
+    end
+    alias_method :classes_dir, :java_classes_dir # #deprecated
     
     def extensions
       @extensions ||= begin

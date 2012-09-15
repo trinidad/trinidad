@@ -6,14 +6,14 @@ describe Trinidad::WebApp do
   before { Trinidad.configuration = nil }
   
   it "exposes configuration via [] and readers" do
-    default_config = { :classes_dir => 'classes', :libs_dir => 'vendor' }
-    app = Trinidad::WebApp.create({ :classes_dir => 'klasses' }, default_config)
+    default_config = { :context_path => '/', :rackup => 'rackup.rb' }
+    app = Trinidad::WebApp.create({ :context_path => '/root' }, default_config)
     
-    app[:classes_dir].should == 'klasses'
-    app[:libs_dir].should == 'vendor'
+    app[:context_path].should == '/root'
+    app[:rackup].should == 'rackup.rb'
     
-    app.classes_dir.should == 'klasses'
-    app.libs_dir.should == 'vendor'
+    app.context_path.should == '/root'
+    app.rackup.should == 'rackup.rb'
   end
   
   it "creates a RailsWebApp if rackup option is not present" do
@@ -556,6 +556,53 @@ describe Trinidad::WebApp do
       app.context_params['rackup.path'].should == 'main/config.ru'
     end
   end
+
+  it "accepts and expands java_classes and java_lib" do
+    app = Trinidad::WebApp.create({
+      :root_dir => '/home/kares',
+      :java_classes => 'java/classes',
+      :java_lib => 'java/lib'
+    })
+    app.java_classes.should == 'java/classes'
+    app.java_lib.should == 'java/lib'
+    
+    app.java_classes_dir.should == '/home/kares/java/classes'
+    app.java_lib_dir.should == '/home/kares/java/lib'
+  end
+  
+  it "accepts absolute paths for java_classes and java_lib" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :java_classes => '/home/trinidad/shared/classes',
+      :java_lib => '/home/trinidad/shared/jars'
+    })
+    app.java_classes_dir.should == '/home/trinidad/shared/classes'
+    app.java_lib_dir.should =='/home/trinidad/shared/jars'
+  end
+
+  it "expands java_classes as 'classes' relative to java_lib" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :java_lib => '/home/trinidad/shared'
+    })
+    app.java_classes_dir.should == '/home/trinidad/shared/classes'
+  end
+  
+  it "uses sensible defaults for java_classes and java_lib" do
+    app = Trinidad::WebApp.create({ :root_dir => Dir.pwd })
+    app.java_lib.should =='lib/java'
+    app.java_classes.should == 'lib/java/classes'
+  end
+  
+  it "handles (old) :classes_dir and :libs_dir syntax" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :classes_dir => 'klasses',
+      :libs_dir => 'thelib'
+    })
+    app.java_classes.should == 'klasses'
+    app.java_lib.should == 'thelib'
+  end
   
   it "parses (context-param) xml values correctly" do
     FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/custom.web.xml"
@@ -623,7 +670,7 @@ describe Trinidad::WebApp do
       create_rails_web_xml
 
       app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
+        :root_dir => Dir.pwd,
         :default_web_xml => 'config/web.xml'
       })
       app.default_servlet.should be true # true - keep as is
