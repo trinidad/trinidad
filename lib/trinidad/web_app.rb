@@ -66,30 +66,12 @@ module Trinidad
     end
     
     def java_lib_dir
-      @java_lib_dir ||= self[:java_lib_dir] || begin
-        if lib = java_lib
-          lib_file = java.io.File.new(lib)
-          if lib_file.absolute?
-            lib_file.absolute_path
-          else
-            File.expand_path(lib, root_dir)
-          end
-        end
-      end
+      @java_lib_dir ||= self[:java_lib_dir] || expand_path(java_lib)
     end
     alias_method :libs_dir, :java_lib_dir # #deprecated
     
     def java_classes_dir
-      @java_classes_dir ||= self[:java_classes_dir] || begin
-        if classes = java_classes
-          classes_file = java.io.File.new(classes)
-          if classes_file.absolute?
-            classes_file.absolute_path
-          else
-            File.expand_path(classes, root_dir)
-          end
-        end
-      end
+      @java_classes_dir ||= self[:java_classes_dir] || expand_path(java_classes)
     end
     alias_method :classes_dir, :java_classes_dir # #deprecated
     
@@ -120,23 +102,19 @@ module Trinidad
     end
 
     def deployment_descriptor
-      @deployment_descriptor ||= if web_xml
-        # absolute ?
-        file = File.expand_path(File.join(root_dir, web_xml))
-        File.exist?(file) ? file : nil
-      end
+      return nil if @deployment_descriptor == false
+      @deployment_descriptor ||= expand_path(web_xml) || false
     end
     
     # @deprecated use {#deployment_descriptor}
     def default_deployment_descriptor
-      @default_deployment_descriptor ||= if default_web_xml
-        file = File.expand_path(File.join(root_dir, default_web_xml))
-        File.exist?(file) ? file : nil
-      end
+      return nil if @default_deployment_descriptor == false
+      @default_deployment_descriptor ||= expand_path(default_web_xml) || false
     end
     
     def class_loader
-      @class_loader ||= org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
+      @class_loader ||= 
+        org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
     end
     
     def class_loader!
@@ -291,15 +269,27 @@ module Trinidad
     
     def web_xml_doc
       return @web_xml_doc || nil unless @web_xml_doc.nil?
-      if deployment_descriptor
+      descriptor = deployment_descriptor
+      if descriptor && File.exist?(descriptor)
         begin
           require 'rexml/document'
-          @web_xml_doc = REXML::Document.new(File.read(deployment_descriptor))
+          @web_xml_doc = REXML::Document.new(File.read(descriptor))
         rescue REXML::ParseException => e
-          logger.warn "invalid deployment descriptor:[#{deployment_descriptor}]\n #{e.message}"
+          logger.warn "invalid deployment descriptor:[#{descriptor}]\n #{e.message}"
           @web_xml_doc = false
         end
         @web_xml_doc || nil
+      end
+    end
+    
+    def expand_path(path)
+      if path
+        path_file = java.io.File.new(path)
+        if path_file.absolute?
+          path_file.absolute_path
+        else
+          File.expand_path(path, root_dir)
+        end
       end
     end
     
@@ -383,7 +373,7 @@ module Trinidad
       def lock; @lock = true; end
       def unlock; @lock = false; end
       
-      # @deprecated behaves Hash like for (<= 1.3.5) compatibility
+      # #deprecated behaves Hash like for (<= 1.3.5) compatibility
       def [](key)
         case key.to_sym
           when :app then
@@ -400,7 +390,7 @@ module Trinidad
         end
       end
 
-      # @deprecated behaves Hash like for (<= 1.3.5) compatibility
+      # #deprecated behaves Hash like for (<= 1.3.5) compatibility
       def []=(key, val)
         case key.to_sym
           when :context then

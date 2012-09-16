@@ -27,7 +27,8 @@ module Trinidad
         @@_add_context_config = true # due backward compatibility
         
         def configure_deployment_descriptor(context)
-          if descriptor = web_app.deployment_descriptor
+          descriptor = web_app.deployment_descriptor
+          if descriptor && File.exist?(descriptor)
             listeners = context.findLifecycleListeners
             context_config = listeners && listeners.find do |listener|
               listener.is_a?(Trinidad::Tomcat::ContextConfig)
@@ -43,8 +44,8 @@ module Trinidad
             end
 
             context_config.setDefaultWebXml(descriptor)
+            descriptor
           end
-          descriptor
         end
 
         def configure_rack_servlet(context)
@@ -91,6 +92,7 @@ module Trinidad
         def add_application_jars(class_loader)
           return unless lib_dir = web_app.java_lib_dir
           Dir[ File.join(lib_dir, "**/*.jar") ].each do |jar|
+            logger.debug "[#{web_app.context_path}] adding jar: #{jar}"
             class_loader.addURL java.io.File.new(jar).to_url
           end
         end

@@ -40,7 +40,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
     listener.send(:configure_deployment_descriptor, context).should be nil
   end
 
-  it "loads a default web xml when the deployment descriptor is provided" do
+  it "sets default web xml when the deployment descriptor is provided" do
     FakeFS do
       create_rails_web_xml
 
@@ -57,14 +57,28 @@ describe Trinidad::Lifecycle::WebApp::Default do
       context.find_lifecycle_listeners.
         map {|l| l.class.name }.should include('Java::OrgApacheCatalinaStartup::ContextConfig')
 
-      context_configs = context.find_lifecycle_listeners.select do |listener|
-        listener.class.name == 'Java::OrgApacheCatalinaStartup::ContextConfig'
-      end
-      context_configs.size.should == 1
-      context_configs.first.default_web_xml.should == expected_xml
+      context_config = find_context_config(context)
+      context_config.default_web_xml.should == expected_xml
     end
   end
 
+  it "ignores the deployment descriptor when it doesn't exist" do
+    FakeFS do
+      create_rails_web_xml
+
+      listener = rails_web_app_listener({
+        :root_dir => Dir.pwd,
+        :web_xml => 'config/missing-web.xml'
+      })
+      context = web_app_context(listener.web_app)
+      
+      listener.send(:configure_deployment_descriptor, context).should == nil
+
+      context_config = find_context_config(context)
+      context_config.default_web_xml.should == "org/apache/catalina/startup/NO_DEFAULT_XML"
+    end
+  end
+  
   it "adds the rack servlet and the mapping for /*" do
     listener = rails_web_app_listener({})
     listener.send :configure_rack_servlet, context
@@ -357,6 +371,14 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
   
   private
+  
+  def find_context_config(context)
+    context_configs = context.find_lifecycle_listeners.select do |listener|
+      listener.class.name == 'Java::OrgApacheCatalinaStartup::ContextConfig'
+    end
+    context_configs.size.should == 1
+    context_configs.first
+  end
   
   def find_wrapper(context, name)
     context.find_children.size.should >= 1

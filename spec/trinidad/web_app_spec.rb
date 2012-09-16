@@ -317,20 +317,25 @@ describe Trinidad::WebApp do
     end
   end
 
-  it "ignores the deployment descriptor when it doesn't exist" do
+  it "expands relative web xml paths" do
     app = Trinidad::WebApp.create({
-      :web_app_dir => Dir.pwd,
-      :default_web_xml => 'config/web.xml'
+      :root_dir => Dir.pwd,
+      :web_xml => 'config/some.xml'
     })
-    app.default_deployment_descriptor.should be nil
-    
-    app = Trinidad::WebApp.create({
-      :web_app_dir => Dir.pwd,
-      :web_xml => 'config/web.xml'
-    })
-    app.deployment_descriptor.should be nil
+    app.web_xml.should == 'config/some.xml'
+    app.deployment_descriptor.should == File.expand_path('config/some.xml', Dir.pwd)
   end
 
+  it "accepts absolute web xml paths" do
+    default_web_xml = "/home/kares/trinidad/default.web.xml"
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :default_web_xml => default_web_xml
+    })
+    app.default_web_xml.should == "/home/kares/trinidad/default.web.xml"
+    app.default_deployment_descriptor.should == "/home/kares/trinidad/default.web.xml"
+  end
+  
   it "doesn't load any web.xml when the deployment descriptor doesn't exist" do
     app = Trinidad::WebApp.create({
       :web_app_dir => Dir.pwd,
