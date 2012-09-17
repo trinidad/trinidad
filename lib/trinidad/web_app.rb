@@ -31,10 +31,9 @@ module Trinidad
     def doc_base; self[:doc_base] || root_dir; end
     
     def environment; self[:environment] || 'development'; end # TODO check web.xml
-    def public_root; self[:public] || 'public'; end # TODO check web.xml
     
     def public_dir
-      @public_dir ||= File.expand_path(public_root, root_dir)
+      @public_dir ||= expand_path(public_root)
     end
     
     # by (a "Rails") convention use '[RAILS_ROOT]/tmp'
@@ -112,8 +111,25 @@ module Trinidad
       @default_deployment_descriptor ||= expand_path(default_web_xml) || false
     end
     
-    def aliases
-      return nil unless aliases = self[:aliases]
+    def public_root
+      @public_root ||= ( public_config[:root] || 'public' )
+    end
+    alias_method :public, :public_root
+    
+    # we do support nested :public configuration e.g. :
+    # public:
+    #   root: /assets
+    #   cache: true
+    #   cache_ttl: 60000
+    def public_config
+      @public_config ||= 
+        self[:public].is_a?(String) ? 
+          { :root => self[:public] } : 
+            ( self[:public] || {} )
+    end
+    
+    def aliases # :public => { :aliases => ... }
+      return nil unless aliases = ( self[:aliases] || public_config[:aliases] )
       return aliases if aliases.is_a?(String)
       # "/aliasPath1=docBase1,/aliasPath2=docBase2"
       @aliases ||= aliases.map do |path, base|
@@ -123,6 +139,37 @@ module Trinidad
         end
         "#{path}=#{File.expand_path(base, root_dir)}"
       end.join(',')
+    end
+    
+    def caching_allowed? # :public => { :cached => ... }
+      # ((BaseDirContext) resources).setCached(isCachingAllowed())
+      return @caching_allowed unless @caching_allowed.nil?
+      @caching_allowed = self[:caching_allowed]
+      if @caching_allowed.nil?
+        @caching_allowed = public_config[:cached]
+        if @caching_allowed.nil?
+          @caching_allowed = environment != 'development'
+        end
+      end
+      @caching_allowed = !! @caching_allowed
+    end
+    
+    # The cache max size in kB
+    def cache_max_size # :public => { :cache_max_size => ... }
+      # ((BaseDirContext) resources).setCacheMaxSize
+      self[:cache_max_size] || public_config[:cache_max_size]
+    end
+    
+    # The max size for a cached object in kB
+    def cache_object_max_size # :public => { :cache_object_max_size => ... }
+      # ((BaseDirContext) resources).setCacheObjectMaxSize
+      self[:cache_object_max_size] || public_config[:cache_object_max_size]
+    end
+    
+    # Cache entry time-to-live in millis
+    def cache_ttl # :public => { :cache_ttl => ... }
+      # ((BaseDirContext) resources).setCacheTTL
+      self[:cache_ttl] || public_config[:cache_ttl]
     end
     
     def class_loader

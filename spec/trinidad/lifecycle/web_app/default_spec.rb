@@ -218,6 +218,50 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.resources.should_not be nil
     context.resources.doc_base.should == MOCK_WEB_APP_DIR
   end
+
+  it "accepts public configuration", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :public => { 
+        :root => 'tmp',
+        :cache => false
+      }
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    context.caching_allowed?.should == false
+    resources = context.resources.dir_context
+    resources.doc_base.should == "#{MOCK_WEB_APP_DIR}/tmp"
+    resources.cached?.should == false
+  end
+
+  it "accepts public configuration cache parameters", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :public => { 
+        :cached => true,
+        :cache_ttl => 60 * 1000,
+        :cache_max_size => 100 * 1000,
+        :cache_object_max_size => 1000
+      }
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+    
+    context.caching_allowed?.should == true
+    context.cache_ttl.should == 60000
+    context.cache_max_size.should == 100000
+    context.cache_object_max_size.should == 1000
+    
+    resources = context.resources.dir_context
+    resources.cached?.should == true
+    resources.cache_ttl.should == 60000
+    resources.cache_max_size.should == 100000
+    resources.cache_object_max_size.should == 1000
+  end
   
   it "loads context.xml for application from META-INF", :integration => true do
     begin

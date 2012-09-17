@@ -159,30 +159,25 @@ describe Trinidad::WebApp do
   end
 
   it "ignores rack_servlet when a deployment descriptor provides a RackServlet named servlet" do
-    FileUtils.touch custom_web_xml = "extended-web.xml"
-    begin
-      FakeFS do
-        create_config_file custom_web_xml, '' +
-          '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<web-app>' +
-          '  <servlet>' +
-          '    <servlet-class>org.kares.jruby.rack.ExtendedServlet</servlet-class>' +
-          '    <servlet-name>RackServlet</servlet-name>' +
-          '    <async-supported>true</async-supported>' +
-          '  </servlet>' +
-          '  <servlet-mapping>' +
-          '    <url-pattern>/*</url-pattern>' +
-          '    <servlet-name>RackServlet</servlet-name>' +
-          '  </servlet-mapping>' +
-          '</web-app>'
+    FakeFS do
+      create_config_file custom_web_xml = "extended-web.xml", '' +
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<web-app>' +
+        '  <servlet>' +
+        '    <servlet-class>org.kares.jruby.rack.ExtendedServlet</servlet-class>' +
+        '    <servlet-name>RackServlet</servlet-name>' +
+        '    <async-supported>true</async-supported>' +
+        '  </servlet>' +
+        '  <servlet-mapping>' +
+        '    <url-pattern>/*</url-pattern>' +
+        '    <servlet-name>RackServlet</servlet-name>' +
+        '  </servlet-mapping>' +
+        '</web-app>'
 
-        app = Trinidad::WebApp.create({
-          :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
-        })
-        app.rack_servlet.should be nil
-      end
-    ensure
-      FileUtils.rm custom_web_xml
+      app = Trinidad::WebApp.create({
+        :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
+      })
+      app.rack_servlet.should be nil
     end
   end
   
@@ -384,17 +379,15 @@ describe Trinidad::WebApp do
   end
 
   it "loads rackup file from a given directory" do
-    FakeFS do
-      create_rackup_file('rack')
-      
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :rackup => 'rack'
-      })
-      
-      app.context_params.should include('rackup.path')
-      app.context_params['rackup.path'].should == 'rack/config.ru'
-    end
+    create_rackup_file('rack')
+
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :rackup => 'rack'
+    })
+
+    app.context_params.should include('rackup.path')
+    app.context_params['rackup.path'].should == 'rack/config.ru'
   end
 
   it "allows to configure the servlet from the configuration options" do
@@ -518,31 +511,27 @@ describe Trinidad::WebApp do
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
-    FakeFS do
-      create_rails_environment
-      
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 2
-      })
+    create_rails_environment
 
-      app.threadsafe?.should be true
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 2
+    })
+
+    app.threadsafe?.should be true
   end
 
   it "does not set threadsafe when the option is not enabled" do
-    FakeFS do
-      create_rails_environment_non_threadsafe
+    create_rails_environment_non_threadsafe
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 2
-      })
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 2
+    })
 
-      app.threadsafe?.should be false
-    end
+    app.threadsafe?.should be false
   end
   
   it "detects a rackup web app even if :rackup present in main config" do
@@ -609,6 +598,60 @@ describe Trinidad::WebApp do
     app.java_lib.should == 'thelib'
   end
   
+  it "sets public root" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :public => 'assets'
+    })
+
+    app.public.should == 'assets'
+    app.public_root.should == 'assets'
+  end
+
+  it "accepts public configuration" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :public => { 
+        :root => 'assets',
+        :cache => false
+      }
+    })
+
+    app.public_root.should == 'assets'
+    app.caching_allowed?.should == false
+  end
+
+  it "accepts public configuration cache parameters" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :public => { 
+        :cached => true,
+        :cache_ttl => 60 * 1000,
+        :cache_max_size => 100 * 1000,
+        :cache_object_max_size => 1000
+      }
+    })
+
+    app.public_root.should == 'public'
+    app.caching_allowed?.should == true
+    app.cache_ttl.should == 60000
+    app.cache_max_size.should == 100000
+    app.cache_object_max_size.should == 1000
+  end
+
+  it "turns off caching in development (if not specified)" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :environment => 'development'
+    })
+
+    app.caching_allowed?.should == false
+  end
+
+  it "turns on caching in non-development" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :environment => 'production'
+    })
+
+    app.caching_allowed?.should == true
+  end
+  
   it "parses (context-param) xml values correctly" do
     FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/custom.web.xml"
     begin
@@ -671,63 +714,52 @@ describe Trinidad::WebApp do
   end
   
   it "'keeps' default servlet (by default)" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      app = Trinidad::WebApp.create({
-        :root_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.default_servlet.should be true # true - keep as is
-    end
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.default_servlet.should be true # true - keep as is
   end
 
   it "'removes' default servlet when a deployment descriptor provides a default named servlet" do
-    FileUtils.touch custom_web_xml = "extended-web.xml"
-    begin
-      FakeFS do
-        create_config_file custom_web_xml, '' +
-          '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<web-app>' +
-          '  <servlet>' +
-          '    <servlet-class>org.kares.Servlet42</servlet-class>' +
-          '    <servlet-name>default</servlet-name>' +
-          '    <async-supported>false</async-supported>' +
-          '  </servlet>' +
-          '  <servlet-mapping>' +
-          '    <url-pattern>/</url-pattern>' +
-          '    <servlet-name>default</servlet-name>' +
-          '  </servlet-mapping>' +
-          '</web-app>'
+    create_config_file custom_web_xml = "extended-web.xml", '' +
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<web-app>' +
+      '  <servlet>' +
+      '    <servlet-class>org.kares.Servlet42</servlet-class>' +
+      '    <servlet-name>default</servlet-name>' +
+      '    <async-supported>false</async-supported>' +
+      '  </servlet>' +
+      '  <servlet-mapping>' +
+      '    <url-pattern>/</url-pattern>' +
+      '    <servlet-name>default</servlet-name>' +
+      '  </servlet-mapping>' +
+      '</web-app>'
 
-        app = Trinidad::WebApp.create({
-          :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
-        })
-        app.default_servlet.should be false # false - remove default
-      end
-    ensure
-      FileUtils.rm custom_web_xml
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
+    })
+    app.default_servlet.should be false # false - remove default
   end
   
   it "returns default servlet setup when configured" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      app = Trinidad::WebApp.create({
-        :default_servlet => {
-          :class => 'org.kares.DefaultServlet',
-          :mapping => [ '/', '/assets' ]
-        },
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.default_servlet.should be_a Hash
-      app.default_servlet.should == {
+    app = Trinidad::WebApp.create({
+      :default_servlet => {
         :class => 'org.kares.DefaultServlet',
         :mapping => [ '/', '/assets' ]
-      }
-    end
+      },
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.default_servlet.should be_a Hash
+    app.default_servlet.should == {
+      :class => 'org.kares.DefaultServlet',
+      :mapping => [ '/', '/assets' ]
+    }
   end
   
   it "allows aliases to be specified" do

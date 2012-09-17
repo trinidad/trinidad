@@ -31,6 +31,15 @@ module Trinidad
           context.doc_base = web_app.doc_base if web_app.doc_base
           context.work_dir = web_app.work_dir if web_app.work_dir
           context.aliases  = web_app.aliases  if web_app.aliases
+          
+          context.caching_allowed = web_app.caching_allowed?
+          context.cache_ttl = web_app.cache_ttl if web_app.cache_ttl
+          if max_size = web_app.cache_max_size
+            context.cache_max_size = max_size
+          end
+          if object_max_size = web_app.cache_object_max_size
+            context.cache_object_max_size = object_max_size
+          end
         end
         
         def configure_logging(context)
