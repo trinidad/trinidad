@@ -45,12 +45,12 @@ describe Trinidad::Lifecycle::WebApp::Shared do
   end
 
   it "sets up work dir on configure" do
-    @listener.expects(:set_work_dir)
+    @listener.expects(:adjust_context)
     @listener.configure(@context)
   end
 
   it "sets up work dir" do
-    @listener.send :set_work_dir, @context
+    @listener.send :adjust_context, @context
     @context.work_dir.should == "#{MOCK_WEB_APP_DIR}/tmp"
     @context.work_path.should == "#{MOCK_WEB_APP_DIR}/tmp"
   end

@@ -30,6 +30,7 @@ module Trinidad
         def adjust_context(context)
           context.doc_base = web_app.doc_base if web_app.doc_base
           context.work_dir = web_app.work_dir if web_app.work_dir
+          context.aliases  = web_app.aliases  if web_app.aliases
         end
         
         def configure_logging(context)

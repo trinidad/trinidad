@@ -194,6 +194,31 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.find_parameter('rackup.path').should == "config.ru"
   end
   
+  it "sets resources base to public root", :integration => true do
+    listener = rails_web_app_listener({
+      :root_dir => RAILS_WEB_APP_DIR
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    context.resources.should_not be nil
+    context.resources.doc_base.should == "#{RAILS_WEB_APP_DIR}/public"
+  end
+  
+  it "keeps resources base if public does not exist", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :public => 'does-not-exist'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    context.resources.should_not be nil
+    context.resources.doc_base.should == MOCK_WEB_APP_DIR
+  end
+  
   it "loads context.xml for application from META-INF", :integration => true do
     begin
       web_app = Trinidad::WebApp.create({}, { 
@@ -284,41 +309,36 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "re-configures DefaultServlet when default in web.xml", :integration => true do
-    FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/default-web.xml"
-    begin
-      create_config_file custom_web_xml, '' +
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<web-app>' +
-        '  <servlet>' +
-        '    <servlet-class>org.apache.catalina.servlets.CGIServlet</servlet-class>' +
-        '    <servlet-name>default</servlet-name>' +
-        '  </servlet>' +
-        '  <servlet-mapping>' +
-        '    <url-pattern>/default</url-pattern>' +
-        '    <servlet-name>default</servlet-name>' +
-        '  </servlet-mapping>' +
-        '</web-app>'
+    create_config_file "#{MOCK_WEB_APP_DIR}/default-web.xml", '' +
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<web-app>' +
+      '  <servlet>' +
+      '    <servlet-class>org.apache.catalina.servlets.CGIServlet</servlet-class>' +
+      '    <servlet-name>default</servlet-name>' +
+      '  </servlet>' +
+      '  <servlet-mapping>' +
+      '    <url-pattern>/default</url-pattern>' +
+      '    <servlet-name>default</servlet-name>' +
+      '  </servlet-mapping>' +
+      '</web-app>'
 
-      listener = rackup_web_app_listener({
-        :web_xml => 'default-web.xml',
-        :web_app_dir => MOCK_WEB_APP_DIR, 
-        :rackup => 'config.ru'
-      })
-      context = web_app_context(listener.web_app)
-      context.addLifecycleListener listener
-      context.start
+    listener = rackup_web_app_listener({
+      :web_xml => 'default-web.xml',
+      :web_app_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
 
-      wrapper = find_wrapper(context, 'default')
-      wrapper.name.should == 'default'
-      wrapper.getServletClass.should == 'org.apache.catalina.servlets.CGIServlet'
-      context.findServletMapping('/default').should == 'default'
-      
-      context.find_children.find do |wrapper|
-        wrapper.getServletClass == 'org.apache.catalina.servlets.DefaultServlet'
-      end.should be nil
-    ensure
-      FileUtils.rm custom_web_xml
-    end
+    wrapper = find_wrapper(context, 'default')
+    wrapper.name.should == 'default'
+    wrapper.getServletClass.should == 'org.apache.catalina.servlets.CGIServlet'
+    context.findServletMapping('/default').should == 'default'
+
+    context.find_children.find do |wrapper|
+      wrapper.getServletClass == 'org.apache.catalina.servlets.DefaultServlet'
+    end.should be nil
   end
   
   class DefaultServlet < org.apache.catalina.servlets.DefaultServlet

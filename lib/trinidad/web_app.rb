@@ -112,6 +112,19 @@ module Trinidad
       @default_deployment_descriptor ||= expand_path(default_web_xml) || false
     end
     
+    def aliases
+      return nil unless aliases = self[:aliases]
+      return aliases if aliases.is_a?(String)
+      # "/aliasPath1=docBase1,/aliasPath2=docBase2"
+      @aliases ||= aliases.map do |path, base|
+        path = path.to_s
+        if (root = '/') != path[0, 1]
+          path = (root << path)
+        end
+        "#{path}=#{File.expand_path(base, root_dir)}"
+      end.join(',')
+    end
+    
     def class_loader
       @class_loader ||= 
         org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)

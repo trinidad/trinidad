@@ -730,6 +730,26 @@ describe Trinidad::WebApp do
     end
   end
   
+  it "allows aliases to be specified" do
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :aliases => "/assets1=/home/public,/assets2=/var/www/public"
+    })
+    app.aliases.should == '/assets1=/home/public,/assets2=/var/www/public'
+  end
+
+  it "converts and expands aliases specified as a Hash" do
+    app = Trinidad::WebApp.create({
+      :root_dir => '.',
+      :aliases => {
+        :assets1 => '/home/public',
+        :assets2 => 'app/public-ext',
+        '/assets3' => '/var/www/public'
+      }
+    })
+    app.aliases.should == "/assets1=/home/public,/assets2=#{Dir.pwd}/app/public-ext,/assets3=/var/www/public"
+  end
+  
   let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
   
   private
@@ -740,8 +760,8 @@ describe Trinidad::WebApp do
     context.setPath(web_app.context_path)
     context.setDocBase(web_app.context_dir)
     context.addLifecycleListener(Trinidad::Tomcat::Tomcat::DefaultWebXmlListener.new)
-    context.addLifecycleListener(ctxCfg = Trinidad::Tomcat::ContextConfig.new)
-    ctxCfg.setDefaultWebXml(tomcat.noDefaultWebXmlPath)
+    context.addLifecycleListener(ctx_cfg = Trinidad::Tomcat::ContextConfig.new)
+    ctx_cfg.setDefaultWebXml(tomcat.noDefaultWebXmlPath)
     tomcat.getHost().addChild(context)
     context
   end

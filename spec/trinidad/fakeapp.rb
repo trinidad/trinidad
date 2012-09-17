@@ -175,21 +175,45 @@ EOF
 
   def create_rails_environment(env = 'environment.rb')
     create_config_file "config/#{env}", <<-EOF
-    config.threadsafe!
+Rails::Application.configure do
+  config.threadsafe!
+end
 EOF
   end
 
   def create_rails_environment_non_threadsafe(env = 'environment.rb')
     create_config_file "config/#{env}", <<-EOF
-    # config.threadsafe!
+Rails::Application.configure do
+  # config.threadsafe!
+end
 EOF
   end
-
+  
   protected
+  
   def create_config_file(path, content)
     dir = File.dirname(path)
     FileUtils.mkdir_p(dir) unless File.exist?(dir)
-    File.open(path, 'w') {|io| io.write(content) }
+    File.open(path, 'w') { |io| io.write(content) }
+    config_files << path
+  end
+  
+  def rm_if_exist(path)
+    FileUtils.rm(path) if File.exist?(path)
+  end
+  
+  public
+  
+  def config_files
+    @config_files ||= []
+  end
+  
+  def self.included(spec)
+    spec.after do
+      config_files.each do |path|
+        FileUtils.rm(path) if File.exist?(path)
+      end
+    end
   end
   
 end
