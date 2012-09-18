@@ -1,5 +1,9 @@
+require 'trinidad/configuration'
+
 module Trinidad
   class WebApp
+    
+    @@defaults = Trinidad::Configuration::DEFAULTS
     
     attr_reader :config, :default_config
 
@@ -30,7 +34,7 @@ module Trinidad
     # JRuby-Rack correctly resolves relative paths for the context!
     def doc_base; self[:doc_base] || root_dir; end
     
-    def environment; self[:environment] || 'development'; end # TODO check web.xml
+    def environment; self[:environment] || @@defaults[:environment]; end # TODO check web.xml
     
     def public_dir
       @public_dir ||= expand_path(public_root)
@@ -56,7 +60,7 @@ module Trinidad
     
     def java_lib
       # accepts #deprecated :libs_dir syntax
-      self[:java_lib] || self[:libs_dir] || 'lib/java'
+      self[:java_lib] || self[:libs_dir] || @@defaults[:java_lib]
     end
     
     def java_classes
@@ -112,7 +116,7 @@ module Trinidad
     end
     
     def public_root
-      @public_root ||= ( public_config[:root] || 'public' )
+      @public_root ||= ( public_config[:root] || @@defaults[:public] )
     end
     alias_method :public, :public_root
     

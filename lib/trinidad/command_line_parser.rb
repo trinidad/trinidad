@@ -29,7 +29,7 @@ module Trinidad
 
     # Load the configuration from the given options and return it.
     def load!(options)
-      config = config_file(options[:web_app_dir])
+      config = config_file(options[:root_dir] || options[:web_app_dir])
       if config && File.exist?(config)
         if yaml = (File.extname(config) == '.yml')
           require 'yaml'; require 'erb'
@@ -45,10 +45,12 @@ module Trinidad
     end
     alias_method :load_configuration, :load!
 
+    DEFAULT_CONFIG_FILE = 'config/trinidad.{yml,rb}'
+    
     def config_file(base_dir = nil)
       base_dir ||= Dir.pwd
       if @config_file.nil? # false means do not use no config file
-        Dir.glob(File.join(base_dir, 'config', 'trinidad.{yml,rb}')).first
+        Dir.glob(File.join(base_dir, DEFAULT_CONFIG_FILE)).first
       else
         @config_file && File.expand_path(@config_file, base_dir)
       end
@@ -59,79 +61,79 @@ module Trinidad
     def options_parser
       require 'optparse'
       @parser ||= OptionParser.new do |opts|
-        opts.banner = 'Trinidad server default options:'
+        opts.banner = 'Usage: trinidad [server options]'
         opts.separator ''
 
-        opts.on('-d', '--dir WEB_APP_DIRECTORY', 'web app directory path',
-            "default: #{Dir.pwd}") do |dir|
-          default_options[:web_app_dir] = dir
+        opts.on('-d', '--dir ROOT_DIRECTORY', 'web application root directory',
+          "default: current working directory") do |dir|
+          default_options[:root_dir] = dir
         end
 
-        opts.on('-e', '--env ENVIRONMENT', '(rails) environment',
-            "default: #{default_options[:environment]}") do |env|
+        opts.on('-e', '--env ENVIRONMENT', 'rack (rails) environment', 
+          "default: #{default(:environment)}") do |env|
           default_options[:environment] = env
         end
-
-        opts.on('-p', '--port PORT', 'port to bind to',
-            "default: #{default_options[:port]}") do |port|
-          default_options[:port] = port
-        end
-
-        opts.on('-c', '--context CONTEXT_PATH', 'application context path',
-            "default: #{default_options[:context_path]}") do |path|
-          default_options[:context_path] = path
-        end
-
-        opts.on('--lib', '--jars LIBS_DIR', 'directory containing java jars used by the application',
-            "default: #{default_options[:libs_dir]}") do |dir|
-          default_options[:libs_dir] = dir
-        end
-
-        opts.on('--classes', '--classes CLASSES_DIR', 'directory containing java classes used by the application',
-            "default: #{default_options[:classes_dir]}") do |dir|
-          default_options[:classes_dir] = dir
-        end
-
-        opts.on('-s', '--ssl [SSL_PORT]', 'enable secure socket layout',
-            "default port: 8443") do |port|
-          default_options[:ssl] = { :port => (port || 8443).to_i }
-        end
-
-        opts.on('-a', '--ajp [AJP_PORT]', 'enable ajp connections (deprecated)',
-            "default port: 8009") do |port|
-          default_options[:ajp] = { :port => (port || 8009).to_i }
-        end
-
-        opts.on('-f', '--config [CONFIG_FILE]', 'configuration file',
-            "default: config/trinidad.{yml,rb}") do |file|
-          self.config_file = file
-        end
-
+        
         opts.on('-r', '--rackup [RACKUP_FILE]', 'rackup configuration file',
-            'default: config.ru') do |rackup|
+          "default: config.ru") do |rackup|
           default_options[:rackup] = rackup || 'config.ru'
         end
 
-        opts.on('--public', '--public DIRECTORY', 'public directory', 'default: public') do |public|
+        opts.on('--public', '--public DIRECTORY', 'public directory', 
+          "default: #{default(:public)}") do |public|
           default_options[:public] = public
         end
-
+        
+        opts.on('-c', '--context CONTEXT_PATH', 'application context path',
+          "default: #{default(:context_path)}") do |path|
+          default_options[:context_path] = path
+        end
+        
+        opts.on('--monitor', '--monitor MONITOR_FILE', 'monitor for application re-deploys', 
+          "default: tmp/restart.txt") do |monitor|
+          default_options[:monitor] = monitor
+        end
+        
         opts.on('-t', '--threadsafe', 'force thread-safe mode') do
           default_options[:jruby_min_runtimes] = 1
           default_options[:jruby_max_runtimes] = 1
         end
-
-        opts.on('--address', '--address ADDRESS', 'host address', 'default: localhost') do |address|
+        
+        opts.on('-f', '--config [CONFIG_FILE]', 'configuration file',
+          "default: #{DEFAULT_CONFIG_FILE}") do |file|
+          self.config_file = file
+        end
+        
+        opts.on('--address', '--address ADDRESS', 'host address', 
+          "default: #{default(:address)}") do |address|
           default_options[:address] = address
         end
-
-        opts.on('-g', '--log LEVEL', 'log level', 'default: INFO') do |log|
-          default_options[:log] = log
+        
+        opts.on('-p', '--port PORT', 'port to bind to', 
+          "default: #{default(:port)}") do |port| 
+          default_options[:port] = port
         end
 
-        opts.on('-v', '--version', 'display the current version') do
-          puts "trinidad #{Trinidad::VERSION} (tomcat #{Trinidad::TOMCAT_VERSION})"
-          exit
+        opts.on('-s', '--ssl [SSL_PORT]', 'enable secure socket layout',
+          "default port: 8443") do |port|
+          default_options[:ssl] = { :port => (port || 8443).to_i }
+        end
+
+        opts.on('-a', '--ajp [AJP_PORT]', 'enable ajp connections',
+          "default port: 8009") do |port|
+          default_options[:ajp] = { :port => (port || 8009).to_i }
+        end
+
+        opts.on('--java_lib LIB_DIR', '--lib LIB_DIR (deprecated use --java_lib)', 
+          'contains .jar files used by the app',
+          "default: #{default(:java_lib)}") do |lib|
+          default_options[:java_lib] = lib
+        end
+
+        opts.on('--java_classes CLASSES_DIR', '--classes CLASSES_DIR (deprecated use --java_classes)', 
+          'contains java classes used by the app',
+          "default: #{default_java_classes}") do |classes|
+          default_options[:java_classes] = classes
         end
 
         opts.on('-l', '--load EXTENSION_NAMES', Array, 'load options for extensions') do |ext_names|
@@ -140,19 +142,35 @@ module Trinidad
           end
         end
 
-        opts.on('--apps', '--apps APPS_BASE_DIR', 'applications base directory') do |path|
-          default_options[:apps_base] = path
-        end
-
-        opts.on('--monitor' '--monitor MONITOR_FILE', 'monitor file for hot deployments') do |monitor|
-          default_options[:monitor] = monitor
+        opts.on('--apps', '--apps APPS_BASE_DIR', 'applications base directory') do |apps_base|
+          default_options[:apps_base] = apps_base
         end
         
-        opts.on('-h', '--help', 'display the help') do
+        opts.on('-g', '--log LEVEL', 'set logging level') do |log|
+          default_options[:log] = log
+        end
+        
+        opts.on('-v', '--version', 'show server version') do
+          puts "Trinidad #{Trinidad::VERSION} (Tomcat #{Trinidad::TOMCAT_VERSION})"
+          exit
+        end
+        
+        opts.on('-h', '--help', 'display this help') do
           puts opts
           exit
         end
       end
+    end
+    
+    private
+    
+    def default(key)
+      default_options[key] || Configuration::DEFAULTS[key]
+    end
+    
+    def default_java_classes
+      default(:java_classes) || 
+        ( default(:java_lib) && File.join(default(:java_lib), 'classes') )
     end
     
   end

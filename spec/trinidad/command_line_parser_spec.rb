@@ -7,25 +7,32 @@ describe Trinidad::CommandLineParser do
   
   subject { Trinidad::CommandLineParser }
 
-  it "overrides classes option" do
+  it "overrides java_classes option" do
+    args = "--java_classes my_classes".split
+
+    options = subject.parse(args)
+    options[:java_classes].should == 'my_classes'
+  end
+
+  it "overrides java_classes option with classes option (deprecated)" do
     args = "--classes my_classes".split
 
     options = subject.parse(args)
-    options[:classes_dir].should == 'my_classes'
+    options[:java_classes].should == 'my_classes'
   end
+  
+  it "overrides java_lib option" do
+    args = "--java_lib my_libs".split
 
-  it "overrides libs option with lib option" do
+    options = subject.parse(args)
+    options[:java_lib].should == 'my_libs'
+  end
+  
+  it "overrides java_lib option with lib option (deprecated)" do
     args = "--lib my_libs".split
 
     options = subject.parse(args)
-    options[:libs_dir].should == 'my_libs'
-  end
-
-  it "overrides libs option with jar option" do
-    args = "--jars my_jars".split
-
-    options = subject.parse(args)
-    options[:libs_dir].should == 'my_jars'
+    options[:java_lib].should == 'my_libs'
   end
 
   it "uses config/trinidad.yml as the default configuration file name" do
@@ -125,13 +132,13 @@ describe Trinidad::CommandLineParser do
   it "loads the given extensions to add its options to the parser" do
     args = "--load foo,bar --foo".split
     options = subject.parse(args)
-    options.has_key?(:foo).should be_true
-    options.has_key?(:bar).should be_true
+    options.has_key?(:foo).should be true
+    options.has_key?(:bar).should be true
   end
 
   it "adds the application directory path with the option --dir" do
     args = "--dir #{MOCK_WEB_APP_DIR}".split
-    subject.parse(args)[:web_app_dir].should == MOCK_WEB_APP_DIR
+    subject.parse(args)[:root_dir].should == MOCK_WEB_APP_DIR
   end
 
   it "accepts the option --address to set the trinidad's host name" do

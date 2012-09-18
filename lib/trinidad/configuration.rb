@@ -32,20 +32,22 @@ module Trinidad
   # the instance using Trinidad#configuration
   class Configuration
     
+    DEFAULTS = {
+      :port => 3000,
+      :address => 'localhost',
+      :environment => 'development',
+      :context_path => '/',
+      :public => 'public',
+      :java_lib => 'lib/java',
+      :default_web_xml => 'config/web.xml',
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 5,
+      :log => 'INFO',
+      :trap => true
+    }
+    
     def initialize(options = {})
-      @config = {
-        :port => 3000,
-        :address => 'localhost', 
-        :environment => 'development',
-        :context_path => '/',
-        :libs_dir => 'lib',
-        :classes_dir => 'classes',
-        :default_web_xml => 'config/web.xml',
-        :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 5,
-        :log => 'INFO',
-        :trap => true
-      }
+      @config = DEFAULTS.clone
       update!(options)
     end
 
@@ -77,15 +79,16 @@ module Trinidad
     end
     
     %w{ port address environment context_path
-        libs_dir classes_dir default_web_xml
+        java_lib libs_dir java_classes classes_dir default_web_xml
         jruby_min_runtimes jruby_max_runtimes jruby_compat_version
-        rackup servlet public hosts
+        rackup servlet rack_servlet default_servlet public hosts
         http ajp ssl extensions
         apps_base web_apps web_app_dir
         monitor reload_strategy log trap }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
       class_eval "def #{method}=(value); self[:'#{method}'] = value; end"
     end
+    # TODO #deprecate libs_dir classes_dir servlet
     
     # a Hash like #symbolize helper
     def self.symbolize_options(options, deep = true)
