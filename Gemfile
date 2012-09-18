@@ -1,4 +1,4 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 
 gemspec :name => "trinidad"
 
@@ -13,8 +13,10 @@ if (jars = ENV['trinidad_jars']) && jars != 'false'
   end
 end
 
-# for the integration tests :
-group :test do
-  gem "rails", "~> 3.2"
+gem 'sinatra', :require => nil, :group => :test
+
+group :integration do
+  gem "rails", "~> 3.2.8"
   gem "jruby-openssl"
+  #eval(File.read("spec/integration/rails32/Gemfile"), binding)
 end
