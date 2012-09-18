@@ -158,7 +158,12 @@ describe Trinidad::CommandLineParser do
     subject.parse(args)[:log].should == 'WARNING'
   end
 
-  it "accepts the option --apps to set the applications base directory" do
+  it "accepts the option --apps_base to set the applications base directory" do
+    args = '--apps_base foo'.split
+    subject.parse(args)[:apps_base].should == 'foo'
+  end
+  
+  it "accepts the option --apps to set the applications base directory (deprecated)" do
     args = '--apps foo'.split
     subject.parse(args)[:apps_base].should == 'foo'
   end

@@ -64,7 +64,7 @@ module Trinidad
         opts.banner = 'Usage: trinidad [server options]'
         opts.separator ''
 
-        opts.on('-d', '--dir ROOT_DIRECTORY', 'web application root directory',
+        opts.on('-d', '--dir ROOT_DIR', 'web application root directory',
           "default: current working directory") do |dir|
           default_options[:root_dir] = dir
         end
@@ -79,7 +79,7 @@ module Trinidad
           default_options[:rackup] = rackup || 'config.ru'
         end
 
-        opts.on('--public', '--public DIRECTORY', 'public directory', 
+        opts.on('--public', '--public PUBLIC_DIR', 'web application public root', 
           "default: #{default(:public)}") do |public|
           default_options[:public] = public
         end
@@ -94,12 +94,12 @@ module Trinidad
           default_options[:monitor] = monitor
         end
         
-        opts.on('-t', '--threadsafe', 'force thread-safe mode') do
+        opts.on('-t', '--threadsafe', 'force thread-safe mode (use single runtime)') do
           default_options[:jruby_min_runtimes] = 1
           default_options[:jruby_max_runtimes] = 1
         end
         
-        opts.on('-r', '--runtimes MIN:MAX', 'use given numer of min/max jruby runtimes', 
+        opts.on('--runtimes MIN:MAX', 'use given number of min/max jruby runtimes', 
           "default: #{default(:jruby_min_runtimes)}:#{default(:jruby_max_runtimes)}") do 
           |min_max| min, max = min_max.split(':')
           default_options[:jruby_min_runtimes] = min.to_i if min
@@ -126,7 +126,7 @@ module Trinidad
           default_options[:ssl] = { :port => (port || 8443).to_i }
         end
 
-        opts.on('-a', '--ajp [AJP_PORT]', 'enable ajp connections',
+        opts.on('-a', '--ajp [AJP_PORT]', 'enable the AJP web protocol',
           "default port: 8009") do |port|
           default_options[:ajp] = { :port => (port || 8009).to_i }
         end
@@ -149,7 +149,8 @@ module Trinidad
           end
         end
 
-        opts.on('--apps', '--apps APPS_BASE_DIR', 'applications base directory') do |apps_base|
+        opts.on('--apps_base APPS_BASE_DIR', '--apps APPS_BASE_DIR (deprecated use --apps_base)', 
+          'set applications base directory') do |apps_base|
           default_options[:apps_base] = apps_base
         end
         
