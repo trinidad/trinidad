@@ -9,10 +9,10 @@ module Trinidad
     config = ( self.configuration ||= Configuration.new )
     args.compact!
     if options = args.shift
-      options = Trinidad::Configuration.symbolize_options(options)
+      options = Configuration.symbolize_options(options)
       args.each do |opts|
-        opts = Trinidad::Configuration.symbolize_options(opts)
-        options = Trinidad::Configuration.merge_options(options, opts)
+        opts = Configuration.symbolize_options(opts)
+        options = Configuration.merge_options(options, opts)
       end
       config.update!(options)
     end

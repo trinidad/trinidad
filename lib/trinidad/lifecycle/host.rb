@@ -1,3 +1,5 @@
+require 'trinidad/lifecycle/base'
+
 module Trinidad
   module Lifecycle
     # A host lifecycle listener - monitors deployed web apps.

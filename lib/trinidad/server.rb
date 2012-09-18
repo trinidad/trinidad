@@ -1,3 +1,6 @@
+require 'trinidad/configuration'
+require 'trinidad/web_app'
+
 module Trinidad
   class Server
     attr_reader :config, :tomcat, :web_apps

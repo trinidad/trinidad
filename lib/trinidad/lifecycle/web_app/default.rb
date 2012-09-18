@@ -1,3 +1,6 @@
+require 'trinidad/lifecycle/base'
+require 'trinidad/lifecycle/web_app/shared'
+
 module Trinidad
   module Lifecycle
     module WebApp
