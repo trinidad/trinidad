@@ -129,6 +129,13 @@ describe Trinidad::CommandLineParser do
     options[:jruby_max_runtimes].should == 1
   end
 
+  it "changes runtime pool configuration" do
+    args = '--runtimes 2:6'.split
+    options = subject.parse(args)
+    options[:jruby_min_runtimes].should == 2
+    options[:jruby_max_runtimes].should == 6
+  end
+  
   it "loads the given extensions to add its options to the parser" do
     args = "--load foo,bar --foo".split
     options = subject.parse(args)

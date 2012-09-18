@@ -502,10 +502,13 @@ describe Trinidad::WebApp do
       app = Trinidad::WebApp.create({
         :root_dir => Dir.pwd,
         :environment => 'staging',
+        }, {
         :jruby_min_runtimes => 1,
         :jruby_max_runtimes => 2
       })
       
+      app.jruby_min_runtimes.should == 1
+      app.jruby_max_runtimes.should == 1 # overrides default config
       app.threadsafe?.should be true
     end
   end
@@ -514,16 +517,14 @@ describe Trinidad::WebApp do
     create_rails_environment
 
     app = Trinidad::WebApp.create({
-      :web_app_dir => Dir.pwd,
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 2
+      :web_app_dir => Dir.pwd
     })
 
     app.threadsafe?.should be true
   end
 
-  it "does not set threadsafe when the option is not enabled" do
-    create_rails_environment_non_threadsafe
+  it "does not change jruby runtime pool settings even when a threadsafe flag is detected" do
+    create_rails_environment
 
     app = Trinidad::WebApp.create({
       :web_app_dir => Dir.pwd,
@@ -531,7 +532,31 @@ describe Trinidad::WebApp do
       :jruby_max_runtimes => 2
     })
 
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 2
     app.threadsafe?.should be false
+  end
+  
+  it "does not set threadsafe when the option is not enabled" do
+    create_rails_environment_non_threadsafe
+
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd
+    })
+
+    app.threadsafe?.should be false
+  end
+
+  it "changes to threadsafe mode when option provided" do
+    create_rails_environment_non_threadsafe
+
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :threadsafe => true
+    })
+
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 1
+    app.threadsafe?.should be true
   end
   
   it "detects a rackup web app even if :rackup present in main config" do

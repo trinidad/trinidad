@@ -99,6 +99,13 @@ module Trinidad
           default_options[:jruby_max_runtimes] = 1
         end
         
+        opts.on('-r', '--runtimes MIN:MAX', 'use given numer of min/max jruby runtimes', 
+          "default: #{default(:jruby_min_runtimes)}:#{default(:jruby_max_runtimes)}") do 
+          |min_max| min, max = min_max.split(':')
+          default_options[:jruby_min_runtimes] = min.to_i if min
+          default_options[:jruby_max_runtimes] = max.to_i if max
+        end
+        
         opts.on('-f', '--config [CONFIG_FILE]', 'configuration file',
           "default: #{DEFAULT_CONFIG_FILE}") do |file|
           self.config_file = file

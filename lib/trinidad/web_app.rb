@@ -21,11 +21,16 @@ module Trinidad
 
     def [](key)
       key = key.to_sym
-      config.has_key?(key) ? config[key] : default_config[key]
+      config.key?(key) ? config[key] : default_config[key]
     end
     
-    %w{ context_path root_dir
-        jruby_min_runtimes jruby_max_runtimes jruby_compat_version
+    def key?(key, use_default = true)
+      key = key.to_sym
+      return true if config.has_key?(key)
+      use_default ? default_config.key?(key) : false
+    end
+    
+    %w{ context_path root_dir jruby_compat_version
         rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
@@ -33,6 +38,22 @@ module Trinidad
     # NOTE: should be set to application root (base) directory thus
     # JRuby-Rack correctly resolves relative paths for the context!
     def doc_base; self[:doc_base] || root_dir; end
+    
+    def jruby_min_runtimes
+      if min = config[:jruby_min_runtimes]
+        return min.to_i # min specified overrides :threadsafe
+      else # but :threadsafe takes precendence over default :
+        self[:threadsafe] ? 1 : default_config[:jruby_min_runtimes]
+      end
+    end
+    
+    def jruby_max_runtimes
+      if max = config[:jruby_max_runtimes]
+        return max.to_i # max specified overrides :threadsafe
+      else # but :threadsafe takes precendence over default :
+        self[:threadsafe] ? 1 : default_config[:jruby_max_runtimes]
+      end
+    end
     
     def environment; self[:environment] || @@defaults[:environment]; end # TODO check web.xml
     
@@ -274,9 +295,9 @@ module Trinidad
     def solo?
       ! is_a?(WarWebApp) && config[:solo]
     end
-
+    
     def threadsafe?
-      jruby_min_runtimes.to_i == 1 && jruby_max_runtimes.to_i == 1
+      jruby_min_runtimes == 1 && jruby_max_runtimes == 1
     end
     
     protected
@@ -503,9 +524,9 @@ module Trinidad
     def complete_config!
       super
       # detect threadsafe! in config/environments/environment.rb :
-      if self.class.threadsafe?(root_dir, environment)
-        config[:jruby_min_runtimes] = 1
-        config[:jruby_max_runtimes] = 1
+      if ! key?(:threadsafe) && self.class.threadsafe?(root_dir, environment)
+        config[:jruby_min_runtimes] = 1 unless key?(:jruby_min_runtimes, false)
+        config[:jruby_max_runtimes] = 1 unless key?(:jruby_max_runtimes, false)
       end
     end
     
