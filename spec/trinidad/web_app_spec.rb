@@ -442,6 +442,17 @@ describe Trinidad::WebApp do
     app.context_path.should == '/foo'
   end
 
+  it "converts context name to_s" do
+    app = Trinidad::WebApp.create({ :context_name => :home, :context_path => :'/home' })
+    app.context_name.should ==  'home'
+    app.context_path.should == '/home'
+  end
+
+  it "a missing context name stays nil" do
+    app = Trinidad::WebApp.create({ :context_path => '/home' })
+    app.context_name.should be nil
+  end
+  
   it "missing context path assumes root" do
     app = Trinidad::WebApp.create({})
     app.context_path.should == '/'

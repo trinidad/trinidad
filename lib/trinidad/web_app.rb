@@ -36,8 +36,15 @@ module Trinidad
     end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
     
-    def context_path; self[:context_path] || self[:path]; end
-    def context_name; self[:context_name] || self[:name]; end
+    def context_path
+      path = self[:context_path] || self[:path]
+      path ? path.to_s : path
+    end
+    
+    def context_name
+      name = self[:context_name] || self[:name]
+      name ? name.to_s : name
+    end
     
     # NOTE: should be set to application root (base) directory thus
     # JRuby-Rack correctly resolves relative paths for the context!
