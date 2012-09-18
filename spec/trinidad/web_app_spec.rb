@@ -417,11 +417,36 @@ describe Trinidad::WebApp do
     app.work_dir.should == 'foo/tmp'
   end
 
-  it "removes the war extension from the context path if it's a war application" do
-    app = Trinidad::WebApp.create({ :context_path => 'foo.war' })
-    app.context_path.should == 'foo'
+  it "adds / in front of the context path" do
+    app = Trinidad::WebApp.create({ :context_path => 'bar' })
+    app.context_path.should == '/bar'
   end
 
+  it "accepts the context path as is" do
+    app = Trinidad::WebApp.create({ :context_path => '/bar', :context_name => 'huu' })
+    app.context_path.should == '/bar'
+  end
+
+  it "resolves the context path from name" do
+    app = Trinidad::WebApp.create({ :context_name => 'huu' })
+    app.context_path.should == '/huu'
+  end
+
+  it "resolves context name 'default' as root path" do
+    app = Trinidad::WebApp.create({ :context_name => 'default' })
+    app.context_path.should == '/'
+  end
+  
+  it "removes the war extension from the context path if it's a war application" do
+    app = Trinidad::WebApp.create({ :context_path => 'foo.war' })
+    app.context_path.should == '/foo'
+  end
+
+  it "missing context path assumes root" do
+    app = Trinidad::WebApp.create({})
+    app.context_path.should == '/'
+  end
+  
   it "removes the war extension from the working directory if it's a war application" do
     app = Trinidad::WebApp.create({
       :context_path => 'foo.war',

@@ -107,7 +107,7 @@ module Trinidad
 
     def add_web_app(web_app, host = nil)
       host ||= web_app.config[:host] || @tomcat.host
-      context = @tomcat.addWebapp(host, web_app.context_path, web_app.web_app_dir)
+      context = @tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
       context.add_lifecycle_listener(web_app.define_lifecycle)
       context
@@ -144,9 +144,7 @@ module Trinidad
     
     def create_from_web_apps
       @config[:web_apps].map do |name, app_config|
-        app_config[:context_path] ||= (name.to_s == 'default' ? '' : "/#{name}")
-        app_config[:web_app_dir]  ||= Dir.pwd
-        
+        app_config[:context_name] ||= name
         create_web_app(app_config)
       end if @config[:web_apps]
     end
@@ -163,11 +161,10 @@ module Trinidad
 
           apps_path.map do |path|
             if File.directory?(path) || path =~ /\.war$/
-              name = File.basename(path)
               create_web_app({
-                :context_path => (name.to_s == 'default' ? '' : "/#{name}"),
-                :web_app_dir  => File.expand_path(path),
-                :host         => host
+                :context_name => File.basename(path),
+                :root_dir => File.expand_path(path),
+                :host => host
               })
             end
           end

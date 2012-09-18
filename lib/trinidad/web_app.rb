@@ -30,11 +30,15 @@ module Trinidad
       use_default ? default_config.key?(key) : false
     end
     
-    %w{ context_path root_dir jruby_compat_version
+    %w{ root_dir jruby_compat_version
         rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
+    
+    def context_path; self[:context_path] || self[:path]; end
+    def context_name; self[:context_name] || self[:name]; end
+    
     # NOTE: should be set to application root (base) directory thus
     # JRuby-Rack correctly resolves relative paths for the context!
     def doc_base; self[:doc_base] || root_dir; end
@@ -308,6 +312,7 @@ module Trinidad
     
     def complete_config!
       config[:root_dir] ||= self.class.root_dir(config, default_config)
+      config[:context_path] = self.class.context_path(config, default_config)
     end
     
     public
@@ -424,6 +429,18 @@ module Trinidad
         ( default_config && 
           ( default_config[:root_dir] || default_config[:web_app_dir] ) ) ||
             Dir.pwd
+    end
+    
+    def self.context_path(config, default_config = nil)
+      path = config[:context_path] || 
+        ( default_config && default_config[:context_path] )
+      unless path
+        name = config[:context_name] ||
+          ( default_config && default_config[:context_name] )
+        path = name.to_s == 'default' ? '/' : "/#{name}"
+      end
+      path = "/#{path}" if path.to_s[0, 1] != '/'
+      path.to_s
     end
     
     def self.file_line_match?(path, pattern = nil)

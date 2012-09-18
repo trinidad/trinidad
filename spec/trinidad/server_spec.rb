@@ -80,7 +80,7 @@ describe Trinidad::Server do
   it "loads one application for each option present into :web_apps" do
     server = Trinidad::Server.new({
       :web_apps => {
-        :mock1 => {
+        :_ock1 => {
           :context_path => '/mock1',
           :web_app_dir => MOCK_WEB_APP_DIR
         },
@@ -96,7 +96,7 @@ describe Trinidad::Server do
     context_loaded = server.tomcat.host.find_children
     context_loaded.should have(3).web_apps
 
-    expected = ['/mock1', '/mock2', '']
+    expected = [ '/mock1', '/mock2', '/' ]
     context_loaded.each do |context|
       expected.delete(context.path).should == context.path
     end
