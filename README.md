@@ -30,7 +30,7 @@ gem 'trinidad', :require => nil
 
 **Rails**
 
-If you have Trinidad in your Gemfile you can start it with `rails server`:
+If you have Trinidad in your *Gemfile* you can start it with `rails server`:
 
 ```
 $ rails s trinidad
@@ -73,24 +73,41 @@ Or you can set Trinidad by default in your `config.ru` file:
 #\ -s trinidad
 ```
 
+We do recommend to use the plain `trinidad` command for running applications 
+(in production), since it supports runtime pooling while the rackup mode does
+not, it also provides you with better Java integration possibilities.
+
+Also note that Trinidad does not mimic JRuby-Rack's behavior of starting a pool
+for Rails but booting plain Rack applications in a thread-safe manner  by 
+default (this is due backwards compatibility). Currently, runtime pooling is the 
+default with Trinidad and stays the same no matter the type of the application
+you're running. We expect this default to most likely change in future versions
+of Trinidad as thread-safe gets more adopted by the release of Rails 4.0.
+
 ## Configuration
 
 Trinidad allows you to configure parameters from the command line, the following 
 is a list of the currently supported options (try `trinidad -h`):
 
 ```
-  * -p, --port PORT               =>  port to bind to.
-  * -e, --env ENVIRONMENT         =>  rails environment.
-  * -c, --context CONTEXT         =>  application context path.
-  * --lib, --jars LIBS_DIR        =>  directory containing jars.
-  * --classes CLASSES_DIR         =>  directory containing classes.
-  * -r, --rackup [RACKUP_FILE]    =>  run a provided rackup file instead of a rails application, by default it's config.ru.
-  * --public PUBLIC_DIR           =>  specify the public directory for your application, by default it's 'public'.
-  * -t, --threadsafe              =>  shortcut to work in threadsafe mode. Setting jruby_min_runtimes and jruby_max_runtimes to 1 in the configuration file the server behaves as the same way.
-  * -l, --load EXTENSION_NAMES    =>  load extensions to use their command line options.
-  * --address HOST                =>  set the server host.
-  * -g, --log LEVEL               =>  set the log level, default INFO.
-  * --apps APPS_BASE_DIRECTORY    =>  set the applications base directory.
+  * -d, --dir ROOT_DIR            =>  web application root directory
+  * -e, --env ENVIRONMENT         =>  rack (rails) environment
+  * --rackup [RACKUP_FILE]        =>  rackup configuration file
+  * --public PUBLIC_DIR           =>  web application public root
+  * -c, --context CONTEXT         =>  application context path
+  * --monitor MONITOR_FILE        =>  monitor for application re-deploys
+  * -t, --threadsafe              =>  force thread-safe mode (use single runtime)
+  * --runtimes MIN:MAX            =>  use given number of min/max jruby runtimes
+  * -f, --config [CONFIG_FILE]    =>  configuration file
+  * --address ADDRESS             =>  host address
+  * -p, --port PORT               =>  port to bind to
+  * -s, --ssl [SSL_PORT]          =>  enable secure socket layout
+  * -a, --ajp [AJP_PORT]          =>  enable the AJP web protocol
+  * --java_lib LIB_DIR            =>  contains .jar files used by the app
+  * --java_classes CLASSES_DIR    =>  contains java classes used by the app
+  * -l, --load EXTENSION_NAMES    =>  load options for extensions
+  * --apps_base APPS_BASE_DIR     =>  set applications base directory
+  * -g, --log LEVEL               =>  set logging level
 ```
 
 You can also specify a default *web.xml* to configure your web application. 
@@ -128,6 +145,7 @@ configuration - the file `config/trinidad.rb` is loaded by default if exists.
 Trinidad.configure do |config|
   config.port = 4242
   config.address = '0.0.0.0'
+  #config[:custom] = 'custom'
 end
 ```
 
@@ -175,13 +193,40 @@ class-path under your *[classes]/META-INF* directory.
 
 Context Doc: http://tomcat.apache.org/tomcat-7.0-doc/config/context.html
 
+### Serving Assets
+
+Trinidad uses Tomcat's built-in capabilities to server your public files. 
+We do recommend compiling assets up front and disabling the asset server (in 
+production) if you're using the asset pipeline in a Rails application.
+If you do not put a web-server such as Apache in front of Trinidad you might
+want to configure the resource caching (on by default for env != development)
+for maximum performance e.g. by default it's configured as follows :
+
+```yml
+---
+  public: 
+    root: public # same as the above "public: public" setting
+    cached: true # enable (in-memory) asset caching on for env != 'development'
+    cache_ttl: 5000 # cache TTL in millis (might want to increase this)
+    cache_max_size: 10240 # the maximum cache size in kB
+    cache_object_max_size: 512 # max size for a cached object (asset) in kB
+    #aliases: # allows to "link" other directories into the public root e.g. :
+      #/home: /var/local/www
+```
+
+You might also "mount" file-system directories as aliases to your resources
+root to be served by your application (as if they were in the public folder).
+
+**NOTE:** In development mode if you ever happen to `rake assets:precompile` 
+make sure to remove your *public/assets* directory later, otherwise requests
+such as **/assets/application.js?body=1.0** won't hit the Rails runtime !
 
 ## Hot Deployment
 
 Trinidad supports monitoring a file to reload applications, when the file 
 *tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt`), the server reloads 
-the application the file belongs. 
-The file monitor can be customized with the `monitor` configuration option.
+the application the monitor file belongs to. 
+This monitor file can be customized with the `monitor` configuration option.
 
 Since version **1.4.0** Trinidad supports 2 reload strategies :
 
