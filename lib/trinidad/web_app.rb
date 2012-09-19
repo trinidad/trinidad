@@ -66,6 +66,10 @@ module Trinidad
       end
     end
     
+    def jruby_runtime_acquire_timeout
+      self[:jruby_runtime_acquire_timeout] || 5.0 # default 10s seems too high
+    end
+    
     def environment; self[:environment] || @@defaults[:environment]; end # TODO check web.xml
     
     def public_dir
@@ -122,6 +126,7 @@ module Trinidad
       add_context_param 'jruby.min.runtimes', jruby_min_runtimes
       add_context_param 'jruby.max.runtimes', jruby_max_runtimes
       add_context_param 'jruby.initial.runtimes', jruby_min_runtimes
+      add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
       add_context_param 'jruby.compat.version', jruby_compat_version || RUBY_VERSION
       add_context_param 'public.root', File.join('/', public_root)
       @context_params
