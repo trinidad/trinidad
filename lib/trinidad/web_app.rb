@@ -248,7 +248,7 @@ module Trinidad
     def default_servlet
       return @default_servlet unless @default_servlet.nil?
       @default_servlet ||= begin
-        if ! web_xml_servlet?(nil, DEFAULT_SERVLET_NAME)
+        if ! web_xml_servlet?(DEFAULT_SERVLET_CLASS, DEFAULT_SERVLET_NAME)
           default_servlet = self[:default_servlet]
           if default_servlet.is_a?(javax.servlet.Servlet)
             { :instance => default_servlet }
@@ -257,6 +257,31 @@ module Trinidad
           end
         else
           false # configured in web.xml thus remove the (default) "default"
+        end
+      end
+    end
+    
+    JSP_SERVLET_CLASS = nil # by default we resolve by it's name
+    JSP_SERVLET_NAME = 'jsp'
+    
+    # Returns a servlet config for the JspServlet. 
+    # This servlet is setup by default for every Tomcat context and is named 
+    # 'jsp' with '*.jsp' and '*.jspx' mappings.
+    # Return values should be interpreted as follows :
+    #  true - do nothing leave the servlet as set-up (by default)
+    #  false - remove the set-up servlet (by default we do not need jsp support)
+    def jsp_servlet
+      return @jsp_servlet unless @jsp_servlet.nil?
+      @jsp_servlet ||= begin
+        if ! web_xml_servlet?(JSP_SERVLET_CLASS, JSP_SERVLET_NAME)
+          jsp_servlet = self[:jsp_servlet]
+          if jsp_servlet.is_a?(javax.servlet.Servlet)
+            { :instance => jsp_servlet }
+          else
+            jsp_servlet || false # remove jsp support unless specified
+          end
+        else
+          false # configured in web.xml thus remove the default "jsp"
         end
       end
     end
@@ -441,7 +466,7 @@ module Trinidad
     end
     
     def self.war?(config, default_config = nil)
-      config[:context_path] && config[:context_path][-4..-1] == '.war'
+      config[:context_path] && config[:context_path].to_s[-4..-1] == '.war'
     end
     
     private

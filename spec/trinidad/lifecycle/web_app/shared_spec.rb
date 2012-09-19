@@ -25,10 +25,6 @@ describe Trinidad::Lifecycle::WebApp::Shared do
     @listener.send :remove_defaults, @context
 
     @context.welcome_files.should have(0).files
-
-    @context.find_child('jsp').should be nil
-
-    @context.process_tlds.should be false
     @context.xml_validation.should be false
   end
 

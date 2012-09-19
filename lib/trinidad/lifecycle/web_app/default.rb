@@ -9,7 +9,6 @@ module Trinidad
         
         def configure(context)
           super
-          configure_default_servlet(context)
           deployment_descriptor = configure_deployment_descriptor(context)
           unless deployment_descriptor
             configure_rack_servlet(context)
@@ -142,59 +141,6 @@ module Trinidad
             end
           else
             logger.warn "[#{web_app.context_path}] could not set-up public due missing resouces"
-          end
-        end
-        
-        def configure_default_servlet(context)
-          default = Trinidad::WebApp::DEFAULT_SERVLET_NAME
-          default_wrapper = context.find_child(default)
-          case default_servlet = web_app.default_servlet
-          when true
-            # nothing to do leave default as is
-          when false
-            # use the one from web.xml - remove what Tomcat set-up
-            remove_servlet_mapping(context, default)
-            context.remove_child(default_wrapper)
-            false
-          else
-            wrapper, name = default_wrapper, default
-            if servlet = default_servlet[:instance]
-              wrapper = context.create_wrapper
-              wrapper.name = name = default_servlet[:name] || default
-              wrapper.servlet = servlet
-              context.remove_child(default_wrapper)
-              context.add_child(wrapper) # the new 'default' servlet
-            elsif servlet_class = default_servlet[:class]
-              wrapper.servlet_class = servlet_class
-            end
-            # do not remove wrapper but only "update" the default :
-            wrapper.load_on_startup = ( default_servlet[:load_on_startup] || 
-                default_wrapper.load_on_startup ).to_i
-            add_init_params(wrapper, default_servlet[:init_params])
-            # NOTE: we keep the root mapping / should not hurt ?
-            if mapping = default_servlet[:mapping]
-              add_servlet_mapping(context, mapping, name)
-              # else keep the servlet mapping as is ...
-            end
-            wrapper
-          end
-        end
-        
-        private
-        
-        def add_servlet_mapping(context, mapping, name)
-          if mapping.is_a?(String) || mapping.is_a?(Symbol) 
-            context.add_servlet_mapping(mapping.to_s, name)
-          else
-            mapping.each { |m| add_servlet_mapping(context, m, name) }
-          end
-        end
-
-        def add_init_params(wrapper, params)
-          return unless params
-          params.each do |param, value|
-            val = value.to_s unless value.nil?
-            wrapper.add_init_parameter(param.to_s, val)
           end
         end
         

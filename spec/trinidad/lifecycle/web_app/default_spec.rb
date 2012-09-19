@@ -112,6 +112,8 @@ describe Trinidad::Lifecycle::WebApp::Default do
     })
     context = tomcat.add_webapp('/', Dir.pwd)
     listener.stubs(:configure_logging)
+    listener.stubs(:configure_default_servlet)
+    listener.stubs(:configure_jsp_servlet)
     listener.configure(context)
 
     context.find_parameter('jruby.max.runtimes').should be nil
@@ -423,7 +425,10 @@ describe Trinidad::Lifecycle::WebApp::Default do
   
   it "allows overriding DefaultServlet with servlet and custom mapping", :integration => true do
     listener = rackup_web_app_listener({
-      :default_servlet => { :instance => servlet = DefaultServlet.new, :mapping => [ '/static1', '/static2' ] },
+      :default_servlet => { 
+        :instance => servlet = DefaultServlet.new, 
+        :mapping => [ '/static1', '/static2' ] 
+      },
       :root_dir => MOCK_WEB_APP_DIR, 
       :rackup => 'config.ru'
     })
@@ -434,9 +439,52 @@ describe Trinidad::Lifecycle::WebApp::Default do
     wrapper = find_wrapper(context, 'default')
     wrapper.name.should == 'default'
     wrapper.getServlet.should be servlet
-    context.findServletMapping('/').should == 'default'
+    context.findServletMapping('/').should be nil
     context.findServletMapping('/static1').should == 'default'
     context.findServletMapping('/static2').should == 'default'
+  end
+  
+  it "keeps the jsp servlet when :jsp_servlet set to true", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru',
+      :jsp_servlet => true
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    jsp_wrapper = find_wrapper(context, 'jsp')
+    jsp_wrapper.should_not be nil
+    jsp_wrapper.should be_a org.apache.catalina.core.StandardWrapper
+    context.findServletMapping('*.jsp').should == 'jsp'
+  end
+
+  class Java::OrgApacheJasperServlet::JspServlet
+    field_reader :options
+  end
+  
+  it "updates the jsp servlet with given config", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :rackup => 'config.ru',
+      :jsp_servlet => { 
+        :mapping => [ '*.php', '/jspx' ], 
+        :init_params => { :trimSpaces => true }
+      }
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    find_wrapper(context, 'jsp').should_not be nil
+    context.findServletMapping('*.jsp').should == nil
+    context.findServletMapping('*.php').should == 'jsp'
+    context.findServletMapping('/jspx').should == 'jsp'
+    
+    wrapper = find_wrapper(context, 'jsp')
+    wrapper.servlet.should be_a org.apache.jasper.servlet.JspServlet
+    wrapper.servlet.options.getTrimSpaces.should == true
   end
   
   private

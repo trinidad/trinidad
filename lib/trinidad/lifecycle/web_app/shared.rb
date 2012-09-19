@@ -22,6 +22,8 @@ module Trinidad
         def configure(context)
           adjust_context(context)
           remove_defaults(context)
+          configure_default_servlet(context)
+          configure_jsp_servlet(context)
           configure_logging(context)
         end
 
@@ -43,27 +45,85 @@ module Trinidad
           end
         end
         
+        def configure_default_servlet(context)
+          configure_builtin_servlet(context, 
+            web_app.default_servlet, 
+            Trinidad::WebApp::DEFAULT_SERVLET_NAME
+          )
+        end
+        
+        def configure_jsp_servlet(context)
+          wrapper = configure_builtin_servlet(context, 
+            web_app.jsp_servlet, 
+            Trinidad::WebApp::JSP_SERVLET_NAME
+          )
+          if wrapper == false # jsp servlet removed
+            context.process_tlds = false
+          end
+          wrapper
+        end
+        
         def configure_logging(context)
           Trinidad::Logging.configure_web_app(web_app, context)
         end
         
         private
 
+        def configure_builtin_servlet(context, servlet_config, name)
+          name_wrapper = context.find_child(name)
+          case servlet_config
+          when true
+            return true # nothing to do leave built-in servlet as is
+          when false
+            # remove what Tomcat set-up (e.g. use one from web.xml)
+            remove_servlet_mapping(context, name)
+            context.remove_child(name_wrapper)
+            return false
+          else
+            wrapper, name = name_wrapper, name
+            if servlet = servlet_config[:instance]
+              wrapper = context.create_wrapper
+              wrapper.name = name = servlet_config[:name] || name
+              wrapper.servlet = servlet
+              context.remove_child(name_wrapper)
+              context.add_child(wrapper)
+            elsif servlet_class = servlet_config[:class]
+              wrapper.servlet_class = servlet_class
+            end
+            # do not remove wrapper but only "update" the default :
+            wrapper.load_on_startup = ( servlet_config[:load_on_startup] || 
+                name_wrapper.load_on_startup ).to_i
+            add_init_params(wrapper, servlet_config[:init_params])
+            if mapping = servlet_config[:mapping]
+              # NOTE: we override the default mapping :
+              remove_servlet_mapping(context, name)
+              add_servlet_mapping(context, mapping, name)
+              # else keep the servlet mapping as is ...
+            end
+            wrapper
+          end
+        end
+        
         def remove_defaults(context)
           context.remove_welcome_file('index.htm')
           context.remove_welcome_file('index.html')
-          remove_jsp_support(context)
-        end
-
-        def remove_jsp_support(context)
           context.remove_welcome_file('index.jsp')
-          if jsp_wrapper = context.find_child('jsp')
-            remove_servlet_mapping(context, 'jsp')
-            context.remove_child(jsp_wrapper)
-          else
-            logger.warn "[#{web_app.context_path}] jsp servlet not found"
+        end
+        
+        def add_init_params(wrapper, params)
+          return unless params
+          params.each do |param, value|
+            val = value.to_s unless value.nil?
+            wrapper.add_init_parameter(param.to_s, val)
           end
-          context.process_tlds = false
+        end
+        
+        def add_servlet_mapping(context, mapping, name)
+          if mapping.is_a?(String) || mapping.is_a?(Symbol) 
+            context.add_servlet_mapping(mapping.to_s, name)
+          else
+            mapping.each { |m| add_servlet_mapping(context, m, name) }
+          end
         end
         
         # Remove all servlet mappings for given (servlet) name.
