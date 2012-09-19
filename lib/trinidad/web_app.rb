@@ -262,8 +262,9 @@ module Trinidad
     end
     
     RACK_SERVLET_CLASS = 'org.jruby.rack.RackServlet'
-    RACK_SERVLET_NAME = 'RackServlet' # in-case of a "custom" RackServlet class
+    RACK_SERVLET_NAME = 'rack' # in-case of a "custom" rack servlet class
     RACK_FILTER_CLASS = 'org.jruby.rack.RackFilter'
+    RACK_FILTER_NAME = 'rack'
     
     # Returns a config for the RackServlet or nil if no need to set-up one.
     # (to be used for dispatching to this Rack / Rails web application)
@@ -279,7 +280,7 @@ module Trinidad
           servlet_name = rack_servlet[:name] || RACK_SERVLET_NAME
           
           if ! web_xml_servlet?(servlet_class, servlet_name) &&
-              ! web_xml_filter?(RACK_FILTER_CLASS)
+              ! web_xml_filter?(RACK_FILTER_CLASS, RACK_FILTER_NAME)
             {
               :instance => rack_servlet[:instance],
               :class => servlet_class, :name => servlet_name,
@@ -335,7 +336,7 @@ module Trinidad
     def web_xml_servlet?(servlet_class, servlet_name = nil)
       return nil unless web_xml_doc
       if servlet_class
-        servlet_xpath = "/web-app/servlet[servlet-class = '#{servlet_class}']"  
+        servlet_xpath = "/web-app/servlet[servlet-class = '#{servlet_class}']"
         return true if web_xml_doc.root.elements[servlet_xpath] # else try name
       end
       if servlet_name
@@ -348,9 +349,19 @@ module Trinidad
     end
 
     # Returns true if a filter definition with a given filter-class is found.
-    def web_xml_filter?(filter_class)
+    def web_xml_filter?(filter_class, filter_name = nil)
       return nil unless web_xml_doc
-      !! web_xml_doc.root.elements["/web-app/filter[filter-class = '#{filter_class}']"]
+      if filter_class
+        filter_xpath = "/web-app/filter[filter-class = '#{filter_class}']"
+        return true if web_xml_doc.root.elements[filter_xpath] # else try name
+      end
+      if filter_name
+        filter_xpath = "/web-app/filter[filter-name = '#{filter_name}']"
+        return !! web_xml_doc.root.elements[filter_xpath]
+      end
+      
+      return false if filter_class || filter_name
+      raise ArgumentError, "nor filter_class nor filter_name given"
     end
     
     # Returns true if a listener definition with a given listener-class is found.

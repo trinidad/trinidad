@@ -78,17 +78,6 @@ describe Trinidad::Lifecycle::WebApp::Default do
       context_config.default_web_xml.should == "org/apache/catalina/startup/NO_DEFAULT_XML"
     end
   end
-  
-  it "adds the rack servlet and the mapping for /*" do
-    listener = rails_web_app_listener({})
-    listener.send :configure_rack_servlet, context
-
-    servlet = context.find_child('RackServlet')
-    servlet.should_not be nil
-    servlet.servlet_class.should == 'org.jruby.rack.RackServlet'
-
-    context.find_servlet_mapping('/*').should == 'RackServlet'
-  end
 
   it "configures the rack context listener from the web app" do
     listener = rackup_web_app_listener({})
@@ -298,8 +287,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   
   it "has 2 child servlets mapped by default when context starts", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR, 
-      :rackup => 'config.ru'
+      :root_dir => MOCK_WEB_APP_DIR, :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
     context.addLifecycleListener listener
@@ -307,18 +295,35 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.start
 
     context.find_children.size.should == 2
-    wrapper1 = context.find_children[0]
-    wrapper1.should be_a org.apache.catalina.core.StandardWrapper
-    wrapper1.getServletClass.should == 'org.jruby.rack.RackServlet'
-    wrapper1.name.should == 'RackServlet'
-    context.findServletMapping('/*').should == 'RackServlet'
 
-    wrapper2 = context.find_children[1]
-    wrapper2.should be_a org.apache.catalina.core.StandardWrapper
-    wrapper2.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    wrapper = context.find_children[0]
+    wrapper.should be_a org.apache.catalina.core.StandardWrapper
+    wrapper.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    wrapper.name.should == 'default'
+    context.findServletMapping('/').should == 'default'
+    
+    wrapper = context.find_children[1]
+    wrapper.should be_a org.apache.catalina.core.StandardWrapper
+    wrapper.getServletClass.should == 'org.jruby.rack.RackServlet'
+    wrapper.name.should == 'rack'
+    context.findServletMapping('/*').should == 'rack'
+    
+    # removes the jsp servlet by default
+    context.process_tlds.should be false
   end
   
-  it "allows overriding the RackServlet", :integration => true do
+  it "adds the rack servlet and the mapping for /*" do
+    listener = rails_web_app_listener({})
+    listener.send :configure_rack_servlet, context
+
+    servlet = context.find_child('rack')
+    servlet.should_not be nil
+    servlet.servlet_class.should == 'org.jruby.rack.RackServlet'
+
+    context.find_servlet_mapping('/*').should == 'rack'
+  end
+  
+  it "allows overriding the rack servlet", :integration => true do
     listener = rackup_web_app_listener({
       :rack_servlet => servlet = org.jruby.rack.RackServlet.new,
       :root_dir => MOCK_WEB_APP_DIR, 
@@ -328,10 +333,10 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.addLifecycleListener listener
     context.start
 
-    wrapper = find_wrapper(context, 'RackServlet')
-    wrapper.name.should == 'RackServlet'
+    wrapper = find_wrapper(context, 'rack')
+    wrapper.name.should == 'rack'
     wrapper.getServlet.should be servlet
-    context.findServletMapping('/*').should == 'RackServlet'
+    context.findServletMapping('/*').should == 'rack'
   end
   
   it "keeps DefaultServlet (optionally adds init params)", :integration => true do

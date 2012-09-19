@@ -147,50 +147,84 @@ describe Trinidad::WebApp do
   end
   
   it "ignores rack_servlet when a deployment descriptor already provides it" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.rack_servlet.should be nil
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.rack_servlet.should be nil
   end
 
-  it "ignores rack_servlet when a deployment descriptor provides a RackServlet named servlet" do
-    FakeFS do
-      create_config_file custom_web_xml = "extended-web.xml", '' +
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<web-app>' +
-        '  <servlet>' +
-        '    <servlet-class>org.kares.jruby.rack.ExtendedServlet</servlet-class>' +
-        '    <servlet-name>RackServlet</servlet-name>' +
-        '    <async-supported>true</async-supported>' +
-        '  </servlet>' +
-        '  <servlet-mapping>' +
-        '    <url-pattern>/*</url-pattern>' +
-        '    <servlet-name>RackServlet</servlet-name>' +
-        '  </servlet-mapping>' +
-        '</web-app>'
+  it "ignores rack_servlet when a deployment descriptor provides a 'rack' named servlet" do
+    create_config_file custom_web_xml = "extended-web.xml", '' +
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<web-app>' +
+      '  <servlet>' +
+      '    <servlet-class>org.kares.jruby.rack.ExtendedServlet</servlet-class>' +
+      '    <servlet-name>rack</servlet-name>' +
+      '    <async-supported>true</async-supported>' +
+      '  </servlet>' +
+      '  <servlet-mapping>' +
+      '    <url-pattern>/*</url-pattern>' +
+      '    <servlet-name>rack</servlet-name>' +
+      '  </servlet-mapping>' +
+      '</web-app>'
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
-      })
-      app.rack_servlet.should be nil
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd, :web_xml => custom_web_xml
+    })
+    app.rack_servlet.should be nil
+  end
+
+  it "ignores rack_servlet when RackFilter is configured" do
+    create_config_file custom_web_xml = "filter1-web.xml", '' +
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<web-app>' +
+      '  <filter>' +
+      '    <filter-class>org.jruby.rack.RackFilter</filter-class>' +
+      '    <filter-name>filter</filter-name>' +
+      '  </filter>' +
+      '  <filter-mapping>' +
+      '    <url-pattern>/*</url-pattern>' +
+      '    <filter-name>filter</filter-name>' +
+      '  </filter-mapping>' +
+      '</web-app>'
+
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :web_xml => custom_web_xml
+    })
+    app.rack_servlet.should be nil
+  end
+  
+  it "ignores rack_servlet when a deployment descriptor provides a 'rack' named filter" do
+    create_config_file custom_web_xml = "filter2-web.xml", '' +
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<web-app>' +
+      '  <filter>' +
+      '    <filter-class>org.kares.jruby.rack.CustomRackFilter</filter-class>' +
+      '    <filter-name>rack</filter-name>' +
+      '  </filter>' +
+      '  <filter-mapping>' +
+      '    <url-pattern>/*</url-pattern>' +
+      '    <filter-name>rack</filter-name>' +
+      '  </filter-mapping>' +
+      '</web-app>'
+
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd, :web_xml => custom_web_xml
+    })
+    app.rack_servlet.should be nil
   end
   
   it "ignores rack_listener when a deployment descriptor already provides it" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.rack_listener.should be nil
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.rack_listener.should be nil
   end
 
   it "does not ignore rack_servlet when it's commented in a deployment descriptor" do
@@ -202,7 +236,7 @@ describe Trinidad::WebApp do
         :default_web_xml => 'config/web.xml'
       })
       app.servlet.should_not be nil
-      app.servlet[:name].should == 'RackServlet'
+      app.servlet[:name].should == Trinidad::WebApp::RACK_SERVLET_NAME
       app.servlet[:class].should == 'org.jruby.rack.RackServlet'
     end
   end
@@ -223,7 +257,7 @@ describe Trinidad::WebApp do
   it "uses RackServlet with /* when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({}, {})
     app.rack_servlet.should_not be nil
-    app.rack_servlet[:name].should == 'RackServlet'
+    app.rack_servlet[:name].should == Trinidad::WebApp::RACK_SERVLET_NAME
     app.rack_servlet[:class].should == 'org.jruby.rack.RackServlet'
     app.rack_servlet[:mapping].should == '/*'
   end
@@ -759,6 +793,8 @@ describe Trinidad::WebApp do
       
       web_app.web_xml_filter?('org.jruby.rack.RackFilter').should be true
       web_app.web_xml_filter?('org.jruby.rack.Rack').should be false
+      web_app.web_xml_filter?(nil, 'Rack').should be false
+      web_app.web_xml_filter?(nil, 'RackFilter').should be true
       
       web_app.web_xml_listener?('org.jruby.rack.rails').should be false
       web_app.web_xml_listener?('org.jruby.rack.rails.RailsServletContextListener').should be true
