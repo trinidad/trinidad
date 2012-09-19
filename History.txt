@@ -1,4 +1,32 @@
-== Trinidad .NEXT (2012-xx-xx)
+== Trinidad 1.4.2 (2012-09-19)
+
+* allow to keep (and configure) the jsp servlet (support for serving .jsp pages)
+* decreased jruby.runtime.acquire.timeout default from 10 to 5 seconds
+* removed Threads=MIN:MAX option from Rack::Handler (makes no sense right now)
+* trinidad (CLI) :
+  - added --runtimes option to allow specifying pool size on command-line
+  - deprecated libs_dir and classes_dir added java_lib and java_classes
+  - deprecated --apps option and use the same name as in config --apps_base
+  - now prints some more accurate defaults that are used
+* leverage Tomcat's default servlet for serving static asset files :
+  - default servlet resources now point to to public root 
+  - support for providing aliases (to achieve desired backward compatibility)
+  - support for allowing caching and tuning (asset) cache parameters
+* allow absolute paths with :default_web_xml / :web_xml configuration option
+* replace :libs_dir and :classes_dir with :java_lib and :java_classes options 
+  (backwards compatible) with sensible defaults *lib/java* and *lib/java/classes*
+* make sure application :work_dir is actually being set on the context
+  and change it by default to to [RAILS_ROOT]/tmp 
+* web application's :web_app_dir deprecated in favor of the :root_dir option
+* make sure the rack servlet loads on startup by default
+* allow init_params: to be configured with (rack/default) servlet options
+* allow for default (servlet) overrides using default_servlet:
+* better rack_servlet: configuration
+  - accepts a servlet instance (and assumes it is configured)
+  - 'rack' naming convention might be used to use custom servlet class
+  - support for servlet :mapping and :load_on_startup options
+* fix async_supported: option not propagating correctly into servlet
+* support for loading META-INF/context.xml from the (classes) class-path
 
 Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 
