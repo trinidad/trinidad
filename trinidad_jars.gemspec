@@ -9,8 +9,8 @@ Gem::Specification.new do |s|
   line = File.read(file)[/^\s*TRINIDAD_JARS_VERSION\s*=\s*.*/]
   s.version = line.match(/.*TRINIDAD_JARS_VERSION\s*=\s*['"](.*)['"]/)[1]
   
-  s.summary     = "Tomcat's jars packed for Trinidad"
-  s.description = "Bundled version of Tomcat packed for Trinidad"
+  s.summary     = "Jars packaged for Trinidad"
+  s.description = "Bundled version of Tomcat and a slice of Java required by Trinidad."
   
   s.authors  = ["David Calavera"]
   s.email    = 'calavera@apache.org'

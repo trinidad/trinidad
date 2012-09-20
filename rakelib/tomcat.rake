@@ -2,8 +2,8 @@ require 'open-uri'
 require 'tmpdir'
 
 namespace :tomcat do
+  include TrinidadRakeHelpers
   
-  TOMCAT_CORE_JAR = File.expand_path('../../trinidad-libs/tomcat-core.jar', __FILE__)
   TOMCAT_MAVEN_REPO = 'http://repo2.maven.org/maven2/org/apache/tomcat'
 
   tomcat = "#{TOMCAT_MAVEN_REPO}/embed/tomcat-embed-core/%s/tomcat-embed-core-%s.jar"
@@ -36,7 +36,7 @@ namespace :tomcat do
     FileUtils.rm_r temp_dir
   end
   
-  TARGET_DIR = File.expand_path('../../target', __FILE__)
+  TOMCAT_CORE_TARGET_DIR = File.expand_path('../../target/tomcat-core', __FILE__)
   
   desc "Updates Tomcat to a given version e.g. `rake tomcat:update[7.0.30]`"
   task :update, :version do |_, args|
@@ -52,25 +52,35 @@ namespace :tomcat do
     puts "DONE - Tomcat's version has been updated to #{version} succesfully !\n"
     puts "`export trinidad_jars=true && bundle install` to use the local trinidad_jars gem with bundler"
   end
-
-  task :compile do
-    FileUtils.mkdir TARGET_DIR unless File.exists?(TARGET_DIR)
-    sh 'javac -Xlint:deprecation -Xlint:unchecked -g -source 1.6 -target 1.6 ' + 
-       "-classpath #{TOMCAT_CORE_JAR} -d #{TARGET_DIR} " + 
-       Dir["src/java/**/*.java"].join(" ")
-  end
   
-  task :patch => :compile do
-    Dir.chdir(TARGET_DIR) do
-      entries = Dir.entries(TARGET_DIR) - [ '.', '..']
-      puts "updating #{TOMCAT_CORE_JAR}"
-      %x{jar -uvf #{TOMCAT_CORE_JAR} #{entries.join(' ')}}
-    end
+  task :patch do
+    Rake::Task['tomcat-core:jar'].invoke
   end
 
-  task :clean do
-    rm_r TARGET_DIR if File.exist?(TARGET_DIR)
+  task :clear do
     rm TOMCAT_CORE_JAR if File.exist?(TOMCAT_CORE_JAR)
   end
+  task :clean => :clear
+  
+end
+
+namespace :'tomcat-core' do
+
+  task :compile do
+    javac "src/tomcat-core/java", TOMCAT_CORE_TARGET_DIR
+  end
+
+  task :jar => :compile do
+    unless File.exist?(TOMCAT_CORE_JAR)
+      fail "missing #{TOMCAT_CORE_JAR} run tomcat:update first"
+    end
+    jar TOMCAT_CORE_TARGET_DIR, TOMCAT_CORE_JAR
+  end
+  
+  task :clear do
+    rm_r TOMCAT_CORE_TARGET_DIR if File.exist?(TOMCAT_CORE_TARGET_DIR)
+    rm TOMCAT_CORE_JAR if File.exist?(TOMCAT_CORE_JAR)
+  end
+  task :clean => :clear
   
 end

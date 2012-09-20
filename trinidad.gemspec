@@ -3,12 +3,12 @@ $:.push File.expand_path("../lib", __FILE__)
 require 'trinidad/version'
 
 Gem::Specification.new do |s|
-  s.name              = 'trinidad'
-  s.rubyforge_project = 'trinidad'
+  s.name = 'trinidad'
   s.version = Trinidad::VERSION
   
-  s.summary     = "Simple library to run rails applications into an embedded Tomcat"
-  s.description = "Trinidad allows you to run a rails or rackup applications within an embedded Apache Tomcat container"
+  s.summary = "Web server for Rails/Rack applications built upon JRuby::Rack and Apache Tomcat"
+  s.description = "Trinidad allows you to run Rails or Rack applications within " + 
+    "an embedded Apache Tomcat container. Serves your requests with the elegance of a cat !"
   
   s.authors  = ["David Calavera"]
   s.email    = 'calavera@apache.org'
@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[README.md LICENSE]
   
-  s.add_dependency('trinidad_jars', ">= 1.0.6")
+  s.add_dependency('trinidad_jars', ">= 1.1.0")
   s.add_dependency('jruby-rack', ">= 1.1.10")
   
   s.add_development_dependency('rack')
@@ -34,7 +34,7 @@ Gem::Specification.new do |s|
   s.files = `git ls-files`.split("\n").sort.
     reject { |file| file =~ /^\./ }. # .gitignore, .travis.yml
     reject { |file| file =~ /^spec\// }. # spec/**/*.spec
-    reject { |file| file =~ /^src\// }. # src/* patched into tomcat-core.jar
+    reject { |file| file =~ /^src\// }. # src/* compiled into the jars
     # reject trinidad_jars.gemspec files :
     reject { |file| file == 'trinidad_jars.gemspec' || 
                     file == 'lib/trinidad/jars.rb'  || 
