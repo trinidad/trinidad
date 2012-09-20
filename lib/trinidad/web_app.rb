@@ -252,8 +252,17 @@ module Trinidad
           default_servlet = self[:default_servlet]
           if default_servlet.is_a?(javax.servlet.Servlet)
             { :instance => default_servlet }
+          elsif default_servlet == false
+            false # forced by user to remove
+          elsif default_servlet == true
+            true # forced by user to leave as is
           else
-            default_servlet || true
+            default_servlet = {} if default_servlet.nil?
+            unless default_servlet.key?(:class)
+              # we use a custom class by default to server /public assets :
+              default_servlet[:class] = 'rb.trinidad.servlets.DefaultServlet'
+            end
+            default_servlet
           end
         else
           false # configured in web.xml thus remove the (default) "default"

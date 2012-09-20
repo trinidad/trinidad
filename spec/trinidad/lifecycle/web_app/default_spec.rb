@@ -184,23 +184,10 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     context.find_parameter('rackup.path').should == "config.ru"
   end
-  
-  it "sets resources base to public root", :integration => true do
-    listener = rails_web_app_listener({
-      :root_dir => RAILS_WEB_APP_DIR
-    })
-    context = web_app_context(listener.web_app)
-    context.addLifecycleListener listener
-    context.start
 
-    context.resources.should_not be nil
-    context.resources.doc_base.should == "#{RAILS_WEB_APP_DIR}/public"
-  end
-  
-  it "keeps resources base if public does not exist", :integration => true do
+  it "keeps resources base pointing to app root", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR, 
-      :public => 'does-not-exist'
+      :root_dir => MOCK_WEB_APP_DIR
     })
     context = web_app_context(listener.web_app)
     context.addLifecycleListener listener
@@ -209,12 +196,51 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.resources.should_not be nil
     context.resources.doc_base.should == MOCK_WEB_APP_DIR
   end
+  
+  it "sets public root with the (custom) default servlet", :integration => true do
+    listener = rails_web_app_listener({
+      :root_dir => RAILS_WEB_APP_DIR
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = find_wrapper(context, 'default')
+    wrapper.getServlet.should be_a Java::RbTrinidadServlets::DefaultServlet
+    wrapper.getServlet.getPublicRoot.should == '/public'
+  end
+  
+  it "normalizes public root with the (custom) default servlet", :integration => true do
+    listener = rackup_web_app_listener({
+      :root_dir => MOCK_WEB_APP_DIR, 
+      :public => 'assets'
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    wrapper = find_wrapper(context, 'default')
+    wrapper.getServlet.should be_a Java::RbTrinidadServlets::DefaultServlet
+    wrapper.getServlet.getPublicRoot.should == '/assets'
+    
+    servlet = wrapper.getServlet
+    servlet.public_root = nil
+    servlet.public_root.should == nil
+    servlet.public_root = ''
+    servlet.public_root.should == nil
+    servlet.public_root = '/'
+    servlet.public_root.should == nil
+    servlet.public_root = 'assets/'
+    servlet.public_root.should == '/assets'
+    servlet.public_root = '/assets/'
+    servlet.public_root.should == '/assets'
+  end
 
   it "accepts public configuration", :integration => true do
     listener = rackup_web_app_listener({
       :root_dir => MOCK_WEB_APP_DIR, 
       :public => { 
-        :root => 'tmp',
+        :root => 'assets/',
         :cache => false
       }
     })
@@ -224,8 +250,12 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     context.caching_allowed?.should == false
     resources = context.resources.dir_context
-    resources.doc_base.should == "#{MOCK_WEB_APP_DIR}/tmp"
-    resources.cached?.should == false
+    
+    wrapper = find_wrapper(context, 'default')
+    servlet = wrapper.servlet
+    servlet.public_root.should == '/assets'
+    servlet.resources.doc_base.should == MOCK_WEB_APP_DIR
+    servlet.resources.cache.should be nil
   end
 
   it "accepts public configuration cache parameters", :integration => true do
@@ -300,7 +330,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     wrapper = context.find_children[0]
     wrapper.should be_a org.apache.catalina.core.StandardWrapper
-    wrapper.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    wrapper.getServletClass.should == 'rb.trinidad.servlets.DefaultServlet'
     wrapper.name.should == 'default'
     context.findServletMapping('/').should == 'default'
     
@@ -341,7 +371,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.findServletMapping('/*').should == 'rack'
   end
   
-  it "keeps DefaultServlet (optionally adds init params)", :integration => true do
+  it "keeps DefaultServlet with a custom class (optionally adds init params)", :integration => true do
     listener = rackup_web_app_listener({
       :default_servlet => { :init_params => { :debug => 1, '_flag' => true } },
       :web_app_dir => MOCK_WEB_APP_DIR, 
@@ -353,7 +383,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     wrapper = find_wrapper(context, 'default')
     wrapper.name.should == 'default'
-    wrapper.getServletClass.should == 'org.apache.catalina.servlets.DefaultServlet'
+    wrapper.getServletClass.should == 'rb.trinidad.servlets.DefaultServlet'
     context.findServletMapping('/').should == 'default'
     wrapper.findInitParameter('debug').should == '1'
     wrapper.findInitParameter('_flag').should == 'true'

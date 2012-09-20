@@ -26,6 +26,8 @@ package rb.trinidad.servlets;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.naming.resources.ProxyDirContext;
+
 
 /**
  * Tomcat's default resource-serving servlet adapted to accept a "public.root".
@@ -41,7 +43,7 @@ public class DefaultServlet extends org.apache.catalina.servlets.DefaultServlet 
     private transient String publicRoot = null;
 
     public String getPublicRoot() {
-        return publicRoot;
+        return this.publicRoot;
     }
 
     public void setPublicRoot(String publicRoot) {
@@ -53,6 +55,10 @@ public class DefaultServlet extends org.apache.catalina.servlets.DefaultServlet 
             publicRoot = "/" + publicRoot;
         }
         this.publicRoot = publicRoot.equals("/") ? null : publicRoot;
+    }
+    
+    public ProxyDirContext getResources() {
+        return this.resources;
     }
     
     @Override

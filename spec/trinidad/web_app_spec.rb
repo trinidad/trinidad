@@ -810,16 +810,28 @@ describe Trinidad::WebApp do
     end
   end
   
-  it "'keeps' default servlet (by default)" do
+  it "configures a custom default servlet (by default)" do
     create_rails_web_xml
 
     app = Trinidad::WebApp.create({
       :root_dir => Dir.pwd,
       :default_web_xml => 'config/web.xml'
     })
-    app.default_servlet.should be true # true - keep as is
+    app.default_servlet.should be_a Hash
+    app.default_servlet[:class].should == 'rb.trinidad.servlets.DefaultServlet'
   end
 
+  it "'keeps' default servlet when configured so" do
+    create_rails_web_xml
+
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml',
+      :default_servlet => true
+    })
+    app.default_servlet.should be true # true - keep as is
+  end
+  
   it "'removes' default servlet when a deployment descriptor provides a default named servlet" do
     create_config_file custom_web_xml = "extended-web.xml", '' +
       '<?xml version="1.0" encoding="UTF-8"?>' +

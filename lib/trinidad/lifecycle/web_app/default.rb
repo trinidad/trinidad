@@ -24,12 +24,6 @@ module Trinidad
           # AFTER_INIT_EVENT ContextConfig#init() will pick this up
         end
         
-        def after_start(event)
-          super
-          # NOTE: resouces are only being created on context.start !
-          set_resources_base event.lifecycle
-        end
-        
         protected
         
         @@_add_context_config = true # due backward compatibility
@@ -124,23 +118,6 @@ module Trinidad
               end
             end
             context.setDefaultContextXml(context_xml)
-          end
-        end
-        
-        def set_resources_base(context)
-          if resources = context.resources
-            # NOTE: cheating but works - point resources to /public
-            # unwrap org.apache.naming.resources.ProxyDirContext
-            resources = resources.dir_context if resources.respond_to?(:dir_context)
-            if public_dir = web_app.public_dir
-              if File.exist?(public_dir)
-                resources.doc_base = public_dir
-              else
-                logger.info "[#{web_app.context_path}] public directory: #{public_dir} does not exist"
-              end
-            end
-          else
-            logger.warn "[#{web_app.context_path}] could not set-up public due missing resouces"
           end
         end
         
