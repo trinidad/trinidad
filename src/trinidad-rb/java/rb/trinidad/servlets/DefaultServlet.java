@@ -89,13 +89,30 @@ public class DefaultServlet extends org.apache.catalina.servlets.DefaultServlet 
         return request.getContextPath();
     }
 
-    /*
     @Override
     public void log(String msg) {
+        String prefix;
+        // NOTE: logs are a bit confusing without looking at the code, tune them :
         // log("DefaultServlet.init:  input buffer size=" + input + ", output buffer size=" + output);
+        // log("DefaultServlet.serveResource:  Serving resource '" + path + "' headers and data");
+        // log("DefaultServlet.serveResource:  Serving resource '" + path + "' headers only");
         // log("DefaultServlet.serveFile:  contentType='" + contentType + "'");
         // log("DefaultServlet.serveFile:  contentLength=" + contentLength);
-        super.log(msg); // getServletContext().log(getServletName() + ": " + msg);
-    } */
+        if ( msg != null ) {
+            if ( msg.startsWith( prefix = "DefaultServlet.serveResource: " ) ) {
+                msg = msg.substring( prefix.length() );
+                if ( (msg = msg.trim()).startsWith( prefix = "Serving" ) ) {
+                    msg = "matching" + msg.substring( prefix.length() );
+                }
+            }
+            else if ( msg.startsWith( prefix = "DefaultServlet.serveFile: " ) ) {
+                msg = "serving" + msg.substring( prefix.length() );
+            }
+            else if ( msg.startsWith( prefix = "DefaultServlet.init: " ) ) {
+                msg = "initialized" + msg.substring( prefix.length() );
+            }
+        }
+        super.log(msg);
+    }
     
 }
