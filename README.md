@@ -214,12 +214,16 @@ for maximum performance e.g. by default it's configured as follows :
       #/home: /var/local/www
 ```
 
+Note that this configuration applies to (server-side) resource caching on top 
+of the "public" file-system. You do not need to worry about client side caching, 
+it is handled out of the box with *ETag* and *Last-Modified* headers being set.
+
 You might also "mount" file-system directories as aliases to your resources
 root to be served by your application (as if they were in the public folder).
 
 **NOTE:** In development mode if you ever happen to `rake assets:precompile` 
 make sure to remove your *public/assets* directory later, otherwise requests
-such as **/assets/application.js?body=1.0** won't hit the Rails runtime !
+such as **/assets/application.js?body=1.0** might not hit the Rails runtime.
 
 ## Hot Deployment
 

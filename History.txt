@@ -1,4 +1,4 @@
-== Trinidad 1.4.2 (2012-09-19)
+== Trinidad 1.4.3 (2012-09-20)
 
 * allow to keep (and configure) the jsp servlet (support for serving .jsp pages)
 * decreased jruby.runtime.acquire.timeout default from 10 to 5 seconds
@@ -9,7 +9,7 @@
   - deprecated --apps option and use the same name as in config --apps_base
   - now prints some more accurate defaults that are used
 * leverage Tomcat's default servlet for serving static asset files :
-  - default servlet resources now point to to public root 
+  - use a customized default servlet to handle the public.root assets
   - support for providing aliases (to achieve desired backward compatibility)
   - support for allowing caching and tuning (asset) cache parameters
 * allow absolute paths with :default_web_xml / :web_xml configuration option
@@ -39,6 +39,13 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
    the input stream before Rails (e.g. valves such as AccessLogValve).
    it is an experimental feature that might change in the future and 
    currently requires setting 'jruby.rack.handler.env' param to 'servlet'
+
+== Trinidad_jars 1.1.0 (2012-09-20)
+
+* include java code compiled into trinidad-rb.jar for Trinidad
+* otherwise same as previous version (1.0.7) uses Tomcat 7.0.30
+
+== Trinidad 1.4.2 (2012-09-19) YANKED
 
 == Trinidad_jars 1.0.7 (2012-09-12)
 
