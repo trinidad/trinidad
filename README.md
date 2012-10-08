@@ -235,7 +235,7 @@ This monitor file can be customized with the `monitor` configuration option.
 Since version **1.4.0** Trinidad supports 2 reload strategies :
 
 * **restart** (default) synchronous reloading (exposed by Tomcat). This strategy
-  pauses incoming requests while it reloads the application and than serves them
+  pauses incoming requests while it reloads the application and then serves them
   once ready (or timeouts if it takes too long). It has been chosen as the default
   strategy since **1.4.0** due it's more predictable memory requirements.
 
