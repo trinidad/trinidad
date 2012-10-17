@@ -69,16 +69,24 @@ module Trinidad
       logger = JUL::Logger.getLogger(logger_name) # exclusive for web app
       # avoid duplicate calls - do not configure our FileHandler twice :
       return false if logger.handlers.find { |h| h.is_a?(FileHandler) }
-      level = parse_log_level(web_app.log, nil)
-      logger.level = level # inherits level from parent if nil
+      logging = web_app.logging
+      logger.level = parse_log_level(logging[:level], nil)
       # delegate to root (console) output only in development mode :
-      logger.use_parent_handlers = ( web_app.environment == 'development' )
-      
-      prefix, suffix = web_app.environment, '.log' # {prefix}{date}{suffix}
-      file_handler = FileHandler.new(web_app.log_dir, prefix, suffix)
-      file_handler.rotatable = true # {prefix}{date}{suffix}
-      file_handler.formatter = web_app_formatter
-      logger.add_handler(file_handler)
+      logger.use_parent_handlers = logging[:use_parent_handlers]
+      # logging:
+      #  file:
+      #    dir: log # [RAILS_ROOT]/log
+      #    prefix: production
+      #    suffix: .log
+      if file = logging[:file]
+        prefix, suffix = file[:prefix], file[:suffix] # {prefix}{date}{suffix}
+        file_handler = FileHandler.new(file[:dir] || file[:directory], prefix, suffix)
+        file_handler.rotatable = file.key?(:rotatable) ? file[:rotatable] : file[:rotate]
+        file_handler.buffer_size = file[:buffer_size] if file[:buffer_size]
+        format = file.key?(:format) ? file[:format] : logging[:format]
+        file_handler.formatter = web_app_formatter(format) # nil uses default
+        logger.add_handler(file_handler)
+      end
       logger
     end
     
@@ -88,9 +96,9 @@ module Trinidad
       MessageFormatter.new
     end
     
-    def self.web_app_formatter
+    def self.web_app_formatter(format = nil)
       # format used by Rails "2012-06-13 16:42:21 +0200"
-      DefaultFormatter.new("yyyy-MM-dd HH:mm:ss Z")
+      DefaultFormatter.new(format.nil? ? 'yyyy-MM-dd HH:mm:ss Z' : format)
     end
     
     private

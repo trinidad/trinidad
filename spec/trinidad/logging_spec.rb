@@ -67,6 +67,35 @@ describe Trinidad::Logging do
       tomcat.stop if tomcat.server.state_name =~ /START/i
     end
     
+    it "configures from provided logging configuration" do
+      make_file log_file = "#{MOCK_WEB_APP_DIR}/log/production.txt", "previous-content\n"
+      yesterday = Time.now - 60 * 60 * 24
+      java.io.File.new(log_file).setLastModified(yesterday.to_f * 1000)
+      
+      web_app = create_mock_web_app :context_path => '/app0', 
+        :logging => {
+          :level => 'debug', :format => 'dd.MM -',
+          :file => { 
+            :rotate => false, 
+            :suffix => '.txt', 
+            :directory => 'log', 
+            :buffer_size => 4096
+          }
+        }
+      context = create_mock_web_app_context web_app
+      
+      logger = Trinidad::Logging.configure_web_app(web_app, context)
+      logger.fine "hello-there"
+      
+      File.exist?(log_file).should be true; now = Time.now
+      
+      File.read(log_file).should == "previous-content\n"
+       
+      logger.handlers.first.flush
+      File.read(log_file).should == "previous-content\n" + 
+         "#{now.day}.#{now.month} - FINE: hello-there\n"
+    end
+    
     it "creates the log file according with the environment if it doesn't exist" do
       web_app = create_mock_web_app :context_path => '/app1'
       context = create_mock_web_app_context web_app
@@ -118,7 +147,7 @@ describe Trinidad::Logging do
     end
     
     it "rotates and merges an old log file" do
-      File.open("#{MOCK_WEB_APP_DIR}/log/staging.log", 'w') { |f| f << "old entry\n" }
+      make_file "#{MOCK_WEB_APP_DIR}/log/staging.log", "old entry\n"
       yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
       y_date = yesterday.strftime '%Y-%m-%d'
       java.io.File.new("#{MOCK_WEB_APP_DIR}/log/staging.log").setLastModified(yesterday_ms)
@@ -136,7 +165,7 @@ describe Trinidad::Logging do
     end
     
     it "rotates when logging date changes" do
-      File.open("#{MOCK_WEB_APP_DIR}/log/production.log", 'w') { |f| f << "old entry\n" }
+      make_file "#{MOCK_WEB_APP_DIR}/log/production.log", "old entry\n"
       yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
       java.io.File.new("#{MOCK_WEB_APP_DIR}/log/production.log").setLastModified(yesterday_ms)
       
@@ -344,6 +373,14 @@ describe Trinidad::Logging do
       context = tomcat.addWebapp(context_path, context_dir)
       context.addLifecycleListener web_app.define_lifecycle
       context
+    end
+    
+    def make_file(path, content = nil)
+      if dir = File.dirname(path)
+        FileUtils.mkdir(dir) unless File.exist?(dir)
+      end
+      FileUtils.touch path
+      File.open(path, 'w') { |f| f << content } if content
     end
     
   end

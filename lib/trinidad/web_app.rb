@@ -141,6 +141,22 @@ module Trinidad
       end
     end
 
+    def logging
+      @logging ||= begin
+        defaults = {
+          :level => log, # backwards compatibility
+          :use_parent_handlers => environment == 'development',
+          :file => {
+            :dir => log_dir,
+            :prefix => environment,
+            :suffix => '.log',
+            :rotate => true
+          }
+        }
+        Trinidad::Configuration.merge_options(defaults, self[:logging])
+      end
+    end
+    
     def deployment_descriptor
       return nil if @deployment_descriptor == false
       @deployment_descriptor ||= expand_path(web_xml) || false

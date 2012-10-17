@@ -110,6 +110,7 @@ module Trinidad
     
     # a Hash like deep_merge helper
     def self.merge_options(target, current, deep = true)
+      return target unless current
       target_dup = target.dup
       current.keys.each do |key|
         target_dup[key] = 
