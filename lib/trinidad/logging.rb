@@ -133,7 +133,7 @@ module Trinidad
       
       def initialize(directory, prefix, suffix)
         super(directory, prefix, suffix)
-        self._date = '' # to openWriter on first #publish(record)
+        self._date = nil # to openWriter on first #publish(record)
       end
       
       def openWriter

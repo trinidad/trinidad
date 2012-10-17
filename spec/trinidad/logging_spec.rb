@@ -347,6 +347,62 @@ describe Trinidad::Logging do
     end
     
   end
+  
+  describe 'FileHandler' do
+    
+    FileHandler = Trinidad::Logging::FileHandler
+    
+    let(:prefix) { 'testing' }
+    let(:suffix) { '.log' }
+    let(:log_dir) { "#{MOCK_WEB_APP_DIR}/log" }
+    let(:log_file) { "#{log_dir}/#{prefix}#{suffix}" }
+    
+    before { FileUtils.touch log_file }
+    after { FileUtils.rm log_file if File.exist?(log_file) }
+    
+    it 'logs when rotatable' do
+      file_handler = FileHandler.new(log_dir, prefix, suffix)
+      file_handler.rotatable = true # {prefix}{date}{suffix}
+
+      log_content = File.read(log_file)
+      log_content.should_not =~ /sample log entry/
+        
+      file_handler.publish new_log_record('sample log entry')
+
+      log_content = File.read(log_file)
+      log_content.should =~ /sample log entry/
+    end
+    
+    it 'logs when non-rotatable' do
+      file_handler = FileHandler.new(log_dir, prefix, suffix)
+      file_handler.rotatable = false # {prefix}{suffix}
+
+      log_content = File.read(log_file)
+      log_content.should_not =~ /another log entry/
+        
+      file_handler.publish new_log_record('another log entry')
+
+      log_content = File.read(log_file)
+      log_content.should =~ /another log entry/
+    end
+    
+    private
+    
+    def new_log_record(options = {})
+      if options.is_a?(String)
+        message = options; options = {}
+      else
+        message = options[:message] || '42'
+      end
+      time = options[:time]
+      level = JUL::Level::WARNING
+      record = JUL::LogRecord.new level, message
+      record.millis = time.to_java.time if time
+      record
+    end
+    
+  end
+  
 end
 
 describe Trinidad::Logging::DefaultFormatter do
