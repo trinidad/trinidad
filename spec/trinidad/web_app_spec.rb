@@ -295,11 +295,10 @@ describe Trinidad::WebApp do
     params['jruby.min.runtimes'].should == '1'
     params['jruby.max.runtimes'].should == '1'
     params['jruby.compat.version'].should == '1.9'
-    params['public.root'].should == '/foo'
+    params['public.root'].should == 'foo'
     params['rails.env'].should == 'production'
-    params['rails.root'].should == '/'
   end
-
+  
   it "adds the rackup script as a context parameter when it's provided" do
     FakeFS do
       create_rackup_file
@@ -448,7 +447,7 @@ describe Trinidad::WebApp do
 
   it "uses the application directory as working directory" do
     app = Trinidad::WebApp.create({ :root_dir => 'foo' })
-    app.work_dir.should == 'foo/tmp'
+    app.work_dir.should == File.expand_path('foo/tmp')
   end
 
   it "adds / in front of the context path" do
@@ -494,10 +493,9 @@ describe Trinidad::WebApp do
   
   it "removes the war extension from the working directory if it's a war application" do
     app = Trinidad::WebApp.create({
-      :context_path => 'foo.war',
-      :web_app_dir => 'foo.war'
+      :context_path => 'foo.war', :web_app_dir => 'foo.war'
     })
-    app.work_dir.should == 'foo/WEB-INF'
+    app.work_dir.should == File.expand_path('foo/WEB-INF')
   end
 
   it "uses development as default environment when the option is missing" do
@@ -646,6 +644,52 @@ describe Trinidad::WebApp do
     end
   end
 
+  it "sets app.root param for a rack application" do
+    app = Trinidad::WebApp.create({
+      :root_dir => MOCK_WEB_APP_DIR,
+      :environment => :production
+    })
+  
+    app.context_params['app.root'].should == MOCK_WEB_APP_DIR
+  end
+
+  it "sets (and expands) rails.root param for a rails application" do
+    app = Trinidad::WebApp.create({
+      :root_dir => File.join(File.dirname(__FILE__), '../web_app_rails'),
+      :environment => :staging
+    })
+  
+    app.context_params['rails.root'].should == RAILS_WEB_APP_DIR
+  end
+
+  it "sets layout class param for a rack application" do
+    app = Trinidad::WebApp.create({
+      :root_dir => MOCK_WEB_APP_DIR
+    })
+  
+    if JRuby::Rack::VERSION == '1.1.10'
+      app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::RailsFilesystemLayout'
+      app.context_params['gem.path'].should_not be nil # due a jruby-rack bug
+      app.context_params['rails.root'].should_not be nil # no support for app.root
+    else
+      app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::FileSystemLayout'
+    end
+  end
+
+  it "sets layout class param for a rails application" do
+    app = Trinidad::WebApp.create({
+      :root_dir => RAILS_WEB_APP_DIR,
+      :environment => 'production'
+    })
+
+    if JRuby::Rack::VERSION == '1.1.10'
+      app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::RailsFilesystemLayout'
+      app.context_params['gem.path'].should_not be nil
+    else
+      app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::FileSystemLayout'
+    end
+  end
+  
   it "accepts and expands java_classes and java_lib" do
     app = Trinidad::WebApp.create({
       :root_dir => '/home/kares',

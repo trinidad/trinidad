@@ -190,7 +190,7 @@ module Trinidad
         # We must create them before creating the applications.
         @config[:web_apps].each do |_, app_config|
           if host_names = app_config.delete(:hosts)
-            dir = app_config[:web_app_dir] || Dir.pwd
+            dir = web_app_root_dir(app_config)
             apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
             app_config[:host] = create_host(apps_base, host_names)
           end
@@ -225,16 +225,20 @@ module Trinidad
     private
     
     def add_default_web_app!(config)
-      if !config[:web_apps] && !config[:apps_base] && !config[:hosts]
+      if ! config[:web_apps] && ! config[:apps_base] && ! config[:hosts]
         default_app = {
           :context_path => config[:context_path],
-          :web_app_dir => config[:web_app_dir] || Dir.pwd,
+          :root_dir => web_app_root_dir(config),
           :log => config[:log]
         }
         default_app[:rackup] = config[:rackup] if config[:rackup]
 
         config[:web_apps] = { :default => default_app }
       end
+    end
+    
+    def web_app_root_dir(config, default = Dir.pwd)
+      config[:root_dir] || config[:web_app_dir] || default
     end
     
     def generate_default_keystore(config)

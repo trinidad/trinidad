@@ -130,7 +130,6 @@ module Trinidad
       add_context_param 'jruby.initial.runtimes', jruby_min_runtimes
       add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
       add_context_param 'jruby.compat.version', jruby_compat_version || RUBY_VERSION
-      add_context_param 'app.root', app_root
       add_context_param 'public.root', public_root
       add_context_param 'jruby.rack.layout_class', layout_class
       @context_params
@@ -377,12 +376,25 @@ module Trinidad
       raise NotImplementedError.new "context_listener expected to be redefined"
     end
     
-    def layout_class
-      'JRuby::Rack::FileSystemLayout'
+    if Gem::Version.create(JRuby::Rack::VERSION) > Gem::Version.create('1.1.10')
+      def layout_class
+        'JRuby::Rack::FileSystemLayout' # handles Rails as well as Rack
+      end
+    else
+      def layout_class
+        # NOTE: we'll also need to do a GEM_PATH hack to avoid a bug :
+        if gem_path = ENV['GEM_PATH']
+          add_context_param 'gem.path', gem_path
+          # ENV['GEM_PATH'] will contain twice the same entry(ies) ...
+        end
+        add_context_param 'rails.root', app_root # still boots a rack app
+        'JRuby::Rack::RailsFilesystemLayout' # no plain FS layout defined !
+      end
     end
     
     def complete_config!
       config[:root_dir] ||= self.class.root_dir(config, default_config)
+      config[:root_dir] = File.expand_path(config[:root_dir])
       config[:context_path] = self.class.context_path(config, default_config)
     end
     
@@ -594,6 +606,7 @@ module Trinidad
   class RackupWebApp < WebApp
 
     def context_params
+      add_context_param 'app.root', app_root
       add_context_param 'rack.env', environment
       if rackup = self.rackup
         rackup = File.join(rackup, 'config.ru') if File.directory?(rackup)
@@ -610,8 +623,8 @@ module Trinidad
   class RailsWebApp < WebApp
 
     def context_params
+      add_context_param 'rails.root', app_root
       add_context_param 'rails.env', environment
-      add_context_param 'rails.root', '/'
       super
     end
 
@@ -628,9 +641,9 @@ module Trinidad
       end
     end
     
-    def layout_class
-      'JRuby::Rack::RailsFileSystemLayout'
-    end
+    #def layout_class
+      #'JRuby::Rack::RailsFileSystemLayout'
+    #end
     
     private
     
@@ -651,7 +664,7 @@ module Trinidad
     def context_path
       super.gsub(/\.war$/, '')
     end
-
+    
     def log_dir
       @log_dir ||= self[:log_dir] || File.join(work_dir, 'log')
     end
