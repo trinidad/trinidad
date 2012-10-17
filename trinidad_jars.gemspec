@@ -3,7 +3,6 @@
 
 Gem::Specification.new do |s|
   s.name              = 'trinidad_jars'
-  s.rubyforge_project = 'trinidad_jars'
   
   file = File.expand_path("../lib/trinidad/jars.rb", __FILE__)
   line = File.read(file)[/^\s*TRINIDAD_JARS_VERSION\s*=\s*.*/]
@@ -19,8 +18,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w[lib]
   
   s.files = `git ls-files`.split("\n").sort.
-    select { |file| file == 'trinidad_jars.gemspec' || 
-                    file == 'lib/trinidad/jars.rb'  || 
+    select { |file| file == 'trinidad_jars.gemspec' ||
+                    file == 'lib/trinidad/jars.rb'  ||
                     file =~ /^trinidad-libs\// }
-  
 end

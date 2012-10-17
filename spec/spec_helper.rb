@@ -33,3 +33,5 @@ Trinidad::Lifecycle::WebApp::Default.class_eval do
   class_variable_get :@@_add_context_config # make sure it's there
   class_variable_set :@@_add_context_config, false
 end
+
+puts "running specs with TOMCAT_VERSION = #{Trinidad::TOMCAT_VERSION}"
