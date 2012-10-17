@@ -231,7 +231,7 @@ module Trinidad
         msg << formatThrown(record).to_s
         # since we're going to print Rails.logger logs and they tend
         # to already have the ending "\n" handle such cases nicely :
-        if web_app_path(record.getLoggerName)
+        if context_name(record.getLoggerName)
           (lns = LINE_SEP) == msg[-1, 1] ? msg : msg << lns
         else
           msg << LINE_SEP
@@ -239,10 +239,11 @@ module Trinidad
       end
       
       # e.g. org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
-      WEB_APP_LOGGER_NAME = /org\.apache\.catalina\.core\.ContainerBase.*?\[(\/.*?)\]$/
+      # or org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[default]
+      WEB_APP_LOGGER_NAME = /^org\.apache\.catalina\.core\.ContainerBase.*?\[(.*?)\]$/
       
       private
-      def web_app_path(name)
+      def context_name(name)
         ( match = (name || '').match(WEB_APP_LOGGER_NAME) ) && match[1]
       end
       

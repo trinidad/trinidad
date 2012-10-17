@@ -504,19 +504,43 @@ end
 
 describe Trinidad::Logging::MessageFormatter do
 
-  it "logs message" do
+  it "logs message (adding a new line)" do
     record = JUL::LogRecord.new JUL::Level::SEVERE, nil
     record.message = "Bazinga!"
     
     new_formatter.format(record).should == "Bazinga!\n"
   end
   
-  it "does not add new line to message for application logger" do
+  it "does not add new line to message for application logger if present" do
     record = JUL::LogRecord.new JUL::Level::INFO, msg = "basza meg a zold tucsok\n"
     record.millis = java.lang.System.current_time_millis
     record.logger_name = 'org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/]'
     
     new_formatter.format(record).should == "basza meg a zold tucsok\n"
+    
+    record.logger_name = 'org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[default]'
+    record.message = "azt a kutya fajat!\n"
+    
+    new_formatter.format(record).should == "azt a kutya fajat!\n"
+    
+    #
+    
+    record.logger_name = 'org.apache.catalina.core.ContainerBase'
+    
+    new_formatter.format(record).should == "azt a kutya fajat!\n\n"
+  end
+
+  it "adds new line for every message if missing" do
+    record = JUL::LogRecord.new JUL::Level::INFO, msg = "basza meg a zold tucsok"
+    record.millis = java.lang.System.current_time_millis
+    record.logger_name = 'org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]'
+    
+    new_formatter.format(record).should == "basza meg a zold tucsok\n"
+    
+    record.logger_name = 'org.apache.catalina.core.ContainerBase'
+    record.message = "azt a kutya fajat!\n"
+    
+    new_formatter.format(record).should == "azt a kutya fajat!\n\n"
   end
   
   it "prints thrown exception if present" do
