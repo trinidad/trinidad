@@ -1,12 +1,10 @@
-TRINIDAD_LIBS = File.dirname(__FILE__) + "/../../trinidad-libs" unless defined?(TRINIDAD_LIBS)
-$:.unshift(TRINIDAD_LIBS) unless 
-  $:.include?(TRINIDAD_LIBS) || $:.include?(File.expand_path(TRINIDAD_LIBS))
+
+load File.expand_path('../../trinidad-libs/tomcat-core.jar', File.dirname(__FILE__))
+load File.expand_path('../../trinidad-libs/trinidad-rb.jar', File.dirname(__FILE__))
 
 module Trinidad
-  require 'tomcat-core'
-  require 'trinidad-rb'
   TRINIDAD_JARS_VERSION = '1.1.1'
-  TOMCAT_VERSION = '7.0.32' unless defined?(Trinidad::TOMCAT_VERSION)
+  TOMCAT_VERSION = '7.0.32' unless const_defined?(:TOMCAT_VERSION)
 
   module Tomcat
     include_package 'org.apache.catalina'

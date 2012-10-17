@@ -1,3 +1,9 @@
+== Trinidad_jars 1.1.1 (2012-10-17)
+
+* Tomcat 7.0.32 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+* avoid using the "global" (and redundant) TRINIDAD_LIBS constant
+* load the .jar files instead of requiring them (no more $: polution)
+
 == Trinidad 1.4.3 (2012-09-20)
 
 * allow to keep (and configure) the jsp servlet (support for serving .jsp pages)

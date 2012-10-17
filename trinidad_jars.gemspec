@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.email    = 'calavera@apache.org'
   s.homepage = 'http://github.com/trinidad/trinidad'
   
-  s.require_paths = %w[lib]
+  s.require_paths = %w[lib] # due require 'trinidad/jars'
   
   s.files = `git ls-files`.split("\n").sort.
     select { |file| file == 'trinidad_jars.gemspec' ||
