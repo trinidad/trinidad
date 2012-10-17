@@ -36,6 +36,8 @@ module Trinidad
     end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
     
+    def app_root; root_dir; end
+    
     def context_path
       path = self[:context_path] || self[:path]
       path ? path.to_s : path
@@ -128,7 +130,9 @@ module Trinidad
       add_context_param 'jruby.initial.runtimes', jruby_min_runtimes
       add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
       add_context_param 'jruby.compat.version', jruby_compat_version || RUBY_VERSION
-      add_context_param 'public.root', File.join('/', public_root)
+      add_context_param 'app.root', app_root
+      add_context_param 'public.root', public_root
+      add_context_param 'jruby.rack.layout_class', layout_class
       @context_params
     end
     # @deprecated replaced with {#context_params}
@@ -371,6 +375,10 @@ module Trinidad
     
     def context_listener
       raise NotImplementedError.new "context_listener expected to be redefined"
+    end
+    
+    def layout_class
+      'JRuby::Rack::FileSystemLayout'
     end
     
     def complete_config!
@@ -620,6 +628,10 @@ module Trinidad
       end
     end
     
+    def layout_class
+      'JRuby::Rack::RailsFileSystemLayout'
+    end
+    
     private
     
     def self.threadsafe?(app_base, environment)
@@ -654,6 +666,10 @@ module Trinidad
 
     def define_lifecycle
       Trinidad::Lifecycle::WebApp::War.new(self)
+    end
+    
+    def layout_class
+      'JRuby::Rack::WebInfLayout'
     end
     
   end
