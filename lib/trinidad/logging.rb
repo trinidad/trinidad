@@ -16,8 +16,11 @@ module Trinidad
       root_logger = JUL::Logger.getLogger('')
       level = parse_log_level(log_level, :INFO)
       
-      out_handler = ConsoleHandler.new JRuby.runtime.out, console_formatter
-      err_handler = ConsoleHandler.new JRuby.runtime.err, console_formatter
+      out_handler = new_console_handler JRuby.runtime.out
+      out_handler.formatter = console_formatter
+
+      err_handler = new_console_handler JRuby.runtime.err
+      err_handler.formatter = console_formatter
       err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
         level : JUL::Level::WARNING # only >= WARNING on STDERR
       
@@ -125,25 +128,22 @@ module Trinidad
       context.find_parameter(name) || web_app.web_xml_context_param(name)
     end
     
-    # JUL::ConsoleHandler replacement as we can set the output stream :
-    #   out_handler = JUL::ConsoleHandler.new # sets System.err
-    #   out_handler.setOutputStream JRuby.runtime.out # closes System.err
-    class ConsoleHandler < JUL::StreamHandler # :nodoc
-      
-      def initialize(stream, formatter = nil)
-        # StreamHandler(OutputStream out, Formatter formatter)
-        super(stream, formatter)
+    JUL::ConsoleHandler.class_eval do
+      field_accessor :sealed rescue nil
+      field_writer :writer rescue nil
+    end
+    
+    def self.new_console_handler(stream)
+      handler = JUL::ConsoleHandler.new # sets output stream to System.err
+      handler.writer = nil if handler.respond_to?(:writer=) # avoid writer.close
+      if handler.respond_to?(:sealed) && handler.sealed
+        handler.sealed = false # avoid manager security checks
+        handler.setOutputStream(stream) # closes previous writer if != null
+        handler.sealed = true
+      else
+        handler.setOutputStream(stream)
       end
-
-      def publish(record) # public void publish(LogRecord record)
-        super
-        flush
-      end
-
-      def close() # public void close()
-        flush
-      end
-      
+      handler
     end
     
     # we'd achieve logging to a production.log file while rotating it (daily)
