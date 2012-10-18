@@ -30,8 +30,7 @@ module Trinidad
       use_default ? default_config.key?(key) : false
     end
     
-    %w{ root_dir jruby_compat_version
-        rackup log async_supported reload_strategy }.each do |method|
+    %w{ root_dir rackup log async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
@@ -56,7 +55,7 @@ module Trinidad
       if min = config[:jruby_min_runtimes]
         return min.to_i # min specified overrides :threadsafe
       else # but :threadsafe takes precendence over default :
-        self[:threadsafe] ? 1 : default_config[:jruby_min_runtimes]
+        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_min_runtimes)
       end
     end
     
@@ -64,12 +63,25 @@ module Trinidad
       if max = config[:jruby_max_runtimes]
         return max.to_i # max specified overrides :threadsafe
       else # but :threadsafe takes precendence over default :
-        self[:threadsafe] ? 1 : default_config[:jruby_max_runtimes]
+        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_max_runtimes)
+      end
+    end
+    
+    def jruby_initial_runtimes
+      if ini = config[:jruby_initial_runtimes]
+        return ini.to_i # min specified overrides :threadsafe
+      else # but :threadsafe takes precendence over default :
+        self[:threadsafe] ? 1 : 
+          fetch_default_config_value(:jruby_initial_runtimes, jruby_min_runtimes)
       end
     end
     
     def jruby_runtime_acquire_timeout
-      self[:jruby_runtime_acquire_timeout] || 5.0 # default 10s seems too high
+      fetch_config_value(:jruby_runtime_acquire_timeout, 5.0) # default 10s seems too high
+    end
+
+    def jruby_compat_version
+      fetch_config_value(:jruby_compat_version, RUBY_VERSION)
     end
     
     def environment; self[:environment] || @@defaults[:environment]; end # TODO check web.xml
@@ -127,9 +139,9 @@ module Trinidad
       @context_params ||= {}
       add_context_param 'jruby.min.runtimes', jruby_min_runtimes
       add_context_param 'jruby.max.runtimes', jruby_max_runtimes
-      add_context_param 'jruby.initial.runtimes', jruby_min_runtimes
+      add_context_param 'jruby.initial.runtimes', jruby_initial_runtimes
       add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
-      add_context_param 'jruby.compat.version', jruby_compat_version || RUBY_VERSION
+      add_context_param 'jruby.compat.version', jruby_compat_version
       add_context_param 'public.root', public_root
       add_context_param 'jruby.rack.layout_class', layout_class
       @context_params
@@ -474,6 +486,21 @@ module Trinidad
           File.expand_path(path, root_dir)
         end
       end
+    end
+
+    def fetch_config_value(name, default = nil)
+      value = config[name]
+      value.nil? ? fetch_default_config_value(name, default) : value
+    end
+    
+    def fetch_default_config_value(name, default = nil)
+      value = default_config[name]
+      if value.nil?
+        # JRuby-Rack names: jruby_min_runtimes -> jruby.min.runtimes :
+        value = java.lang.System.getProperty(name.to_s.gsub('_', '.'))
+        value ||= default
+      end
+      value
     end
     
     def logger

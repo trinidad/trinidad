@@ -690,6 +690,29 @@ describe Trinidad::WebApp do
     end
   end
   
+  it "does look for jruby context param values from system properties" do
+    app = Trinidad::WebApp.create({})
+    app.context_params['jruby.compat.version'].should == RUBY_VERSION
+    app.context_params['jruby.runtime.acquire.timeout'].should_not be nil
+    begin
+      java.lang.System.setProperty('jruby.compat.version', '1_9')
+      java.lang.System.setProperty('jruby.runtime.acquire.timeout', '4.2')
+      
+      app.reset!
+      app.context_params['jruby.compat.version'].should == '1_9'
+      app.context_params['jruby.runtime.acquire.timeout'].should == '4.2'
+      
+      app2 = Trinidad::WebApp.create({ :jruby_runtime_acquire_timeout => 9.5 })
+      app2.context_params['jruby.runtime.acquire.timeout'].should == '9.5'
+      
+      app3 = Trinidad::WebApp.create({}, { :jruby_runtime_acquire_timeout => 1.25 })
+      app3.context_params['jruby.runtime.acquire.timeout'].should == '1.25'
+    ensure
+      java.lang.System.clearProperty('jruby.compat.version')
+      java.lang.System.clearProperty('jruby.runtime.acquire.timeout')
+    end
+  end
+  
   it "accepts and expands java_classes and java_lib" do
     app = Trinidad::WebApp.create({
       :root_dir => '/home/kares',

@@ -40,8 +40,10 @@ module Trinidad
       :public => 'public',
       :java_lib => 'lib/java',
       :default_web_xml => 'config/web.xml',
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 5,
+      :jruby_min_runtimes => 
+        java.lang.System.getProperty('jruby.min.runtimes') || 1,
+      :jruby_max_runtimes => 
+        java.lang.System.getProperty('jruby.max.runtimes') || 5,
       :log => 'INFO',
       :trap => true
     }
