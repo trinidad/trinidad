@@ -15,14 +15,9 @@ module Trinidad
       
       root_logger = JUL::Logger.getLogger('')
       level = parse_log_level(log_level, :INFO)
-
-      out_handler  = JUL::ConsoleHandler.new
-      out_handler.setOutputStream JRuby.runtime.out
-      out_handler.formatter = console_formatter
-
-      err_handler  = JUL::ConsoleHandler.new
-      err_handler.setOutputStream JRuby.runtime.err
-      err_handler.formatter = console_formatter
+      
+      out_handler = ConsoleHandler.new JRuby.runtime.out, console_formatter
+      err_handler = ConsoleHandler.new JRuby.runtime.err, console_formatter
       err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
         level : JUL::Level::WARNING # only >= WARNING on STDERR
       
@@ -128,6 +123,27 @@ module Trinidad
     
     def self.web_app_context_param(web_app, context, name)
       context.find_parameter(name) || web_app.web_xml_context_param(name)
+    end
+    
+    # JUL::ConsoleHandler replacement as we can set the output stream :
+    #   out_handler = JUL::ConsoleHandler.new # sets System.err
+    #   out_handler.setOutputStream JRuby.runtime.out # closes System.err
+    class ConsoleHandler < JUL::StreamHandler # :nodoc
+      
+      def initialize(stream, formatter = nil)
+        # StreamHandler(OutputStream out, Formatter formatter)
+        super(stream, formatter)
+      end
+
+      def publish(record) # public void publish(LogRecord record)
+        super
+        flush
+      end
+
+      def close() # public void close()
+        flush
+      end
+      
     end
     
     # we'd achieve logging to a production.log file while rotating it (daily)

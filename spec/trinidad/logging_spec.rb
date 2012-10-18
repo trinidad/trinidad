@@ -22,8 +22,7 @@ describe Trinidad::Logging do
     
     logger = JUL::Logger.getLogger('')
     logger.level.should == JUL::Level::WARNING
-    handlers = logger.handlers.select { |handler| handler.is_a?(JUL::ConsoleHandler) }
-    handlers.size.should == 2
+    logger.handlers.size.should == 2
   end
   
   after { Trinidad.configuration = nil }
