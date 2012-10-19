@@ -1,3 +1,14 @@
+== Trinidad 1.4.4 (2012-10-19)
+
+* make sure setting FileHandler's rotatable to false works (#82)
+* first draft for web-app logging configuration to avoid use hacks e.g. 
+  for disabling rotation (this feature is not yet official and might change)
+* fix new lines (ala default Rails.logger) in console output
+* set correct (JRuby-Rack) layout for web apps and use app.root 
+  (besides rails.root)
+* check whether (jruby.) params are specified in system properties (#92)
+* fix JUL::ConsoleHandler - not setting up JRuby streams correctly (#88)
+
 == Trinidad_jars 1.1.1 (2012-10-17)
 
 * Tomcat 7.0.32 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html

@@ -664,7 +664,7 @@ describe Trinidad::WebApp do
 
   it "sets layout class param for a rack application" do
     app = Trinidad::WebApp.create({
-      :root_dir => MOCK_WEB_APP_DIR
+      :root_dir => MOCK_WEB_APP_DIR + '../../spec/web_app_mock'
     })
   
     if JRuby::Rack::VERSION == '1.1.10'
@@ -678,13 +678,14 @@ describe Trinidad::WebApp do
 
   it "sets layout class param for a rails application" do
     app = Trinidad::WebApp.create({
-      :root_dir => RAILS_WEB_APP_DIR,
+      :root_dir => RAILS_WEB_APP_DIR  + '/../../spec/web_app_rails',
       :environment => 'production'
     })
 
     if JRuby::Rack::VERSION == '1.1.10'
       app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::RailsFilesystemLayout'
       app.context_params['gem.path'].should_not be nil
+      app.context_params['rails.root'].should == RAILS_WEB_APP_DIR # should be expanded
     else
       app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::FileSystemLayout'
     end
