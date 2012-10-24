@@ -146,78 +146,82 @@ module Trinidad
       handler
     end
     
-    # we'd achieve logging to a production.log file while rotating it (daily)
-    class FileHandler < Java::OrgApacheJuli::FileHandler # :nodoc
-      
-      field_reader :directory, :prefix, :suffix
-      field_accessor :rotatable, :bufferSize => :buffer_size
-      
-      # JULI::FileHandler internals :
-      field_accessor :date => :_date # current date string e.g. 2012-06-26
-      
-      def initialize(directory, prefix, suffix)
-        super(directory, prefix, suffix)
-        self._date = nil # to openWriter on first #publish(record)
-      end
-      
-      def openWriter
-        # NOTE: following code is heavily based on super's internals !
-        synchronized do
-          # we're normally in the lock here (from #publish) 
-          # thus we do not perform any more synchronization
-          prev_rotatable = self.rotatable
-          begin
-            self.rotatable = false
-            # thus current file name will be always {prefix}{suffix} :
-            # due super's `prefix + (rotatable ? _date : "") + suffix`
-            super
-          ensure
-            self.rotatable = prev_rotatable
+    if ( Java::JavaClass.for_name('rb.trinidad.logging.FileHandler') rescue nil )
+      FileHandler = Java::RbTrinidadLogging::FileHandler # recent trinidad_jars
+    else
+      # we'd achieve logging to a production.log file while rotating it (daily)
+      class FileHandler < Java::OrgApacheJuli::FileHandler # :nodoc
+
+        field_reader :directory, :prefix, :suffix
+        field_accessor :rotatable, :bufferSize => :buffer_size
+
+        # JULI::FileHandler internals :
+        field_accessor :date => :_date # current date string e.g. 2012-06-26
+
+        def initialize(directory, prefix, suffix)
+          super(directory, prefix, suffix)
+          self._date = nil # to openWriter on first #publish(record)
+        end
+
+        def openWriter
+          # NOTE: following code is heavily based on super's internals !
+          synchronized do
+            # we're normally in the lock here (from #publish) 
+            # thus we do not perform any more synchronization
+            prev_rotatable = self.rotatable
+            begin
+              self.rotatable = false
+              # thus current file name will be always {prefix}{suffix} :
+              # due super's `prefix + (rotatable ? _date : "") + suffix`
+              super
+            ensure
+              self.rotatable = prev_rotatable
+            end
           end
         end
-      end
 
-      def close
-        @_close = true
-        super
-        @_close = nil
-      end
-      
-      def closeWriter
-        date = _date
-        super # sets `date = null`
-        # the additional trick here is to rotate the closed file
-        synchronized do
-          # we're normally in the lock here (from #publish) 
-          # thus we do not perform any more synchronization
-          dir = java.io.File.new(directory).getAbsoluteFile
-          log = java.io.File.new(dir, prefix + "" + suffix)
-          if log.exists
-            if ! date || date.empty?
-              date = log.lastModified
-              # we abuse Timestamp to get a date formatted !
-              # just like super does internally (just in case)
-              date = java.sql.Timestamp.new(date).toString[0, 10]
+        def close
+          @_close = true
+          super
+          @_close = nil
+        end
+
+        def closeWriter
+          date = _date
+          super # sets `date = null`
+          # the additional trick here is to rotate the closed file
+          synchronized do
+            # we're normally in the lock here (from #publish) 
+            # thus we do not perform any more synchronization
+            dir = java.io.File.new(directory).getAbsoluteFile
+            log = java.io.File.new(dir, prefix + "" + suffix)
+            if log.exists
+              if ! date || date.empty?
+                date = log.lastModified
+                # we abuse Timestamp to get a date formatted !
+                # just like super does internally (just in case)
+                date = java.sql.Timestamp.new(date).toString[0, 10]
+              end
+              today = java.lang.System.currentTimeMillis
+              today = java.sql.Timestamp.new(today).toString[0, 10]
+              return if date == today # no need to rotate just yet
+              to_file = java.io.File.new(dir, prefix + date + suffix)
+              if to_file.exists
+                file = java.io.RandomAccessFile.new(to_file, 'rw')
+                file.seek(file.length)
+                log_channel = java.io.FileInputStream.new(log).getChannel
+                log_channel.transferTo(0, log_channel.size, file.getChannel)
+                file.close
+                log_channel.close
+                log.delete
+              else
+                log.renameTo(to_file)
+              end
             end
-            today = java.lang.System.currentTimeMillis
-            today = java.sql.Timestamp.new(today).toString[0, 10]
-            return if date == today # no need to rotate just yet
-            to_file = java.io.File.new(dir, prefix + date + suffix)
-            if to_file.exists
-              file = java.io.RandomAccessFile.new(to_file, 'rw')
-              file.seek(file.length)
-              log_channel = java.io.FileInputStream.new(log).getChannel
-              log_channel.transferTo(0, log_channel.size, file.getChannel)
-              file.close
-              log_channel.close
-              log.delete
-            else
-              log.renameTo(to_file)
-            end
-          end
-        end if rotatable && ! @_close
+          end if rotatable && ! @_close
+        end
+
       end
-      
     end
     
     # We're truly missing a #formatThrown exception helper method.
@@ -265,47 +269,52 @@ module Trinidad
       
     end
     
-    # A formatter that formats application file logs (e.g. production.log).
-    class DefaultFormatter < JUL::Formatter # :nodoc
+    if ( Java::JavaClass.for_name('rb.trinidad.logging.DefaultFormatter') rescue nil )
+      DefaultFormatter = Java::RbTrinidadLogging::DefaultFormatter # recent trinidad_jars
+    else
+      # A formatter that formats application file logs (e.g. production.log).
+      class DefaultFormatter < JUL::Formatter # :nodoc
 
-      # Allows customizing the date format + the time zone to be used.
-      def initialize(format = nil, time_zone = nil)
-        super()
-        @format = format ? 
-          Java::JavaText::SimpleDateFormat.new(format) : 
-            Java::JavaText::SimpleDateFormat.new
-        case time_zone
-        when Java::JavaUtil::Calendar then
-          @format.calendar = time_zone
-        when Java::JavaUtil::TimeZone then
-          @format.time_zone = time_zone
-        when String then
-          time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zone)
-          @format.time_zone = time_zone
-        when Numeric then
-          time_zones = Java::JavaUtil::TimeZone.getAvailableIDs(time_zone)
-          if time_zones.length > 0
-            time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zones[0])
+        # Allows customizing the date format + the time zone to be used.
+        def initialize(format = nil, time_zone = nil)
+          super()
+          @format = format ? 
+            Java::JavaText::SimpleDateFormat.new(format) : 
+              Java::JavaText::SimpleDateFormat.new
+          case time_zone
+          when Java::JavaUtil::Calendar then
+            @format.calendar = time_zone
+          when Java::JavaUtil::TimeZone then
             @format.time_zone = time_zone
-          end
-        end if time_zone
-      end
-
-      JDate = Java::JavaUtil::Date
-
-      def format(record)
-        timestamp = @format.synchronized do 
-          @format.format JDate.new(record.millis)
+          when String then
+            time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zone)
+            @format.time_zone = time_zone
+          when Numeric then
+            time_zones = Java::JavaUtil::TimeZone.getAvailableIDs(time_zone)
+            if time_zones.length > 0
+              time_zone = Java::JavaUtil::TimeZone.getTimeZone(time_zones[0])
+              @format.time_zone = time_zone
+            end
+          end if time_zone
         end
-        level = record.level.name
-        message = formatMessage(record)
 
-        out = "#{timestamp} #{level}: #{message}"
-        out << formatThrown(record).to_s
-        (lns = "\n") == out[-1, 1] ? out : out << lns
+        JDate = Java::JavaUtil::Date
+
+        def format(record)
+          timestamp = @format.synchronized do 
+            @format.format JDate.new(record.millis)
+          end
+          level = record.level.name
+          message = formatMessage(record)
+
+          out = "#{timestamp} #{level}: #{message}"
+          out << formatThrown(record).to_s
+          (lns = "\n") == out[-1, 1] ? out : out << lns
+        end
+
       end
-
     end
+    
   end
   LogFormatter = Logging::DefaultFormatter # backwards compatibility
 end

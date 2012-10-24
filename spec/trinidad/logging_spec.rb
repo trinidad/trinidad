@@ -163,6 +163,10 @@ describe Trinidad::Logging do
       File.read("#{MOCK_WEB_APP_DIR}/log/staging#{y_date}.log").should == "very old entry\nold entry\n"
     end
     
+    org.apache.juli.FileHandler.class_eval do
+      field_accessor :date
+    end
+    
     it "rotates when logging date changes" do
       make_file "#{MOCK_WEB_APP_DIR}/log/production.log", "old entry\n"
       yesterday = Time.now - 60 * 60 * 24; yesterday_ms = yesterday.to_f * 1000
@@ -174,7 +178,7 @@ describe Trinidad::Logging do
       
       logger = Trinidad::Logging.configure_web_app(web_app, context)
       file_handler = logger.handlers.find { |handler| handler.is_a?(org.apache.juli.FileHandler) }
-      file_handler._date = yesterday.strftime '%Y-%m-%d' # FileHandler internals
+      file_handler.date = yesterday.strftime '%Y-%m-%d' # FileHandler internals
       file_handler.open # make sure file is open (smt was logged previously)
       logger.warning "watch out!" # should switch to today
       
@@ -470,7 +474,7 @@ describe Trinidad::Logging::DefaultFormatter do
     record = JUL::LogRecord.new JUL::Level::INFO, msg = "basza meg a zold tucsok\n"
     record.millis = java.lang.System.current_time_millis
     
-    formatter = new_formatter
+    formatter = new_formatter 'yyyy-MM-dd HH:mm:ss Z'
     log_msg = formatter.format(record)
     log_msg[-(msg.size + 6)..-1].should == "INFO: basza meg a zold tucsok\n"
   end
@@ -480,7 +484,7 @@ describe Trinidad::Logging::DefaultFormatter do
     record.message = "Bazinga!"
     record.thrown = java.lang.RuntimeException.new("42")
     
-    formatter = new_formatter
+    formatter = new_formatter 'yyyy-MM-dd HH:mm:ss Z'
     formatter.format(record).should =~ /.*? SEVERE: Bazinga!\n/
     lines = formatter.format(record).split("\n")
     lines[1].should == 'java.lang.RuntimeException: 42'
