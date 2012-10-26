@@ -59,8 +59,7 @@ public class FileHandler extends org.apache.juli.FileHandler {
             rotatableField.setAccessible(true);
             bufferSizeField = klass.getDeclaredField("bufferSize");
             bufferSizeField.setAccessible(true);
-            dateField = // FileHandler impl internals
-                klass.getDeclaredField("date");
+            dateField = klass.getDeclaredField("date");
             dateField.setAccessible(true);
         }
         catch (NoSuchFieldException e) {
@@ -69,7 +68,7 @@ public class FileHandler extends org.apache.juli.FileHandler {
     }
     
     public FileHandler() {
-        super();
+        this(null, null, null);
     }
     
     public FileHandler(String directory, String prefix, String suffix) {
@@ -115,13 +114,13 @@ public class FileHandler extends org.apache.juli.FileHandler {
         synchronized(this) {
             // we're normally in the lock here (from #publish) 
             // thus we do not perform any more synchronization
-            File dir = new File( getDirectory() ).getAbsoluteFile();
-            File log = new File(dir, getPrefix() + "" + getSuffix());
+            final File dir = new File( getDirectory() ).getAbsoluteFile();
+            final File log = new File( dir, getPrefix() + "" + getSuffix() );
             if ( log.exists() ) {
                 if ( date == null || date.isEmpty() ) {
                     final long lastMod = log.lastModified();
                     // we abuse Timestamp to get a date formatted !
-                    // just like super does internally (just in case)
+                    // just like super does internally (to be sure)
                     date = new java.sql.Timestamp(lastMod).toString().substring(0, 10);
                 }
                 final long todayMS = System.currentTimeMillis();

@@ -99,25 +99,12 @@ public class DefaultFormatter extends Formatter {
         return dateFormat;
     }
     
-    /*
-      def format(record)
-        timestamp = @format.synchronized do 
-          @format.format JDate.new(record.millis)
-        end
-        level = record.level.name
-        message = formatMessage(record)
-
-        out = "#{timestamp} #{level}: #{message}"
-        out << formatThrown(record).to_s
-        (lns = "\n") == out[-1, 1] ? out : out << lns
-      end
-     */
     @Override
     public String format(final LogRecord record) {
         String message = record.getMessage();
         StringBuffer msg = new StringBuffer(32 + 2 + 7 + 1 + message.length());
+        Date millis = new Date(record.getMillis());
         synchronized(dateFormat) {
-            Date millis = new Date(record.getMillis());
             dateFormat.format(millis, msg, dummyPosition);
         }
         msg.append(' ').append(record.getLevel().getName()).append(':'); // WARNING:
