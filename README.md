@@ -282,16 +282,16 @@ and specify the name of the host for each one e.g. :
 Trinidad.configure do |config|
   config.web_apps = {
     :mock1 => {
-      :web_app_dir => 'rails_apps/mock1',
-      :hosts       => ['rails.virtual.host', 'rails.host']
+      :root_dir => 'rails_apps/mock1',
+      :hosts    => ['rails.virtual.host', 'rails.host']
     },
     :mock2 => {
-      :web_app_dir => 'rails_apps/mock2',
-      :hosts       => 'rails.virtual.host'
+      :root_dir => 'rails_apps/mock2',
+      :hosts    => 'rails.virtual.host'
     },
     :mock3 => {
-      :web_app_dir => 'rack_apps/mock3',
-      :hosts       => ['rack.virtual.host', 'rack.host']
+      :root_dir => 'rack_apps/mock3',
+      :hosts    => ['rack.virtual.host', 'rack.host']
     }
   }
 end
@@ -302,22 +302,26 @@ end
 Trinidad allows to extend itself with more (not just Tomcat) features, 
 here is a list of the available extensions that are "officially supported":
 
-* Database Connection Pooling: 
+* Database Connection Pooling :
   http://github.com/trinidad/trinidad_dbpool_extension
-* Daemonize Trinidad, based on Akuma: 
+* Daemonize Trinidad, based on Akuma (Unix only) :
   http://github.com/trinidad/trinidad_daemon_extension
-* Init Services (for Unix and Windows), based on Commons Daemon: 
+* Init Services (for Unix and Windows), based on Commons Daemon :
   http://github.com/trinidad/trinidad_init_services
-* Logging, enhance Trinidad's logging system: 
-  http://github.com/trinidad/trinidad_logging_extension
-* Application and Server Lifecycle Management: 
-  http://github.com/trinidad/trinidad_lifecycle_extension
-* Trinidad's Management Console and REST API: 
-  http://github.com/trinidad/trinidad_sandbox_extension
-* Scheduler, based on Quartz: 
+* Scheduler, based on Quartz :
   http://github.com/trinidad/trinidad_scheduler_extension
-* Valves - components inserted into the request pipeline (e.g. Access Log): 
+* Worker, threaded workers (supports Resque, Delayed::Job) : 
+  http://github.com/trinidad/trinidad_worker_extension
+* Logging, enhance Trinidad's logging system :
+  http://github.com/trinidad/trinidad_logging_extension
+* Application and Server Lifecycle Management :
+  http://github.com/trinidad/trinidad_lifecycle_extension
+* Valves - components inserted into the request pipeline (e.g. Access Log) :
   http://github.com/trinidad/trinidad_valve_extension
+* Trinidad's Management Console and REST API :
+  http://github.com/trinidad/trinidad_sandbox_extension
+* Enable remote JMX monitoring capabilities for Trinidad :
+  http://github.com/trinidad/trinidad_jmx_remote_extension
 
 You can find further information on how to write extensions in the wiki: 
 http://wiki.github.com/trinidad/trinidad/extensions
