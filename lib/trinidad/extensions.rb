@@ -54,10 +54,6 @@ module Trinidad
     end
     
     def self.camelize(string)
-      string.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
-    end
-    
-    def self.camelize(string)
       string = string.sub(/^[a-z\d]*/) { $&.capitalize }
       string.gsub!(/(?:_|(\/))([a-z\d]*)/i) { "#{$1}#{$2.capitalize}" }
       string.gsub!('/', '::')
