@@ -87,7 +87,7 @@ module Trinidad
     def environment; self[:environment] || @@defaults[:environment]; end # TODO check web.xml
     
     def public_dir
-      @public_dir ||= expand_path(public_root)
+      @public_dir ||= ( public_root == '/' ? root_dir : expand_path(public_root) )
     end
     
     # by (a "Rails") convention use '[RAILS_ROOT]/tmp'

@@ -374,11 +374,28 @@ describe Trinidad::WebApp do
     app.rack_listener.should_not be nil
   end
 
-  it "uses `public` as default public root directory" do
+  it "uses 'public' as default public root directory" do
     app = Trinidad::WebApp.create({})
     app.public_root.should == 'public'
   end
 
+  it "accepts and uses absolute public root path" do
+    app = Trinidad::WebApp.create({
+        :public => '/var/www/public', 
+        :root_dir => '/home/trinidad/webapp/current'
+    })
+    app.public_root.should == '/var/www/public'
+    app.public_dir.should == '/var/www/public'
+  end
+  
+  it "expands '/' public root as root dir (not absolute path)" do
+    app = Trinidad::WebApp.create({
+        :public => '/', :root_dir => '/home/trinidad/webapp/current'
+    })
+    app.public_root.should == '/'
+    app.public_dir.should == '/home/trinidad/webapp/current'
+  end
+  
   it "uses extensions from the global configuration" do
     default_config = { :extensions => { :hotdeploy => {} } }
     app = Trinidad::WebApp.create({}, default_config)
