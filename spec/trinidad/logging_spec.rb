@@ -92,7 +92,7 @@ describe Trinidad::Logging do
        
       logger.handlers.first.flush
       File.read(log_file).should == "previous-content\n" + 
-         "#{now.day}.#{now.month} - FINE: hello-there\n"
+         "#{format('%02d', now.day)}.#{format('%02d', now.month)} - FINE: hello-there\n"
     end
     
     it "creates the log file according with the environment if it doesn't exist" do
