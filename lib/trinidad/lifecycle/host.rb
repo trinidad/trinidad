@@ -80,8 +80,9 @@ module Trinidad
         strategy = (app_holder.web_app.reload_strategy || :default).to_sym
         strategy = RELOAD_STRATEGIES[ strategy ]
         strategy = strategy ? self.class.const_get(strategy) : RestartReload
-        strategy.instance_method(:initialize).arity != 0 ?
-          strategy.new(server).reload!(app_holder) : strategy.new.reload!(app_holder)
+        new_args = []
+        new_args << server if strategy.instance_method(:initialize).arity != 0
+        strategy.new(*new_args).reload!(app_holder)
       end
       
     end

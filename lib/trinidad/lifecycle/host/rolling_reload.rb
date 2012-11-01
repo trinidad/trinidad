@@ -53,6 +53,7 @@ module Trinidad
           logger.debug "Stoping the old Context for [#{@old_context.path}]"
 
           @old_context.stop
+          @old_context.work_dir = nil # make sure it's not deleted
           @old_context.destroy
           # NOTE: name might not be changed once added to a parent
           new_context.name = @old_context.name
