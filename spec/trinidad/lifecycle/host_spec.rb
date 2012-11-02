@@ -141,6 +141,8 @@ describe Trinidad::Lifecycle::Host do
   
   describe 'RollingReload' do
 
+    RollingReload = Trinidad::Lifecycle::Host::RollingReload
+    
     it "updates monitor mtime (once context gets replaced)" do
       web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
@@ -204,10 +206,37 @@ describe Trinidad::Lifecycle::Host do
         app_holder.locked?.should be true
       end
       listener.lifecycleEvent periodic_event
-
-      sleep(1) # til Thread.new kicks in
+      
       app_holder.locked?.should be false
       app_holder.context.state_name.should == 'STARTED'
+    end
+
+    it "logs an error when new context startup fails" do
+      roller = RollingReload.new server = mock('server')
+      server.stubs(:add_web_app).returns context = mock('new context')
+      context.expects(:add_lifecycle_listener).with { |l| l.is_a?(RollingReload::Takeover) }
+      context.expects(:state_name).returns 'NEW'
+      context.stubs(:name=); context.stubs(:path).returns '/'
+      Trinidad::Lifecycle::Host::RollingReload.stubs(:logger).returns logger = mock('logger')
+      logger.stubs(:debug); logger.stubs(:info)
+      logger.expects(:error).with do |msg, e|
+        expect( msg ).to eql 'Context with name [default] failed rolling'
+        expect( e ).to be_a java.lang.Throwable
+        true
+      end
+      
+      context.expects(:start).raises RuntimeError, "what's wrong ?!"
+      
+      old_context = mock('old_context')
+      old_context.stubs(:name).returns 'default'
+      old_context.stubs(:path).returns '/'
+      old_context.stubs(:parent).returns parent = mock('parent')
+      parent.stubs(:add_child).with context
+      
+      Thread.expects(:new).yields
+      
+      app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
+      roller.reload!(app_holder)
     end
     
     private

@@ -29,6 +29,11 @@ module Trinidad
             old_context.parent.add_child new_context # NOTE: likely starts!
             new_context.start unless new_context.state_name =~ /START/i
             logger.info "Context with name [#{old_context.name}] has completed rolling"
+          rescue => error
+            e = org.jruby.exceptions.RaiseException.new(error)
+            logger.error("Context with name [#{old_context.name}] failed rolling", e)
+          rescue java.lang.Exception => e
+            logger.error("Context with name [#{old_context.name}] failed rolling", e)
           ensure
             app_holder.unlock
           end
@@ -41,7 +46,7 @@ module Trinidad
       end
 
       class Takeover < Trinidad::Lifecycle::Base # :nodoc
-
+        
         def initialize(context)
           @old_context = context
         end
