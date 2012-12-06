@@ -5,6 +5,7 @@ require 'trinidad/jars'
 
 require 'trinidad/version'
 
+require 'trinidad/helpers'
 require 'trinidad/configuration'
 require 'trinidad/command_line_parser'
 require 'trinidad/extensions'
