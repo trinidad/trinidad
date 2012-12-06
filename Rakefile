@@ -1,8 +1,8 @@
 begin
   require 'bundler/gem_helper'
-rescue LoadError
-  require 'rubygems'
-  require 'bundler/gem_helper'
+rescue LoadError => e
+  require('rubygems') && retry
+  raise e
 end
 
 task :default => :spec
@@ -79,15 +79,18 @@ namespace :'trinidad-rb' do
   
   TRINIDAD_RB_TARGET_DIR = File.expand_path('../target/trinidad-rb', __FILE__)
   
+  desc "Compile trinidad-rb java sources"
   task :compile do
     javac "src/trinidad-rb/java", TRINIDAD_RB_TARGET_DIR
   end
   
+  desc "Package trinidad-rb.jar"
   task :jar => :compile do
     rm TRINIDAD_RB_JAR if File.exist?(TRINIDAD_RB_JAR)
     jar TRINIDAD_RB_TARGET_DIR, TRINIDAD_RB_JAR
   end
   
+  desc "Remove trinidad-rb.jar"
   task :clear do
     rm_r TRINIDAD_RB_TARGET_DIR if File.exist?(TRINIDAD_RB_TARGET_DIR)
     rm TRINIDAD_RB_JAR if File.exist?(TRINIDAD_RB_JAR)
