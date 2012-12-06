@@ -24,12 +24,10 @@ Gem::Specification.new do |s|
   s.add_dependency('trinidad_jars', ">= 1.1.0")
   s.add_dependency('jruby-rack', ">= 1.1.10")
   
-  s.add_development_dependency('rack')
   s.add_development_dependency('rake')
-  s.add_development_dependency('rspec', '~> 2.10')
-  s.add_development_dependency('mocha')
+  s.add_development_dependency('rspec', '~> 2.12.0')
+  s.add_development_dependency('mocha', '~> 0.12.1')
   s.add_development_dependency('fakefs', '>= 0.4.0')
-  s.add_development_dependency('sinatra')
 
   s.files = `git ls-files`.split("\n").sort.
     reject { |file| file =~ /^\./ }. # .gitignore, .travis.yml
