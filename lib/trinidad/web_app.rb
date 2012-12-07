@@ -388,7 +388,7 @@ module Trinidad
       raise NotImplementedError.new "context_listener expected to be redefined"
     end
     
-    if Gem::Version.create(JRuby::Rack::VERSION) > Gem::Version.create('1.1.10')
+    if JRuby::Rack::VERSION > '1.1.10'
       def layout_class
         'JRuby::Rack::FileSystemLayout' # handles Rails as well as Rack
       end
