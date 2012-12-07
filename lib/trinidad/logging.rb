@@ -12,6 +12,7 @@ module Trinidad
     # Configure the "global" Trinidad logging.
     def self.configure(log_level = nil)
       return false if @@configured
+      @@configured = true
       
       root_logger = JUL::Logger.getLogger('')
       level = parse_log_level(log_level, :INFO)
@@ -35,19 +36,21 @@ module Trinidad
       end
       adjust_tomcat_loggers
       
-      @@configured = true
       root_logger
     end
     
     # Force logging (re-)configuration.
     # @see #configure
     def self.configure!(log_level = nil)
-      @@configured = false
-      configure(log_level)
+      ( @@configured = false ) || configure(log_level)
+    end
+    
+    def self.configure_web_app!(web_app, context)
+      configure_web_app!(web_app, context, true)
     end
     
     # Configure logging for a web application.
-    def self.configure_web_app(web_app, context)
+    def self.configure_web_app(web_app, context, reset = nil)
       param_name, param_value = 'jruby.rack.logging', 'JUL'
       # 1. delegate (jruby-rack) servlet log to JUL
       if set_value = web_app_context_param(web_app, context, param_name)
@@ -62,12 +65,15 @@ module Trinidad
         # org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
         context.add_parameter(param_name, logger_name = context.send(:logName))
       end
-      configure # make sure 'global' logging if configured
+      configure # make sure 'global' logging is configured
       
       logger = JUL::Logger.getLogger(logger_name) # exclusive for web app
-      # avoid duplicate calls - do not configure our FileHandler twice :
-      return false if logger.handlers.find { |h| h.is_a?(FileHandler) }
+      logger.handlers.each { |h| logger.remove_handler(h); h.close } if reset
+      # avoid duplicate calls - do not configure (e.g. FileHandler) twice :
+      return false unless logger.handlers.empty?
+      
       logging = web_app.logging
+      
       logger.level = parse_log_level(logging[:level], nil)
       # delegate to root (console) output only in development mode :
       logger.use_parent_handlers = logging[:use_parent_handlers]

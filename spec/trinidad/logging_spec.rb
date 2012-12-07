@@ -345,6 +345,7 @@ describe Trinidad::Logging do
             :environment => 'production' }
         )
         context = create_web_app_context(RAILS_WEB_APP_DIR, web_app)
+        reset_logger!(context)
         context.start
         
         log_content = File.read("#{RAILS_WEB_APP_DIR}/log/production.log")
@@ -386,6 +387,11 @@ describe Trinidad::Logging do
       end
       FileUtils.touch path
       File.open(path, 'w') { |f| f << content } if content
+    end
+    
+    def reset_logger!(context)
+      logger = JUL::Logger.getLogger(context.send(:logName))
+      logger.handlers.each { |h| logger.remove_handler(h); h.close }
     end
     
   end
