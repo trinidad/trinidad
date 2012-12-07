@@ -9,6 +9,8 @@ describe Trinidad::Logging do
     @root_logger = JUL::Logger.getLogger('')
     @root_level = @root_logger.level
     @root_handlers = @root_logger.handlers.to_a
+    
+    Trinidad::Logging.send :class_variable_set, :@@configured, nil
   end
   
   after do
@@ -18,10 +20,10 @@ describe Trinidad::Logging do
   end
   
   it "configures logging during server creation" do
-    Trinidad::Server.new({ :log => 'WARNING', :web_app_dir => MOCK_WEB_APP_DIR })
+    Trinidad::Server.new({ :log => 'WARNING', :root_dir => MOCK_WEB_APP_DIR })
     
     logger = JUL::Logger.getLogger('')
-    logger.level.should == JUL::Level::WARNING
+    logger.level.name.should.== 'WARNING'
     logger.handlers.size.should == 2
   end
   
