@@ -74,18 +74,19 @@ describe Trinidad::Extensions do
 
   it "ignores extensions that don't exist for that scope" do
     extensions = { :override => {} } # fixtures/trinidad_override_extension.rb
-
+    
     lambda {
       Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, nil)
     }.should_not raise_error
   end
 
-  it "raises an error when the extension doesn't exist" do
+  it "ignores extension but warns about it when it doesn't exist" do
     extensions = { :missing => {} }
 
+    Trinidad::Helpers.expects(:warn)
     lambda {
       Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, nil)
-    }.should raise_error
+    }.should_not raise_error
   end
   
 end

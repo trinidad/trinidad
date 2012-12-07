@@ -37,9 +37,18 @@ module Trinidad
     protected
     
     def self.extension(name, type, options)
-      class_name = (camelize(name.to_s) << type).to_sym
-      load_extension(name) unless const_defined?(class_name)
-      clazz = const_get(class_name) rescue nil
+      class_name = Helpers.camelize(name) << type; clazz = nil
+      if ( const_defined?(class_name) rescue nil )
+        clazz = const_get(class_name)
+      else
+        begin
+          load_extension(name)
+        rescue LoadError => e
+          Helpers.warn("Failed to load the #{name.inspect} extension (#{e.message}) ")
+        else
+          clazz = ( const_get(class_name) if const_defined?(class_name) ) rescue nil
+        end
+      end
       clazz.new(options) if clazz # MyExtension.new(options)
     end
 
@@ -54,13 +63,13 @@ module Trinidad
     end
     
     def self.camelize(string)
-      string = string.sub(/^[a-z\d]*/) { $&.capitalize }
-      string.gsub!(/(?:_|(\/))([a-z\d]*)/i) { "#{$1}#{$2.capitalize}" }
-      string.gsub!('/', '::')
-      string
+      Helpers.deprecate("Trinidad::Extensions.camelize use the camelize helper " << 
+                        "available in your Extension")
+      Helpers.camelize(string)
     end
     
     class Extension
+      include Helpers; extend Helpers
       
       attr_reader :options
       
@@ -73,11 +82,6 @@ module Trinidad
       # Hash#symbolize
       def symbolize(options, deep = false)
         Trinidad::Configuration.symbolize_options(options, deep)
-      end
-
-      # String#camelize
-      def camelize(string)
-        Trinidad::Extensions.send :camelize, string
       end
       
     end
