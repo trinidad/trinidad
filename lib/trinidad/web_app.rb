@@ -388,20 +388,8 @@ module Trinidad
       raise NotImplementedError.new "context_listener expected to be redefined"
     end
     
-    if JRuby::Rack::VERSION > '1.1.10'
-      def layout_class
-        'JRuby::Rack::FileSystemLayout' # handles Rails as well as Rack
-      end
-    else
-      def layout_class
-        # NOTE: we'll also need to do a GEM_PATH hack to avoid a bug :
-        if gem_path = ENV['GEM_PATH']
-          add_context_param 'gem.path', gem_path
-          # ENV['GEM_PATH'] will contain twice the same entry(ies) ...
-        end
-        add_context_param 'rails.root', app_root # still boots a rack app
-        'JRuby::Rack::RailsFilesystemLayout' # no plain FS layout defined !
-      end
+    def layout_class
+      'JRuby::Rack::FileSystemLayout' # handles Rails as well as Rack
     end
     
     def complete_config!
