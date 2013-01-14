@@ -1,3 +1,10 @@
+== Trinidad_jars 1.2.0 (2013-01-14)
+
+* Tomcat 7.0.33 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+* patched JULI's DirectJDKLog to not generate stack traces for every log
+  by default (can be turned back using org.apache.juli.logging.logSource=true)
+* native (Java) implementations for logging classes, to keep logging AFAP
+
 == Trinidad 1.4.4 (2012-10-19)
 
 * make sure setting FileHandler's rotatable to false works (#82)
