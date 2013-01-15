@@ -108,9 +108,15 @@ module Trinidad
       connector
     end
 
-    def add_web_app(web_app, host = nil)
+    def add_web_app(web_app, host = nil, start = nil)
       host ||= web_app.config[:host] || @tomcat.host
-      context = @tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
+      prev_start = host.start_children
+      context = begin
+        host.start_children = start unless start.nil?
+        @tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
+      ensure
+        host.start_children = prev_start unless start.nil?
+      end
       Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
       context.add_lifecycle_listener(web_app.define_lifecycle)
       context

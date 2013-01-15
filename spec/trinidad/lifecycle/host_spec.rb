@@ -304,12 +304,12 @@ describe Trinidad::Lifecycle::Host do
         takeover.lifecycleEvent(after_start_event)
       end
 
-      it "change the context's name for the original one" do
+      it "does not change context's name to the original one" do
         old_context.stubs(:stop)
         old_context.stubs(:destroy)
         old_context.name = 'foo'
         takeover.lifecycleEvent(after_start_event)
-        new_context.name.should == 'foo'
+        new_context.name.should_not == 'foo'
       end
 
       work_dir = File.expand_path('work', MOCK_WEB_APP_DIR)

@@ -30,7 +30,11 @@ module Trinidad
         protected
         
         def adjust_context(context)
-          context.name = web_app.context_name if web_app.context_name
+          context_name = web_app.context_name
+          # on (rolling) reloads the name may have been set already :
+          if context_name && ! (context.name || '').index(context_name)
+            context.name = web_app.context_name
+          end
           context.doc_base = web_app.doc_base if web_app.doc_base
           context.work_dir = web_app.work_dir if web_app.work_dir
           context.aliases  = web_app.aliases  if web_app.aliases

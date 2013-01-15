@@ -44,11 +44,28 @@ describe Trinidad::Lifecycle::WebApp::Shared do
     @listener.expects(:adjust_context)
     @listener.configure(@context)
   end
-
+  
   it "sets up work dir" do
     @listener.send :adjust_context, @context
     @context.work_dir.should == "#{MOCK_WEB_APP_DIR}/tmp"
     @context.work_path.should == "#{MOCK_WEB_APP_DIR}/tmp"
+  end
+
+  it "sets context name" do
+    @web_app.expects(:context_name).at_least_once.returns 'foo'
+    @listener.send :adjust_context, @context
+    @context.name.should == 'foo'
+  end
+  
+  # this avoids naming errors when starting a new context with the same name :
+  # Creation of the naming context failed: 
+  #   javax.naming.OperationNotSupportedException: Context is read only
+  
+  it "does not set the context name if it's 'similar'" do
+    @web_app.expects(:context_name).at_least_once.returns 'foo'
+    @context.name = "foo-1234567890"
+    @listener.send :adjust_context, @context
+    @context.name.should == 'foo-1234567890'
   end
   
   private

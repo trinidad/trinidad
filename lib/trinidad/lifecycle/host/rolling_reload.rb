@@ -16,11 +16,10 @@ module Trinidad
 
         web_app.reset! # force a new class loader + re-read state (from config)
         no_host = org.apache.catalina.Host.impl {} # do not add to parent yet
-        new_context = @server.add_web_app(web_app, no_host)
-        new_context.add_lifecycle_listener(takeover = Takeover.new(old_context))
+        new_context = @server.add_web_app(web_app, no_host, false)
         # Tomcat requires us to have unique names for its containers :
         new_context.name = "#{old_context.name}-#{java.lang.System.currentTimeMillis}"
-
+        new_context.add_lifecycle_listener(takeover = Takeover.new(old_context))
         app_holder.context = new_context
 
         Thread.new do
@@ -53,7 +52,7 @@ module Trinidad
       def self.logger # log into the same location as context.reload does :
         Trinidad::Logging::LogFactory.getLog('org.apache.catalina.core.StandardContext')
       end
-
+      
       class Takeover < Trinidad::Lifecycle::Base # :nodoc
         
         def initialize(context)
@@ -70,7 +69,7 @@ module Trinidad
           @old_context.work_dir = nil # make sure it's not deleted
           @old_context.destroy
           # NOTE: name might not be changed once added to a parent
-          new_context.name = @old_context.name
+          #new_context.name = @old_context.name
           super
         end
 
@@ -89,7 +88,7 @@ module Trinidad
         end
         
       end
-
+      
     end
   end
 end
