@@ -144,6 +144,7 @@ module Trinidad
       add_context_param 'jruby.compat.version', jruby_compat_version
       add_context_param 'public.root', public_root
       add_context_param 'jruby.rack.layout_class', layout_class
+      add_context_param 'jruby.rack.error', false # do not start error app on errors
       @context_params
     end
     # @deprecated replaced with {#context_params}

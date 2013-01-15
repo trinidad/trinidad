@@ -217,8 +217,8 @@ describe Trinidad::Lifecycle::Host do
       context.expects(:add_lifecycle_listener).with { |l| l.is_a?(RollingReload::Takeover) }
       context.expects(:state_name).returns 'NEW'
       context.stubs(:name=); context.stubs(:path).returns '/'
-      Trinidad::Lifecycle::Host::RollingReload.stubs(:logger).returns logger = mock('logger')
-      logger.stubs(:debug); logger.stubs(:info)
+      context.stubs(:remove_lifecycle_listener)
+      logger = stub_logger(:debug, :info)
       logger.expects(:error).with do |msg, e|
         expect( msg ).to eql 'Context with name [default] failed rolling'
         expect( e ).to be_a java.lang.Throwable
@@ -232,6 +232,38 @@ describe Trinidad::Lifecycle::Host do
       old_context.stubs(:path).returns '/'
       old_context.stubs(:parent).returns parent = mock('parent')
       parent.stubs(:add_child).with context
+      parent.stubs(:remove_child)
+      
+      Thread.expects(:new).yields
+      
+      app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
+      roller.reload!(app_holder)
+    end
+
+    it "removed new context and keeps old when new context fails to start" do
+      roller = RollingReload.new server = mock('server')
+      server.stubs(:add_web_app).returns context = mock('new context')
+      
+      listener_sequence = sequence('lifecycle-listener')
+      context.expects(:add_lifecycle_listener).
+        with { |l| l.is_a?(RollingReload::Takeover) }.in_sequence listener_sequence
+      context.expects(:remove_lifecycle_listener).
+        with { |l| l.is_a?(RollingReload::Takeover) }.in_sequence listener_sequence
+      
+      context.stubs(:name=); context.stubs(:path).returns '/'
+      stub_logger
+      
+      context.expects(:state_name).returns('NEW').then.returns('FAILED').at_least_once
+      context.expects(:start) # setState(LifecycleState.FAILED);
+      
+      old_context = mock('old_context')
+      old_context.stubs(:name).returns 'default'
+      old_context.stubs(:path).returns '/'
+      old_context.stubs(:parent).returns parent = mock('parent')
+      
+      parent_sequence = sequence('parent-child')
+      parent.expects(:add_child).with(context).in_sequence parent_sequence
+      parent.expects(:remove_child).with(context).in_sequence parent_sequence
       
       Thread.expects(:new).yields
       
@@ -240,6 +272,13 @@ describe Trinidad::Lifecycle::Host do
     end
     
     private
+    
+    def stub_logger(*levels)
+      Trinidad::Lifecycle::Host::RollingReload.stubs(:logger).returns logger = mock('logger')
+      levels = [ :debug, :info, :error ] if levels.empty?
+      levels.each { |level| logger.stubs(level) }
+      logger
+    end
     
     def create_web_app(config = {})
       super(config.merge(:reload_strategy => :rolling))
@@ -293,12 +332,23 @@ describe Trinidad::Lifecycle::Host do
         old_context.addLifecycleListener web_app.define_lifecycle
         Trinidad::Tomcat::Tomcat.initWebappDefaults(old_context)
         old_context.start
-        config.getServer.start # make sure it's available @see ContextConfig#destroy
-        #puts s = config.getServer
-        #puts s.getState().isAvailable()
+        getServer(old_context).start
+        #config.send(:getServer).start # make sure it's available @see ContextConfig#destroy
           
         takeover.lifecycleEvent(after_start_event)
         expect( File.exist?(work_dir) ).to be true
+      end
+      
+      private
+      
+      def getServer(context)
+        engine = context
+        while engine && ! engine.is_a?(Trinidad::Tomcat::Engine)
+          engine = engine.parent
+        end
+        return nil unless engine
+        service = engine.service
+        service ? service.server : nil
       end
       
     end

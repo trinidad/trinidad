@@ -1,9 +1,8 @@
 begin
   require 'rspec'
-rescue LoadError
-  require 'rubygems'
-  gem 'rspec'
-  require 'rspec'
+rescue LoadError => e
+  require('rubygems') && retry
+  raise e
 end
 
 RSpec.configure do |config|
