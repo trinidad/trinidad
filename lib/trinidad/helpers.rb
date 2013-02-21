@@ -17,10 +17,10 @@ module Trinidad
     @@deprecated = {} # :nodoc
     
     # Print a deprecated message (once - no matter how many times it's called).
-    def deprecate(msg)
+    def deprecate(msg, prefix = '[DEPRECATED] ')
       return nil if @@deprecated[msg]
       @@deprecated[msg] = true
-      Helpers.warn "[DEPRECATED] #{msg}" # Kernel.warn
+      Helpers.warn "#{prefix}#{msg}" # Kernel.warn
     end
     
     def camelize(string)
