@@ -18,25 +18,30 @@ module Trinidad
         end
         
         def configure(context)
-          super # TODO assuming warbler .war !
+          super # Shared#configure
           configure_class_loader(context)
         end
-
+        
         protected
         
         def configure_class_loader(context)
-          loader = Trinidad::Tomcat::WebappLoader.new(web_app.class_loader)
+          class_loader = web_app.class_loader || JRuby.runtime.jruby_class_loader
+          loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
           loader.container = context
           context.loader = loader
         end
 
+        def remove_defaults(context = nil)
+          # NOTE: do not remove defaults (welcome files)
+        end
+        
         private
 
         def expand_war_app(context)
           unless File.exist?(context.doc_base)
             host = context.parent
             war_file = java.io.File.new(web_app.root_dir)
-            war = java.net.URL.new("jar:" + war_file.toURI.toURL.to_s + "!/")
+            war = java.net.URL.new("jar:#{war_file.toURI.toURL.toString}!/")
             path_name = File.basename(context.doc_base)
 
             Trinidad::Tomcat::ExpandWar.expand(host, war, path_name)

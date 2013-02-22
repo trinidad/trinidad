@@ -30,12 +30,15 @@ module Trinidad
       use_default ? default_config.key?(key) : false
     end
     
-    %w{ root_dir rackup log async_supported reload_strategy }.each do |method|
+    %w{ root_dir rackup async_supported reload_strategy }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
-    alias_method :web_app_dir, :root_dir # is getting deprecated soon
     
+    alias_method :web_app_dir, :root_dir # is getting deprecated soon
     def app_root; root_dir; end
+    
+    # @deprecated use `self[:log]` instead
+    def log; self[:log]; end
     
     def context_path
       path = self[:context_path] || self[:path]
@@ -527,17 +530,20 @@ module Trinidad
     end
     
     def self.war?(config, default_config = nil)
-      config[:context_path] && config[:context_path].to_s[-4..-1] == '.war'
+      root_dir = root_dir(config, default_config)
+      return true if root_dir && root_dir.to_s[-4..-1] == '.war'
+      context_path = config[:context_path] # backwards-compatibility :
+      context_path && context_path.to_s[-4..-1] == '.war'
     end
     
     private
     
-    def self.root_dir(config, default_config)
+    def self.root_dir(config, default_config, default_dir = Dir.pwd)
       # for backwards compatibility accepts the :web_app_dir "alias"
       config[:root_dir] || config[:web_app_dir] || 
         ( default_config && 
           ( default_config[:root_dir] || default_config[:web_app_dir] ) ) ||
-            Dir.pwd
+            default_dir
     end
     
     def self.context_path(config, default_config = nil)
@@ -618,7 +624,7 @@ module Trinidad
     
   end
   
-  # Rack web application (looks for a rackup config.ru file).
+  # Rack web application (looks for a "rackup" *config.ru* file).
   class RackupWebApp < WebApp
 
     def context_params
@@ -635,7 +641,7 @@ module Trinidad
     
   end
   
-  # Rails web app specifics. Supports the same versions as jruby-rack !
+  # Rails web application specifics (supports same versions as JRuby-Rack).
   class RailsWebApp < WebApp
 
     def context_params
@@ -677,28 +683,45 @@ module Trinidad
   # A web application for deploying (java) .war files.
   class WarWebApp < WebApp
     
-    def context_path
-      super.gsub(/\.war$/, '')
+    #def doc_base; self[:doc_base] || nil; end
+
+    def work_dir
+      @work_dir ||= self[:work_dir] || nil
+        # File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
     end
     
     def log_dir
-      @log_dir ||= self[:log_dir] || File.join(work_dir, 'log')
+      @log_dir ||= self[:log_dir] || File.join(work_dir || root_dir, 'log')
     end
     
-    def work_dir
-      @work_dir ||= File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
-    end
-
     def monitor
-      File.expand_path(root_dir)
+      File.expand_path(root_dir) # the .war file itself
+    end
+    
+    def class_loader
+      @class_loader ||= nil # lifecycle will setup JRuby CL
     end
 
+    def context_params
+      warbler? ? super : @context_params ||= {}
+    end
+
+    def layout_class
+      'JRuby::Rack::WebInfLayout'
+    end
+    
     def define_lifecycle
       Trinidad::Lifecycle::WebApp::War.new(self)
     end
+
+    def warbler?; nil; end # TODO detect warbler created .war
+
+    private
     
-    def layout_class
-      'JRuby::Rack::WebInfLayout'
+    def self.context_path(config, default_config = nil)
+      # due compatibility when used to specify path to .war file :
+      "/#{File.basename(super.gsub(/\.war$/, ''))}"
+      # context_path: '/home/app/myapp.war' -> '/myapp'
     end
     
   end
