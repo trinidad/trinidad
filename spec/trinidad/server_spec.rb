@@ -2,7 +2,6 @@ require File.expand_path('../spec_helper', File.dirname(__FILE__))
 require 'fileutils'
 
 describe Trinidad::Server do
-  include FileUtils
   include FakeApp
   
   JSystem = java.lang.System
@@ -11,47 +10,43 @@ describe Trinidad::Server do
   before { Trinidad.configure }
   after  { Trinidad.configuration = nil }
 
-  after do
-    rm_rf File.expand_path('../../ssl', File.dirname(__FILE__))
-  end
+  after { FileUtils.rm_rf( File.expand_path('../../ssl', File.dirname(__FILE__)) ) rescue nil }
 
   it "always uses symbols as configuration keys" do
     Trinidad.configure { |c| c.port = 4000 }
-    server = Trinidad::Server.new
+    server = configured_server
     server.config[:port].should == 4000
   end
 
   it "enables catalina naming" do
-    Trinidad::Server.new
+    expect( configured_server.tomcat ).to_not be nil
     JSystem.get_property(JContext.URL_PKG_PREFIXES).should  include("org.apache.naming")
     JSystem.get_property(JContext.INITIAL_CONTEXT_FACTORY).should == "org.apache.naming.java.javaURLContextFactory"
     JSystem.get_property("catalina.useNaming").should == "true"
   end
 
   it "disables ssl when config param is nil" do
-    server = Trinidad::Server.new
+    server = configured_server
     server.ssl_enabled?.should be false
   end
 
   it "disables ajp when config param is nil" do
-    server = Trinidad::Server.new
+    server = configured_server
     server.ajp_enabled?.should be false
   end
 
   it "enables ssl when config param is a number" do
-    begin
-      server = Trinidad::Server.new({:ssl => {:port => 8443},
-        :web_app_dir => MOCK_WEB_APP_DIR})
+    server = configured_server({
+      :ssl => { :port => 8443 },
+      :web_app_dir => MOCK_WEB_APP_DIR
+    })
 
-      server.ssl_enabled?.should be true
-      File.exist?('ssl').should be true
-    ensure
-      rm_rf(File.expand_path('../../ssl', File.dirname(__FILE__)))
-    end
+    server.ssl_enabled?.should be true
+    #File.exist?('ssl').should be true
   end
 
   it "enables ajp when config param is a number" do
-    server = Trinidad::Server.new({:ajp => {:port => 8009}})
+    server = configured_server( :ajp => { :port => 8009 } )
     server.ajp_enabled?.should be_true
   end
 
@@ -59,7 +54,7 @@ describe Trinidad::Server do
     Trinidad.configure do |c|
       c.ssl = {:port => 8443}
     end
-    server = Trinidad::Server.new
+    server = configured_server
 
     connectors = server.tomcat.service.find_connectors
     connectors.should have(1).connector
@@ -70,7 +65,7 @@ describe Trinidad::Server do
     Trinidad.configure do |c|
       c.ajp = {:port => 8009}
     end
-    server = Trinidad::Server.new
+    server = configured_server
 
     connectors = server.tomcat.service.find_connectors
     connectors.should have(1).connector
@@ -78,7 +73,7 @@ describe Trinidad::Server do
   end
 
   it "loads one application for each option present into :web_apps" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_apps => {
         :_ock1 => {
           :context_path => '/mock1',
@@ -92,6 +87,7 @@ describe Trinidad::Server do
         }
       }
     })
+    server.send(:deploy_web_apps)
 
     context_loaded = server.tomcat.host.find_children
     context_loaded.should have(3).web_apps
@@ -104,7 +100,7 @@ describe Trinidad::Server do
 
   it "loads the default application from the current directory if :web_apps is not present" do
     Trinidad.configure {|c| c.web_app_dir = MOCK_WEB_APP_DIR}
-    server = Trinidad::Server.new
+    server = deployed_server
 
     default_context_should_be_loaded(server.tomcat.host.find_children)
   end
@@ -117,7 +113,7 @@ describe Trinidad::Server do
   end
 
   it "uses the NioConnector when the http configuration sets nio to true" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_app_dir => MOCK_WEB_APP_DIR,
       :http => {:nio => true}
     })
@@ -128,7 +124,7 @@ describe Trinidad::Server do
   end
 
   it "configures NioConnector with http option values" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_app_dir => MOCK_WEB_APP_DIR,
       :http => {
         :nio => true,
@@ -136,13 +132,14 @@ describe Trinidad::Server do
         'socket.bufferPool' => 1000
       }
     })
+
     connector = server.tomcat.connector
     connector.get_property('maxKeepAliveRequests').should == 4
     connector.get_property('socket.bufferPool').should == '1000'
   end
 
   it "configures the http connector address when the address in the configuration is not localhost" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_app_dir => MOCK_WEB_APP_DIR,
       :address => '10.0.0.1'
     })
@@ -153,7 +150,8 @@ describe Trinidad::Server do
 
   it "adds the default lifecycle listener to each webapp" do
     Trinidad.configuration.web_app_dir = MOCK_WEB_APP_DIR
-    server = Trinidad::Server.new
+    server = deployed_server
+
     app_context = server.tomcat.host.find_child('/')
 
     app_context.find_lifecycle_listeners.map {|l| l.class.name }.
@@ -165,16 +163,16 @@ describe Trinidad::Server do
       c.web_app_dir = MOCK_WEB_APP_DIR
       c.extensions = { :foo => {} }
     end
-    server = Trinidad::Server.new
+    server = deployed_server
 
     context = server.tomcat.host.find_child('/')
     context.doc_base.should == 'foo_web_app_extension'
   end
 
   it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do
-    rm_rf 'ssl'
+    FileUtils.rm_rf 'ssl'
 
-    server = Trinidad::Server.new({
+    server = configured_server({
       :ssl => {
         :port => 8443,
         :SSLCertificateFile => '/usr/local/ssl/server.crt'
@@ -185,45 +183,43 @@ describe Trinidad::Server do
   end
 
   it "uses localhost as host name by default" do
-    Trinidad::Server.new.tomcat.host.name.should == 'localhost'
+    configured_server.tomcat.host.name.should == 'localhost'
   end
 
   it "uses the option :address to set the host name" do
-    server = Trinidad::Server.new({:address => 'trinidad.host'})
+    server = configured_server :address => 'trinidad.host'
     server.tomcat.host.name.should == 'trinidad.host'
     server.tomcat.server.address.should == 'trinidad.host'
   end
 
   it "loads several applications if the option :apps_base is present" do
     begin
-      mkdir 'apps_base'
-      cp_r MOCK_WEB_APP_DIR, 'apps_base/test1'
-      cp_r MOCK_WEB_APP_DIR, 'apps_base/test2'
+      FileUtils.mkdir 'apps_base'
+      FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test1'
+      FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test2'
 
-      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      server = deployed_server :apps_base => 'apps_base'
       server.tomcat.host.find_children.should have(2).web_apps
     ensure
-      rm_rf 'apps_base'
+      FileUtils.rm_rf 'apps_base'
     end
   end
 
   it "loads rack apps from the apps_base directory" do
     begin
-      mkdir 'apps_base'
-      cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
+      FileUtils.mkdir 'apps_base'
+      FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
 
-      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      server = deployed_server :apps_base => 'apps_base'
       listeners = find_listeners(server)
       listeners.first.webapp.should be_a(Trinidad::RackupWebApp)
     ensure
-      rm_rf 'apps_base'
+      FileUtils.rm_rf 'apps_base'
     end
   end
 
   it "adds the APR lifecycle listener to the server if the option is available" do
-    server = Trinidad::Server.new({
-      :http => {:apr => true}
-    })
+    server = configured_server( { :http => { :apr => true } } )
 
     server.tomcat.server.find_lifecycle_listeners.
       select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
@@ -231,7 +227,7 @@ describe Trinidad::Server do
   end
 
   it "adds the default lifecycle listener when the application is not packed with warbler" do
-    server = Trinidad::Server.new({
+    server = deployed_server({
       :web_app_dir => MOCK_WEB_APP_DIR
     })
     listeners = find_listeners(server)
@@ -242,7 +238,7 @@ describe Trinidad::Server do
     begin
       Dir.mkdir('apps_base')
 
-      server = Trinidad::Server.new({ :apps_base => 'apps_base' })
+      server = configured_server :apps_base => 'apps_base'
       server.send(:create_web_app, {
         :context_path => '/foo.war',
         :web_app_dir => 'foo.war'
@@ -250,14 +246,12 @@ describe Trinidad::Server do
       listeners = find_listeners(server, Trinidad::Lifecycle::War)
       listeners.should have(1).listener
     ensure
-      rm_rf 'apps_base'
+      FileUtils.rm_rf 'apps_base'
     end
   end
 
   it "adds the APR lifecycle listener to the server if the option is available" do
-    server = Trinidad::Server.new({
-      :http => {:apr => true}
-    })
+    server = configured_server( { :http => { :apr => true } } )
 
     server.tomcat.server.find_lifecycle_listeners.
       select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
@@ -265,7 +259,7 @@ describe Trinidad::Server do
   end
 
   it "creates the host listener with all the applications into the server" do
-    server = Trinidad::Server.new({
+    server = deployed_server({
       :web_apps => {
         :mock1 => {
           :web_app_dir => MOCK_WEB_APP_DIR
@@ -287,14 +281,14 @@ describe Trinidad::Server do
   it "autoconfigures rack when config.ru is present in the app directory" do
     FakeFS do
       create_rackup_file('rack')
-      server = Trinidad::Server.new({:web_app_dir => 'rack'})
+      server = deployed_server :web_app_dir => 'rack'
 
       server.tomcat.host.find_children.should have(1).application
     end
   end
 
-  it "creates several hosts when they are set in the configuration" do
-    server = Trinidad::Server.new({:hosts => {
+  it "creates several hosts when they are set in configuration" do
+    server = configured_server({ :hosts => {
       'foo' => 'localhost', :'lol' => 'lololhost'
     }})
 
@@ -302,7 +296,7 @@ describe Trinidad::Server do
   end
 
   it "adds aliases to the hosts when we provide an array of host names" do
-    server = Trinidad::Server.new({:hosts => {
+    server = configured_server({:hosts => {
       'foo' => ['localhost', 'local'],
       'lol' => ['lololhost', 'lol']
     }})
@@ -312,7 +306,7 @@ describe Trinidad::Server do
   end
 
   it "doesn't add any alias when we only provide the host name" do
-    server = Trinidad::Server.new({:hosts => {
+    server = configured_server({:hosts => {
       'foo' => 'localhost',
       'lol' => 'lolhost'
     }})
@@ -322,7 +316,7 @@ describe Trinidad::Server do
   end
 
   it "creates several hosts when they are set in the web_apps configuration" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_apps => {
         :mock1 => {
           :web_app_dir => 'foo/mock1',
@@ -339,7 +333,7 @@ describe Trinidad::Server do
   end
 
   it "doesn't create a host if it already exists" do
-    server = Trinidad::Server.new({
+    server = configured_server({
       :web_apps => {
         :mock1 => {
           :web_app_dir => 'foo/mock1',
@@ -352,6 +346,23 @@ describe Trinidad::Server do
       }
     })
     server.tomcat.engine.find_children.should have(1).hosts
+  end
+
+  protected
+
+  def configured_server(config = false)
+    if config == false
+      server = Trinidad::Server.new
+    else
+      server = Trinidad::Server.new(config)
+    end
+    server
+  end
+
+  def deployed_server(config = false)
+    server = configured_server(config)
+    server.send(:deploy_web_apps)
+    server
   end
 
   private

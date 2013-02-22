@@ -3,44 +3,39 @@ require 'trinidad/web_app'
 
 module Trinidad
   class Server
-    attr_reader :config, :tomcat, :web_apps
+    attr_reader :config
 
     def initialize(config = Trinidad.configuration)
-      load_config(config)
-      configure_logging(@config[:log])
-      load_tomcat_server
-      @web_apps = create_web_apps
-      load_host_monitor(@web_apps)
+      configure(config)
     end
 
-    def load_config(config)
-      add_default_web_app! config
+    def configure(config = Trinidad.configuration)
+      configure_logging config[:log]
       @config = config.freeze
     end
+     # @deprecated replaced with {#configure}
+    def load_config(config); configure(config); end
 
-    def load_tomcat_server
-      load_default_system_properties
-
-      @tomcat = Trinidad::Tomcat::Tomcat.new
-      @tomcat.base_dir = Dir.pwd
-      @tomcat.hostname = @config[:address] || 'localhost'
-      @tomcat.server.address = @config[:address]
-      @tomcat.port = @config[:port].to_i
-      create_hosts
-      @tomcat.enable_naming
-
-      add_http_connector if http_configured?
-      add_ssl_connector if ssl_enabled?
-      add_ajp_connector if ajp_enabled?
-
-      @tomcat = Trinidad::Extensions.configure_server_extensions(@config[:extensions], @tomcat)
+    def hosts
+      @hosts ||= @config[:hosts]
     end
-
-    def load_host_monitor(apps)
-      @tomcat.engine.find_children.each do |host|
-        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *apps))
-      end
+    attr_writer :hosts
+    
+    def app_base
+      @app_base ||= @config[:app_base] || @config[:apps_base]
     end
+    attr_writer :app_base
+
+    def web_apps
+      @web_apps ||= @config[:web_apps] || @config[:webapps]
+    end
+    attr_writer :web_apps
+    
+    def trap?
+      @trap ||= @config[:trap] if ! defined?(@trap) || @trap.nil?
+      @trap
+    end
+    attr_writer :trap
 
     def ssl_enabled?
       !! @config[:ssl] && ! @config[:ssl].empty?
@@ -54,26 +49,63 @@ module Trinidad
       (!! @config[:http] && ! @config[:http].empty?) || @config[:address] != 'localhost'
     end
     
-    def add_ajp_connector
-      add_service_connector(@config[:ajp], 'AJP/1.3')
+    def tomcat; @tomcat ||= initialize_tomcat; end
+
+    def initialize_tomcat
+      set_system_properties
+
+      tomcat = Trinidad::Tomcat::Tomcat.new
+      tomcat.base_dir = config[:base_dir] || Dir.pwd
+      tomcat.hostname = config[:address] || 'localhost'
+      tomcat.server.address = config[:address]
+      tomcat.port = config[:port].to_i
+      tomcat.host # initializes default host
+      create_hosts(tomcat)
+      tomcat.enable_naming
+
+      add_http_connector(tomcat) if http_configured?
+      add_ssl_connector(tomcat)  if ssl_enabled?
+      add_ajp_connector(tomcat)  if ajp_enabled?
+
+      Trinidad::Extensions.configure_server_extensions(config[:extensions], tomcat)
+    end
+    protected :initialize_tomcat
+    # #deprecated renamed to {#initialize_tomcat}
+    def load_tomcat_server; initialize_tomcat; end
+
+    def setup_host_monitor(web_app_holders)
+      raise "tomcat not setup" unless tomcat
+      for host in tomcat.engine.find_children
+        if host.is_a?(Trinidad::Tomcat::Host)
+          host_apps = filter_host_apps(web_app_holders)
+          host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
+        end
+      end
+    end
+    protected :setup_host_monitor
+    # @deprecated replaced with {#setup_host_monitor}
+    def load_host_monitor(web_apps); setup_host_monitor(web_apps); end
+
+    def add_ajp_connector(tomcat = @tomcat)
+      add_service_connector(@config[:ajp], 'AJP/1.3', tomcat)
     end
 
-    def add_http_connector
-      options = @config[:http] || {}
+    def add_http_connector(tomcat = @tomcat)
+      options = config[:http] || {}
       options[:address] ||= @config[:address] if @config[:address] != 'localhost'
       options[:port] = @config[:port]
       options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
 
       if options[:apr]
-        @tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
+        tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
       end
 
-      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1')
-      @tomcat.connector = connector
+      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
+      tomcat.connector = connector
     end
     
-    def add_ssl_connector
-      options = @config[:ssl].merge({
+    def add_ssl_connector(tomcat = @tomcat)
+      options = config[:ssl].merge({
         :scheme => 'https',
         :secure => true,
         :SSLEnabled => 'true'
@@ -81,157 +113,87 @@ module Trinidad
 
       options[:keystoreFile] ||= options.delete(:keystore)
 
-      if !options[:keystoreFile] && !options[:SSLCertificateFile]
+      if ! options[:keystoreFile] && ! options[:SSLCertificateFile]
         options[:keystoreFile] = 'ssl/keystore'
         options[:keystorePass] = 'waduswadus42'
         generate_default_keystore(options)
       end
 
-      add_service_connector(options)
+      add_service_connector(options, nil, tomcat)
     end
     
-    def add_service_connector(options, protocol = nil)
-      connector = Trinidad::Tomcat::Connector.new(protocol)
+    def add_service_connector(options, protocol = nil, tomcat = @tomcat)
       opts = options.dup
 
+      connector = Trinidad::Tomcat::Connector.new(protocol)
       connector.scheme = opts.delete(:scheme) if opts[:scheme]
       connector.secure = opts.delete(:secure) || false
       connector.port = opts.delete(:port).to_i
 
       connector.protocol_handler_class_name = opts.delete(:protocol_handler) if opts[:protocol_handler]
 
-      opts.each do |key, value|
-        connector.setProperty(key.to_s, value.to_s)
-      end
+      opts.each { |key, value| connector.setProperty(key.to_s, value.to_s) }
 
-      @tomcat.service.add_connector(connector)
+      tomcat.service.add_connector(connector)
       connector
     end
+    private :add_service_connector
 
     def add_web_app(web_app, host = nil, start = nil)
-      host ||= web_app.config[:host] || @tomcat.host
+      host ||= web_app.config[:host] || tomcat.host # TODO config[:host]
       prev_start = host.start_children
       context = begin
         host.start_children = start unless start.nil?
-        @tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
+        tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
       ensure
         host.start_children = prev_start unless start.nil?
       end
-      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, @tomcat, context)
-      context.add_lifecycle_listener(web_app.define_lifecycle)
+      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, tomcat, context)
+      if lifecycle = web_app.define_lifecycle
+        context.add_lifecycle_listener(lifecycle)
+      end
       context
     end
     
+    def deploy_web_apps(tomcat = self.tomcat)
+      web_app_holders = create_web_apps
+      setup_host_monitor(web_app_holders)
+      web_app_holders
+    end
+
     def start
+      deploy_web_apps(tomcat)
+
       trap_signals if trap?
 
-      @tomcat.start
-      @tomcat.server.await
+      tomcat.start
+      tomcat.server.await
+    end
+
+    def start!
+      if defined?(@tomcat) && @tomcat
+        @tomcat.destroy; @tomcat = nil
+      end
+      start
     end
 
     def stop
-      @tomcat.stop
+      if defined?(@tomcat) && @tomcat
+        @tomcat.stop; true
+      end
     end
 
     def stop!
-      stop
-      @tomcat.destroy
+      (@tomcat.destroy; true) if stop
     end
     
     protected
-    
-    def trap?
-      !!@config[:trap]
-    end
-    
+
     def create_web_apps
-      apps = [ create_from_web_apps ]
-      apps << create_from_apps_base
-      apps.flatten!; apps.compact!
-      apps
-    end
-    
-    def create_from_web_apps
-      @config[:web_apps].map do |name, app_config|
-        app_config[:context_name] ||= name
-        create_web_app(app_config)
-      end if @config[:web_apps]
-    end
+      apps = []
 
-    def create_from_apps_base
-      if @config[:apps_base] || @config[:hosts]
-        @tomcat.engine.find_children.map do |host|
-          apps_base = host.app_base
-
-          apps_path = Dir.glob(File.join(apps_base, '*')).
-            select { |path| !(path =~ /tomcat\.\d+$/) }
-
-          apps_path.reject! { |path| apps_path.include?(path + '.war') }
-
-          apps_path.map do |path|
-            if File.directory?(path) || path =~ /\.war$/
-              create_web_app({
-                :context_name => File.basename(path),
-                :root_dir => File.expand_path(path),
-                :host => host
-              })
-            end
-          end
-        end.flatten
-      end
-    end
-
-    def create_web_app(app_config)
-      web_app = WebApp.create(app_config, config)
-      WebApp::Holder.new(web_app, add_web_app(web_app))
-    end
-    
-    def create_hosts
-      if @config[:hosts]
-        @config[:hosts].each do |apps_base, names|
-          create_host(apps_base, names)
-        end
-      elsif @config[:web_apps]
-        # create the hosts when they are specified for each app into web_apps. 
-        # We must create them before creating the applications.
-        @config[:web_apps].each do |_, app_config|
-          if host_names = app_config.delete(:hosts)
-            dir = web_app_root_dir(app_config)
-            apps_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
-            app_config[:host] = create_host(apps_base, host_names)
-          end
-        end
-      else
-        @tomcat.host.app_base = @config[:apps_base] || Dir.pwd
-      end
-    end
-    
-    def create_host(apps_base, names)
-      host_names = Array(names)
-      host_name = host_names.shift
-      unless host = @tomcat.engine.find_child(host_name)
-        host = Trinidad::Tomcat::StandardHost.new
-        host.name = host_name
-        host.app_base = apps_base || Dir.pwd
-        host_names.each { |name| host.add_alias(name) }
-
-        @tomcat.engine.add_child host
-      end
-      host
-    end
-    
-    def load_default_system_properties
-      java.lang.System.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
-    end
-    
-    def configure_logging(log_level)
-      Trinidad::Logging.configure(log_level)
-    end
-    
-    private
-    
-    def add_default_web_app!(config)
-      if ! config[:web_apps] && ! config[:apps_base] && ! config[:hosts]
+      # add default web app if needed :
+      if ! web_apps && ! app_base && ! hosts
         default_app = {
           :context_path => config[:context_path],
           :root_dir => web_app_root_dir(config),
@@ -239,10 +201,118 @@ module Trinidad
         }
         default_app[:rackup] = config[:rackup] if config[:rackup]
 
-        config[:web_apps] = { :default => default_app }
+        self.web_apps = { :default => default_app }
+      end
+
+      # configured :web_apps
+      web_apps.each do |name, app_config|
+        app_config[:context_name] ||= name
+        apps << create_web_app(app_config)
+      end if web_apps
+
+      # configured :app_base or :hosts
+      tomcat.engine.find_children.each do |host|
+        host_base = host.app_base
+
+        apps_path = Dir.glob(File.join(host_base, '*')).
+          select { |path| ! ( path =~ /tomcat\.\d+$/ ) } # TODO
+        apps_path.reject! { |path| apps_path.include?(path + '.war') } # TODO
+
+        apps_path.each do |path|
+          if File.directory?(path) || path =~ /\.war$/
+            apps << create_web_app({
+              :context_name => File.basename(path),
+              :root_dir => File.expand_path(path),
+              :host => host # TODO setting host
+            })
+          end
+        end
+      end if app_base || hosts
+
+      apps
+    end
+
+    def create_web_app(app_config)
+      web_app = WebApp.create(app_config, config)
+      WebApp::Holder.new(web_app, add_web_app(web_app))
+    end
+
+    def create_hosts(tomcat = @tomcat)
+      hosts.each do |app_base, host_config|
+        if host = find_host(host_config, tomcat)
+          setup_host(app_base, host_config, host)
+        else
+          create_host(app_base, host_config, tomcat)
+        end
+      end if hosts
+      # create hosts as they are specified for each app in :web_apps :
+      # e.g. :app1 => { :root_dir => 'app1', :hosts => 'virtual.host' }
+      web_apps.each do |_, app_config|
+        if host_names = app_config[:hosts] || app_config[:host]
+          unless host = find_host(host_names, tomcat)
+            dir = web_app_root_dir(app_config)
+            host_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
+            host = create_host(host_base, host_names, tomcat)
+          end
+          app_config[:host] = host # TODO revisit setting a Host object (host_name)
+        end
+      end if web_apps
+
+      tomcat.host.app_base = self.app_base || Dir.pwd unless web_apps
+    end
+
+    def create_host(app_base, host_config, tomcat = @tomcat)
+      host = Trinidad::Tomcat::StandardHost.new
+      setup_host(app_base, host_config, host)
+      tomcat.engine.add_child host if tomcat
+      host
+    end
+
+    DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
+    
+    def setup_host(app_base, host_config, host)
+      host_names = Array(host_config) # TODO
+      if host.app_base == DEFAULT_HOST_APP_BASE
+        host.app_base = app_base
+      end
+      host.name = host_names.shift unless host.name
+      aliases = host.find_aliases || []
+      host_names.each do |name|
+        next if name == host.name
+        host.add_alias(name) unless aliases.include?(name)
       end
     end
+
+    def set_system_properties(system = Java::JavaLang::System)
+      system.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
+    end
+    # @deprecated renamed to {#set_system_properties}
+    def load_default_system_properties; set_system_properties; end
     
+    def configure_logging(log_level)
+      Trinidad::Logging.configure(log_level)
+    end
+
+    private
+    
+    def filter_host_apps(web_app_holders)
+      web_app_holders # TODO not implemented
+    end
+
+    def find_host(host_name, tomcat)
+      if host_name.is_a?(String) || host_name.is_a?(Symbol)
+        tomcat.engine.find_child(host_name.to_s)
+      else
+        engine = tomcat.engine
+        for name in host_name # host_names
+          if child = engine.find_child(name.to_s)
+            return child
+          end
+        end
+        nil
+      end
+    end
+
     def web_app_root_dir(config, default = Dir.pwd)
       config[:root_dir] || config[:web_app_dir] || default
     end
