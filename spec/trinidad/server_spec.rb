@@ -307,12 +307,44 @@ describe Trinidad::Server do
 
   it "doesn't add any alias when we only provide the host name" do
     server = configured_server({:hosts => {
-      'foo' => 'localhost',
-      'lol' => 'lolhost'
+      'foo' => 'localhost', 'lol' => 'lolhost'
     }})
 
     hosts = server.tomcat.engine.find_children
     hosts.map { |h| h.aliases }.flatten.should == []
+  end
+
+  it "sets default host app base to current working directory" do
+    server = configured_server
+    expect( server.tomcat.host.app_base ).to eql Dir.pwd
+  end
+
+  it "allows detailed host configuration" do
+    server = configured_server({ :hosts => {
+      :default => {
+        :name => 'localhost',
+        :app_base => '/home/kares/apps',
+        :unpackWARs => true,
+        :deploy_on_startup => false,
+      },
+      :serverhost => {
+        :aliases => [ :'server.host' ],
+        :create_dirs => false
+      }
+    }})
+
+    server.tomcat.engine.find_children.should have(2).hosts
+
+    default_host = server.tomcat.host
+    expect( default_host.name ).to eql 'localhost'
+    expect( default_host.app_base ).to eql '/home/kares/apps'
+    expect( default_host.unpackWARs ).to be true
+    expect( default_host.deploy_on_startup ).to be false
+
+    server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
+    expect( server_host.name ).to eql 'serverhost'
+    expect( server_host.aliases[0] ).to eql 'server.host'
+    expect( server_host.create_dirs ).to be false
   end
 
   it "creates several hosts when they are set in the web_apps configuration" do

@@ -140,7 +140,10 @@ module Trinidad
     private :add_service_connector
 
     def add_web_app(web_app, host = nil, start = nil)
-      host ||= web_app.config[:host] || tomcat.host # TODO config[:host]
+      host ||= begin 
+        name = web_app.config[:host_name]
+        name ? find_host(name, tomcat) : tomcat.host
+      end
       prev_start = host.start_children
       context = begin
         host.start_children = start unless start.nil?
@@ -223,7 +226,7 @@ module Trinidad
             apps << create_web_app({
               :context_name => File.basename(path),
               :root_dir => File.expand_path(path),
-              :host => host # TODO setting host
+              :host_name => host.name
             })
           end
         end
@@ -239,7 +242,7 @@ module Trinidad
 
     def create_hosts(tomcat = @tomcat)
       hosts.each do |app_base, host_config|
-        if host = find_host(host_config, tomcat)
+        if host = find_host(app_base, host_config, tomcat)
           setup_host(app_base, host_config, host)
         else
           create_host(app_base, host_config, tomcat)
@@ -254,11 +257,15 @@ module Trinidad
             host_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
             host = create_host(host_base, host_names, tomcat)
           end
-          app_config[:host] = host # TODO revisit setting a Host object (host_name)
+          app_config[:host_name] = host.name
         end
       end if web_apps
 
-      tomcat.host.app_base = self.app_base || Dir.pwd unless web_apps
+      default_host = tomcat.host
+      default_app_base = default_host.app_base == DEFAULT_HOST_APP_BASE
+      if ! web_apps && ( self.app_base || default_app_base )
+        tomcat.host.app_base = self.app_base || Dir.pwd
+      end
     end
 
     def create_host(app_base, host_config, tomcat = @tomcat)
@@ -271,15 +278,28 @@ module Trinidad
     DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
     
     def setup_host(app_base, host_config, host)
-      host_names = Array(host_config) # TODO
-      if host.app_base == DEFAULT_HOST_APP_BASE
-        host.app_base = app_base
+      if host_config.is_a?(Array)
+        name = host_config.shift
+        host_config = { :name => name, :aliases => host_config }
+      elsif host_config.is_a?(String) || host_config.is_a?(Symbol)
+        host_config = { :name => host_config }
       end
-      host.name = host_names.shift unless host.name
-      aliases = host.find_aliases || []
-      host_names.each do |name|
-        next if name == host.name
-        host.add_alias(name) unless aliases.include?(name)
+      host_config[:app_base] ||= app_base
+
+      host_config.each do |name, value|
+        case (name = name.to_sym)
+        when :app_base
+          host.app_base = value if host.app_base == DEFAULT_HOST_APP_BASE
+        when :aliases
+          aliases = host.find_aliases || []
+          value.each do |name|
+            next if (name = name.to_s) == host.name
+            host.add_alias(name) unless aliases.include?(name)
+          end if host_config[:aliases]
+        else
+          value = value.to_s if value.is_a?(Symbol)
+          host.send("#{name}=", value) # e.g. host.name = value
+        end
       end
     end
 
@@ -299,18 +319,30 @@ module Trinidad
       web_app_holders # TODO not implemented
     end
 
-    def find_host(host_name, tomcat)
-      if host_name.is_a?(String) || host_name.is_a?(Symbol)
-        tomcat.engine.find_child(host_name.to_s)
-      else
-        engine = tomcat.engine
-        for name in host_name # host_names
-          if child = engine.find_child(name.to_s)
-            return child
-          end
-        end
-        nil
+    def find_host(name, host_config, tomcat = nil)
+      if tomcat.nil? # assume 2 args (host_config, tomcat)
+        tomcat = host_config; host_config = name
       end
+
+      if host_config.is_a?(Array)
+        names = host_config
+      elsif host_config.is_a?(String) || host_config.is_a?(Symbol)
+        names = [ host_config ]
+      else # :localhost => { :aliases => 'local,127.0.0.1' ... }
+        names = [ host_config[:name] ||= name ]
+        aliases = host_config[:aliases]
+        if aliases && ! aliases.is_a?(Array)
+          aliases = aliases.split(',').each(&:strip!)
+          host_config[:aliases] = aliases
+        end
+      end
+
+      for name in names # host_names
+        if child = tomcat.engine.find_child(name.to_s)
+          return child
+        end
+      end
+      nil
     end
 
     def web_app_root_dir(config, default = Dir.pwd)
