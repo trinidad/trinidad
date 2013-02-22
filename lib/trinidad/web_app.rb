@@ -30,7 +30,7 @@ module Trinidad
       use_default ? default_config.key?(key) : false
     end
     
-    %w{ root_dir rackup async_supported reload_strategy }.each do |method|
+    %w{ root_dir rackup async_supported reload_strategy host_name }.each do |method|
       class_eval "def #{method}; self[:'#{method}']; end"
     end
     

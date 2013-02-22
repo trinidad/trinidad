@@ -290,28 +290,28 @@ describe Trinidad::Server do
   it "creates several hosts when they are set in configuration" do
     server = configured_server({ :hosts => {
       'foo' => 'localhost', :'lol' => 'lololhost'
-    }})
+    } })
 
     server.tomcat.engine.find_children.should have(2).hosts
   end
 
   it "adds aliases to the hosts when we provide an array of host names" do
-    server = configured_server({:hosts => {
+    server = configured_server( :hosts => {
       'foo' => ['localhost', 'local'],
       'lol' => ['lololhost', 'lol']
-    }})
+    })
 
     hosts = server.tomcat.engine.find_children
-    hosts.map { |h| h.aliases }.flatten.should == ['lol', 'local']
+    expect( hosts.map { |host| host.aliases }.flatten ).to eql ['lol', 'local']
   end
 
   it "doesn't add any alias when we only provide the host name" do
-    server = configured_server({:hosts => {
+    server = configured_server( :hosts => {
       'foo' => 'localhost', 'lol' => 'lolhost'
-    }})
+    })
 
     hosts = server.tomcat.engine.find_children
-    hosts.map { |h| h.aliases }.flatten.should == []
+    expect( hosts.map { |host| host.aliases }.flatten ).to eql []
   end
 
   it "sets default host app base to current working directory" do
@@ -347,37 +347,79 @@ describe Trinidad::Server do
     expect( server_host.create_dirs ).to be false
   end
 
+  it "selects apps for given host" do
+    server = deployed_server({
+      :hosts => {
+        '/var/domains/local' => [ 'localhost', 'local.host' ],
+        :serverhost => {
+          :app_base => '/var/domains/server',
+          :aliases => [ 'server.host' ]
+        }
+      },
+      :web_apps => {
+        :foo1 => {
+          :root_dir => 'foo/mock1', :hosts => ['localhost', 'local.host']
+        },
+        :foo2 => {
+          :root_dir => 'foo/mock2', :host => 'localhost'
+        },
+        :bar => {
+          :root_dir => 'bar/main', :hosts => [ 'server.host' ]
+        },
+        :baz => {
+          :root_dir => 'baz/main', :host_name => 'serverhost'
+        },
+        :all => { :root_dir => 'all/app' }
+      }
+    })
+
+    default_host = server.tomcat.host
+    host_listener = default_host.find_lifecycle_listeners.
+      find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+
+    app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+    expected = [ 'foo/mock1', 'foo/mock2', 'all/app' ].map { |dir| File.expand_path(dir) }
+    expect( app_dirs ).to eql expected
+
+    server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
+    host_listener = server_host.find_lifecycle_listeners.
+      find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+
+    app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+    expected = [ 'bar/main', 'baz/main', 'all/app' ].map { |dir| File.expand_path(dir) }
+    expect( app_dirs ).to eql expected
+  end
+
   it "creates several hosts when they are set in the web_apps configuration" do
     server = configured_server({
       :web_apps => {
         :mock1 => {
-          :web_app_dir => 'foo/mock1',
-          :hosts       => 'localhost'
+          :web_app_dir => 'foo/mock1', :hosts => 'localhost'
         },
         :mock2 => {
-          :web_app_dir => 'bar/mock2',
-          :hosts       => 'lololhost'
+          :root_dir => 'bar/mock2', :host => 'lololhost'
         }
       }
     })
 
-    server.tomcat.engine.find_children.should have(2).hosts
+    children = server.tomcat.engine.find_children
+    children.should have(2).hosts
   end
 
   it "doesn't create a host if it already exists" do
     server = configured_server({
       :web_apps => {
         :mock1 => {
-          :web_app_dir => 'foo/mock1',
-          :hosts       => 'localhost'
+          :root_dir => 'foo/mock1', :host => 'localhost'
         },
         :mock2 => {
-          :web_app_dir => 'foo/mock2',
-          :hosts       => 'localhost'
+          :web_app_dir => 'foo/mock2', :hosts => [ 'localhost' ]
         }
       }
     })
-    server.tomcat.engine.find_children.should have(1).hosts
+
+    children = server.tomcat.engine.find_children
+    children.should have(1).hosts
   end
 
   protected

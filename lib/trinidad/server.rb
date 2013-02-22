@@ -73,11 +73,10 @@ module Trinidad
     # #deprecated renamed to {#initialize_tomcat}
     def load_tomcat_server; initialize_tomcat; end
 
-    def setup_host_monitor(web_app_holders)
-      raise "tomcat not setup" unless tomcat
+    def setup_host_monitor(app_holders)
       for host in tomcat.engine.find_children
         if host.is_a?(Trinidad::Tomcat::Host)
-          host_apps = filter_host_apps(web_app_holders)
+          host_apps = select_host_apps(app_holders, host)
           host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
         end
       end
@@ -141,7 +140,7 @@ module Trinidad
 
     def add_web_app(web_app, host = nil, start = nil)
       host ||= begin 
-        name = web_app.config[:host_name]
+        name = web_app.host_name
         name ? find_host(name, tomcat) : tomcat.host
       end
       prev_start = host.start_children
@@ -270,6 +269,7 @@ module Trinidad
 
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Trinidad::Tomcat::StandardHost.new
+      host.app_base = nil # reset default app_base
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
       host
@@ -283,13 +283,18 @@ module Trinidad
         host_config = { :name => name, :aliases => host_config }
       elsif host_config.is_a?(String) || host_config.is_a?(Symbol)
         host_config = { :name => host_config }
+      else
+        host_config[:name] ||= app_base
       end
-      host_config[:app_base] ||= app_base
+      host_config[:app_base] ||= app_base if app_base.is_a?(String)
 
       host_config.each do |name, value|
         case (name = name.to_sym)
         when :app_base
-          host.app_base = value if host.app_base == DEFAULT_HOST_APP_BASE
+          if host.app_base.nil? || 
+            ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
+            host.app_base = value 
+          end
         when :aliases
           aliases = host.find_aliases || []
           value.each do |name|
@@ -315,8 +320,11 @@ module Trinidad
 
     private
     
-    def filter_host_apps(web_app_holders)
-      web_app_holders # TODO not implemented
+    def select_host_apps(app_holders, host)
+      app_holders.select do |app_holder|
+        host_name = app_holder.web_app.host_name
+        host_name.nil? || host_name == host.name
+      end
     end
 
     def find_host(name, host_config, tomcat = nil)
@@ -328,19 +336,27 @@ module Trinidad
         names = host_config
       elsif host_config.is_a?(String) || host_config.is_a?(Symbol)
         names = [ host_config ]
-      else # :localhost => { :aliases => 'local,127.0.0.1' ... }
+      elsif host_config # :localhost => { :aliases => 'local,127.0.0.1' ... }
         names = [ host_config[:name] ||= name ]
         aliases = host_config[:aliases]
         if aliases && ! aliases.is_a?(Array)
           aliases = aliases.split(',').each(&:strip!)
           host_config[:aliases] = aliases
         end
+      else # only name passed :
+        return tomcat.engine.find_child(name.to_s)
       end
 
+      hosts = tomcat.engine.find_children
       for name in names # host_names
-        if child = tomcat.engine.find_child(name.to_s)
-          return child
+        #if host = tomcat.engine.find_child(name.to_s)
+          #return host
+        #else
+        host = hosts.find do |host|
+          host.name == name || (host.aliases || []).include?(name)
         end
+        return host if host
+        #end
       end
       nil
     end
