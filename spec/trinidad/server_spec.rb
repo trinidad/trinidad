@@ -12,6 +12,13 @@ describe Trinidad::Server do
 
   after { FileUtils.rm_rf( File.expand_path('../../ssl', File.dirname(__FILE__)) ) rescue nil }
 
+  APP_STUBS_DIR = File.expand_path('../stubs', File.dirname(__FILE__))
+
+  before do 
+    FileUtils.mkdir(APP_STUBS_DIR) unless File.exists?(APP_STUBS_DIR)
+  end
+  after { FileUtils.rm_r APP_STUBS_DIR }
+
   it "always uses symbols as configuration keys" do
     Trinidad.configure { |c| c.port = 4000 }
     server = configured_server
@@ -320,7 +327,7 @@ describe Trinidad::Server do
   end
 
   it "allows detailed host configuration" do
-    server = configured_server({ :hosts => {
+    server = configured_server( :hosts => {
       :default => {
         :name => 'localhost',
         :app_base => '/home/kares/apps',
@@ -331,7 +338,7 @@ describe Trinidad::Server do
         :aliases => [ :'server.host' ],
         :create_dirs => false
       }
-    }})
+    } )
 
     server.tomcat.engine.find_children.should have(2).hosts
 
@@ -348,46 +355,53 @@ describe Trinidad::Server do
   end
 
   it "selects apps for given host" do
-    server = deployed_server({
-      :hosts => {
-        '/var/domains/local' => [ 'localhost', 'local.host' ],
-        :serverhost => {
-          :app_base => '/var/domains/server',
-          :aliases => [ 'server.host' ]
+    FileUtils.mkdir_p APP_STUBS_DIR + '/foo/mock1'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/foo/mock2'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/bar/main'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/baz/main'
+
+    Dir.chdir(APP_STUBS_DIR) do
+      server = deployed_server({
+        :hosts => {
+          '/var/domains/local' => [ 'localhost', 'local.host' ],
+          :serverhost => {
+            :app_base => '/var/domains/server',
+            :aliases => [ 'server.host' ]
+          }
+        },
+        :web_apps => {
+          :foo1 => {
+            :root_dir => 'foo/mock1', :hosts => ['localhost', 'local.host']
+          },
+          :foo2 => {
+            :root_dir => 'foo/mock2', :host => 'localhost'
+          },
+          :bar => {
+            :root_dir => 'bar/main', :hosts => [ 'server.host' ]
+          },
+          :baz => {
+            :root_dir => 'baz/main', :host_name => 'serverhost'
+          },
+          :all => { :root_dir => 'all/app' }
         }
-      },
-      :web_apps => {
-        :foo1 => {
-          :root_dir => 'foo/mock1', :hosts => ['localhost', 'local.host']
-        },
-        :foo2 => {
-          :root_dir => 'foo/mock2', :host => 'localhost'
-        },
-        :bar => {
-          :root_dir => 'bar/main', :hosts => [ 'server.host' ]
-        },
-        :baz => {
-          :root_dir => 'baz/main', :host_name => 'serverhost'
-        },
-        :all => { :root_dir => 'all/app' }
-      }
-    })
+      })
 
-    default_host = server.tomcat.host
-    host_listener = default_host.find_lifecycle_listeners.
-      find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+      default_host = server.tomcat.host
+      host_listener = default_host.find_lifecycle_listeners.
+        find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
 
-    app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
-    expected = [ 'foo/mock1', 'foo/mock2', 'all/app' ].map { |dir| File.expand_path(dir) }
-    expect( app_dirs ).to eql expected
+      app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+      expected = [ 'foo/mock1', 'foo/mock2', 'all/app' ].map { |dir| File.expand_path(dir) }
+      expect( app_dirs ).to eql expected
 
-    server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
-    host_listener = server_host.find_lifecycle_listeners.
-      find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+      server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
+      host_listener = server_host.find_lifecycle_listeners.
+        find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
 
-    app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
-    expected = [ 'bar/main', 'baz/main', 'all/app' ].map { |dir| File.expand_path(dir) }
-    expect( app_dirs ).to eql expected
+      app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+      expected = [ 'bar/main', 'baz/main', 'all/app' ].map { |dir| File.expand_path(dir) }
+      expect( app_dirs ).to eql expected
+    end
   end
 
   it "creates several hosts when they are set in the web_apps configuration" do
@@ -420,6 +434,39 @@ describe Trinidad::Server do
 
     children = server.tomcat.engine.find_children
     children.should have(1).hosts
+  end
+
+  it "sets up host base dir based on (configured) web apps" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/foo/app'
+    FileUtils.mkdir_p baz_dir = APP_STUBS_DIR + '/foo/baz'
+    FileUtils.mkdir_p bar1_dir = APP_STUBS_DIR + '/var/www/bar1'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/var/www/bar2'
+
+    server = configured_server({
+      :web_apps => {
+        :foo => {
+          :root_dir => 'spec/stubs/foo/app', :host => 'localhost'
+        },
+        :baz => {
+          :root_dir => baz_dir, :hosts => [ 'baz.host' ]
+        },
+        :bar1 => {
+          :root_dir => bar1_dir, :host => 'bar.host'
+        },
+        :bar2 => {
+          :root_dir => 'spec/stubs/var/www/bar2', :hosts => 'bar.host'
+        }
+      }
+    })
+
+    default_host = server.tomcat.host # localhost app_base is pwd by default
+    expect( default_host.app_base ).to eql File.expand_path('.')
+
+    baz_host = server.tomcat.engine.find_child('baz.host')
+    expect( baz_host.app_base ).to eql File.expand_path(APP_STUBS_DIR + '/foo/baz')
+
+    bar_host = server.tomcat.engine.find_child('bar.host')
+    expect( bar_host.app_base ).to eql File.expand_path(APP_STUBS_DIR + '/var/www')
   end
 
   protected

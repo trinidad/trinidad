@@ -247,35 +247,41 @@ module Trinidad
           create_host(app_base, host_config, tomcat)
         end
       end if hosts
+
+      default_host = tomcat.host
+      default_app_base = ( default_host.app_base == DEFAULT_HOST_APP_BASE )
+      if self.app_base || 
+        ( default_app_base && ! File.exists?(DEFAULT_HOST_APP_BASE) )
+        tomcat.host.app_base = self.app_base || Dir.pwd
+      end
+
+      web_app_hosts = []
       # create hosts as they are specified for each app in :web_apps :
       # e.g. :app1 => { :root_dir => 'app1', :hosts => 'virtual.host' }
       web_apps.each do |_, app_config|
         if host_names = app_config[:hosts] || app_config[:host]
-          unless host = find_host(host_names, tomcat)
-            dir = web_app_root_dir(app_config)
-            host_base = File.dirname(dir) == '.' ? dir : File.dirname(dir)
-            host = create_host(host_base, host_names, tomcat)
+          app_root = File.expand_path web_app_root_dir(app_config)
+          if host = find_host(host_names, tomcat)
+            set_host_app_base(app_root, host, default_host, web_app_hosts)
+          else
+            # for created hosts -> web-app per host by default
+            # thus new host's app_base will point to root_dir :
+            host = create_host(app_root, host_names, tomcat)
+            web_app_hosts << host
           end
           app_config[:host_name] = host.name
         end
       end if web_apps
-
-      default_host = tomcat.host
-      default_app_base = default_host.app_base == DEFAULT_HOST_APP_BASE
-      if ! web_apps && ( self.app_base || default_app_base )
-        tomcat.host.app_base = self.app_base || Dir.pwd
-      end
     end
 
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Trinidad::Tomcat::StandardHost.new
       host.app_base = nil # reset default app_base
+      host.auto_deploy = false # disable by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
       host
     end
-
-    DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
     
     def setup_host(app_base, host_config, host)
       if host_config.is_a?(Array)
@@ -291,10 +297,7 @@ module Trinidad
       host_config.each do |name, value|
         case (name = name.to_sym)
         when :app_base
-          if host.app_base.nil? || 
-            ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
-            host.app_base = value 
-          end
+          host.app_base = value if default_host_base?(host)
         when :aliases
           aliases = host.find_aliases || []
           value.each do |name|
@@ -320,6 +323,47 @@ module Trinidad
 
     private
     
+    DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
+
+    def default_host_base?(host)
+      host.app_base.nil? || ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
+    end
+
+    def set_host_app_base(app_root, host, default_host, web_app_hosts)
+      # unless host == default_host # keep default 'webapps' as is ?!
+      if host.app_base # we'll try setting a common parent :
+        require 'pathname'; app_path = Pathname.new(app_root)
+        app_real_path = begin; app_path.realpath.to_s; rescue
+          Trinidad::Helpers.warn "WARN: root for web_app #{app_path.to_s.inspect} does not exists" 
+          return
+        end
+        base_path = Pathname.new host.app_base; base_parent = false
+        2.times do
+          begin
+            break if base_parent = app_real_path.index(base_path.realpath.to_s) == 0
+          rescue => e
+            Trinidad::Helpers.warn "WARN: app_base for host #{host.name.inspect} " <<
+            "seems to not exists, try configuring an absolute path or create it\n (#{e.message})"
+            return
+          end
+          base_path = base_path.parent
+        end
+        if base_parent
+          return if base_path.to_s == host.app_base
+          host.app_base = base_path.realpath.to_s
+          unless web_app_hosts.include?(host)
+            Trinidad::Helpers.warn "NOTE: changed (configured) app_base for host " <<
+            "#{host.name.inspect} to #{host.app_base.inspect} due web_app at #{app_path.to_s.inspect}"
+          end
+        else
+          Trinidad::Helpers.warn "WARN: app_base for host #{host.name.inspect} " <<
+          "#{host.app_base.inspect} is not a parent directory for web_app at #{app_path.to_s.inspect}"
+        end
+      else
+        host.app_base = app_path.parent.realpath.to_s
+      end
+    end
+
     def select_host_apps(app_holders, host)
       app_holders.select do |app_holder|
         host_name = app_holder.web_app.host_name
