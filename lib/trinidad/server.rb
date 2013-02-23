@@ -192,8 +192,6 @@ module Trinidad
     protected
 
     def create_web_apps
-      apps = []
-
       # add default web app if needed :
       if ! web_apps && ! app_base && ! hosts
         default_app = {
@@ -206,6 +204,8 @@ module Trinidad
         self.web_apps = { :default => default_app }
       end
 
+      apps = []
+      
       # configured :web_apps
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name

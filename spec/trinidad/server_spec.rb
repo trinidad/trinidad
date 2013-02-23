@@ -120,10 +120,7 @@ describe Trinidad::Server do
   end
 
   it "uses the NioConnector when the http configuration sets nio to true" do
-    server = configured_server({
-      :web_app_dir => MOCK_WEB_APP_DIR,
-      :http => {:nio => true}
-    })
+    server = configured_server :web_app_dir => MOCK_WEB_APP_DIR, :http => { :nio => true }
     server.http_configured?.should be true
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11NioProtocol'
@@ -132,7 +129,7 @@ describe Trinidad::Server do
 
   it "configures NioConnector with http option values" do
     server = configured_server({
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_WEB_APP_DIR,
       :http => {
         :nio => true,
         'maxKeepAliveRequests' => 4,
@@ -218,7 +215,8 @@ describe Trinidad::Server do
       FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
 
       server = deployed_server :apps_base => 'apps_base'
-      listeners = find_listeners(server)
+
+      listeners = find_listeners(server, Trinidad::Lifecycle::Default)
       listeners.first.webapp.should be_a(Trinidad::RackupWebApp)
     ensure
       FileUtils.rm_rf 'apps_base'
@@ -226,30 +224,27 @@ describe Trinidad::Server do
   end
 
   it "adds the APR lifecycle listener to the server if the option is available" do
-    server = configured_server( { :http => { :apr => true } } )
+    server = configured_server :http => { :apr => true }
 
     server.tomcat.server.find_lifecycle_listeners.
-      select {|listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener)}.
+      select { |listener| listener.instance_of?(Trinidad::Tomcat::AprLifecycleListener) }.
       should have(1).listener
   end
 
-  it "adds the default lifecycle listener when the application is not packed with warbler" do
-    server = deployed_server({
-      :web_app_dir => MOCK_WEB_APP_DIR
-    })
-    listeners = find_listeners(server)
+  it "adds the default lifecycle listener" do
+    server = deployed_server :root_dir => MOCK_WEB_APP_DIR
+
+    listeners = find_listeners(server, Trinidad::Lifecycle::Default)
     listeners.should have(1).listener
   end
 
-  it "adds the war lifecycle listener when the application is packed with warbler" do
+  it "adds the war lifecycle listener when the application is a .war file" do
     begin
       Dir.mkdir('apps_base')
 
       server = configured_server :apps_base => 'apps_base'
-      server.send(:create_web_app, {
-        :context_path => '/foo.war',
-        :web_app_dir => 'foo.war'
-      })
+      server.send(:create_web_app, { :context_path => '/foo.war', :root_dir => './webapps/foo.war' })
+
       listeners = find_listeners(server, Trinidad::Lifecycle::War)
       listeners.should have(1).listener
     ensure
@@ -469,6 +464,66 @@ describe Trinidad::Server do
     expect( bar_host.app_base ).to eql File.expand_path(APP_STUBS_DIR + '/var/www')
   end
 
+  it "creates (configured) web apps" do
+    FileUtils.mkdir_p foo_dir = APP_STUBS_DIR + '/foo'
+    FileUtils.mkdir_p bar1_dir = APP_STUBS_DIR + '/bar1'
+    FileUtils.mkdir_p bar2_dir = APP_STUBS_DIR + '/bar2'
+    war_dir = "#{APP_STUBS_DIR}/my-app#0.1.war"
+
+    server = configured_server({
+      :web_apps => {
+        :default => { :root_dir => MOCK_WEB_APP_DIR },
+        :foo_app => { :root_dir => 'spec/stubs/foo', :context_name => 'foo' },
+        :bar1 => { :root_dir => bar1_dir, :context_path => '/bar-app' },
+        :bar2 => { :root_dir => bar2_dir },
+        :war => { :root_dir => war_dir, :context_path => '/my-app' },
+      }
+    })
+    web_apps = server.send(:create_web_apps)
+
+    expect( web_apps.size ).to eql 5
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
+    expect( app_holder.web_app.context_name ).to eql 'default'
+    expect( app_holder.web_app.context_path ).to eql '/'
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql foo_dir
+    expect( app_holder.web_app.context_name ).to eql 'foo'
+    expect( app_holder.web_app.context_path ).to eql '/foo'
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql bar1_dir
+    expect( app_holder.web_app.context_name ).to eql 'bar1'
+    expect( app_holder.web_app.context_path ).to eql '/bar-app'
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql bar2_dir
+    expect( app_holder.web_app.context_name ).to eql 'bar2'
+    expect( app_holder.web_app.context_path ).to eql '/bar2'
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql war_dir
+    expect( app_holder.web_app.context_name ).to eql 'war'
+    expect( app_holder.web_app.context_path ).to eql '/my-app'
+  end
+
+  it "creates default web app" do
+    web_apps = nil
+    Dir.chdir(MOCK_WEB_APP_DIR) do
+      server = configured_server
+      web_apps = server.send(:create_web_apps)
+    end
+
+    expect( web_apps.size ).to eql 1
+
+    app_holder = web_apps.shift
+    expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
+    expect( app_holder.web_app.context_name ).to eql 'default'
+    expect( app_holder.web_app.context_path ).to eql '/'
+  end
+
   protected
 
   def configured_server(config = false)
@@ -488,10 +543,13 @@ describe Trinidad::Server do
 
   private
   
-  def find_listeners(server, listener_class = Trinidad::Lifecycle::Default)
-    context = server.tomcat.host.find_children.first
-    context.find_lifecycle_listeners.select do |listener|
-      listener.instance_of? listener_class
+  def default_context(server)
+    server.tomcat.host.find_children.first
+  end
+
+  def find_listeners(server, listener_class = nil)
+    default_context(server).find_lifecycle_listeners.select do |listener|
+      listener_class ? listener.instance_of?(listener_class) : true
     end
   end
 
