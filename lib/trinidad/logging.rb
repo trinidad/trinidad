@@ -34,7 +34,7 @@ module Trinidad
         root_logger.add_handler(err_handler)
         set_log_level(root_logger, level)
       end
-      adjust_tomcat_loggers
+      silence_tomcat_loggers
       
       root_logger
     end
@@ -121,20 +121,22 @@ module Trinidad
     def self.set_log_level(logger, level)
       logger.level = level; LogFactory.getLog(logger.name)
     end
-    
-    def self.adjust_tomcat_loggers
+
+    def self.silence_tomcat_loggers
       # org.apache.coyote.http11.Http11Protocol   INFO: Initializing ProtocolHandler ["http-bio-3000"]
       # org.apache.catalina.core.StandardService  INFO: Starting service Tomcat
       # org.apache.catalina.core.StandardEngine   INFO: Starting Servlet Engine: Apache Tomcat/7.0.27
       # org.apache.catalina.startup.ContextConfig INFO: No global web.xml found
       # org.apache.coyote.http11.Http11Protocol   INFO: Starting ProtocolHandler ["http-bio-3000"]
-      name = 'org.apache.catalina.core.StandardService'
-      if logger = JUL::Logger.getLogger(name)
-        set_log_level(logger, JUL::Level::WARNING)
-      end
-      name = 'org.apache.catalina.startup.ContextConfig'
-      if logger = JUL::Logger.getLogger(name)
-        set_log_level(logger, JUL::Level::WARNING)
+      level = JUL::Level::WARNING
+      logger_names = [
+        'org.apache.catalina.core.StandardService',
+        'org.apache.catalina.core.StandardEngine',
+        'org.apache.catalina.startup.ContextConfig',
+      ]
+      for name in logger_names
+        logger = JUL::Logger.getLogger(name)
+        set_log_level(logger, level) if logger
       end
     end
     
