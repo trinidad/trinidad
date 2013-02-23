@@ -159,7 +159,8 @@ module Trinidad
       prev_start = host.start_children
       context = begin
         host.start_children = start unless start.nil?
-        tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
+        # public Context addWebapp(Host host, String url, String name, String docBase)
+        tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
       ensure
         host.start_children = prev_start unless start.nil?
       end

@@ -156,9 +156,7 @@ describe Trinidad::Server do
     Trinidad.configuration.web_app_dir = MOCK_WEB_APP_DIR
     server = deployed_server
 
-    app_context = server.tomcat.host.find_child('/')
-
-    app_context.find_lifecycle_listeners.map {|l| l.class.name }.
+    default_context(server).find_lifecycle_listeners.map {|l| l.class.name }.
       should include('Trinidad::Lifecycle::WebApp::Default')
   end
 
@@ -169,8 +167,7 @@ describe Trinidad::Server do
     end
     server = deployed_server
 
-    context = server.tomcat.host.find_child('/')
-    context.doc_base.should == 'foo_web_app_extension'
+    default_context(server).doc_base.should == 'foo_web_app_extension'
   end
 
   it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do
@@ -476,7 +473,7 @@ describe Trinidad::Server do
         :foo_app => { :root_dir => 'spec/stubs/foo', :context_name => 'foo' },
         :bar1 => { :root_dir => bar1_dir, :context_path => '/bar-app' },
         :bar2 => { :root_dir => bar2_dir },
-        :war => { :root_dir => war_dir, :context_path => '/my-app' },
+        :war => { :root_dir => war_dir, :context_path => '/myapp' },
       }
     })
     web_apps = server.send(:create_web_apps)
@@ -487,26 +484,36 @@ describe Trinidad::Server do
     expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
     expect( app_holder.web_app.context_name ).to eql 'default'
     expect( app_holder.web_app.context_path ).to eql '/'
+    expect( app_holder.context.name ).to eql 'default'
+    expect( app_holder.context.path ).to eql '/'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql foo_dir
     expect( app_holder.web_app.context_name ).to eql 'foo'
     expect( app_holder.web_app.context_path ).to eql '/foo'
+    expect( app_holder.context.name ).to eql 'foo'
+    expect( app_holder.context.path ).to eql '/foo'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql bar1_dir
     expect( app_holder.web_app.context_name ).to eql 'bar1'
     expect( app_holder.web_app.context_path ).to eql '/bar-app'
+    expect( app_holder.context.name ).to eql 'bar1'
+    expect( app_holder.context.path ).to eql '/bar-app'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql bar2_dir
     expect( app_holder.web_app.context_name ).to eql 'bar2'
     expect( app_holder.web_app.context_path ).to eql '/bar2'
+    expect( app_holder.context.name ).to eql 'bar2'
+    expect( app_holder.context.path ).to eql '/bar2'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql war_dir
     expect( app_holder.web_app.context_name ).to eql 'war'
-    expect( app_holder.web_app.context_path ).to eql '/my-app'
+    expect( app_holder.web_app.context_path ).to eql '/myapp'
+    expect( app_holder.context.name ).to eql 'war'
+    expect( app_holder.context.path ).to eql '/myapp'
   end
 
   it "creates default web app" do
