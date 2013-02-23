@@ -38,16 +38,29 @@ module Trinidad
     attr_writer :trap
 
     def ssl_enabled?
-      !! @config[:ssl] && ! @config[:ssl].empty?
+      if ! defined?(@ssl_enabled) || @ssl_enabled.nil?
+        @ssl_enabled ||= ( !! @config[:ssl] && ! @config[:ssl].empty? )
+      end
+      @ssl_enabled
     end
+    attr_writer :ssl_enabled
 
     def ajp_enabled?
-      !! @config[:ajp] && ! @config[:ajp].empty?
+      if ! defined?(@ajp_enabled) || @ajp_enabled.nil?
+        @ajp_enabled ||= ( !! @config[:ajp] && ! @config[:ajp].empty? )
+      end
+      @ajp_enabled
     end
+    attr_writer :ajp_enabled
 
     def http_configured?
-      (!! @config[:http] && ! @config[:http].empty?) || @config[:address] != 'localhost'
+      if ! defined?(@http_configured) || @http_configured.nil?
+        @http_configured ||= 
+        ( ( !! @config[:http] && ! @config[:http].empty? ) || @config[:address] != 'localhost' )
+      end
+      @http_configured
     end
+    attr_writer :http_configured
     
     def tomcat; @tomcat ||= initialize_tomcat; end
 
@@ -205,7 +218,7 @@ module Trinidad
       end
 
       apps = []
-      
+
       # configured :web_apps
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name
@@ -330,11 +343,10 @@ module Trinidad
     end
 
     def set_host_app_base(app_root, host, default_host, web_app_hosts)
-      # unless host == default_host # keep default 'webapps' as is ?!
       if host.app_base # we'll try setting a common parent :
         require 'pathname'; app_path = Pathname.new(app_root)
         app_real_path = begin; app_path.realpath.to_s; rescue
-          Trinidad::Helpers.warn "WARN: root for web_app #{app_path.to_s.inspect} does not exists" 
+          Helpers.warn "WARN: web app root #{app_path.to_s.inspect} does not exists" 
           return
         end
         base_path = Pathname.new host.app_base; base_parent = false
@@ -342,8 +354,8 @@ module Trinidad
           begin
             break if base_parent = app_real_path.index(base_path.realpath.to_s) == 0
           rescue => e
-            Trinidad::Helpers.warn "WARN: app_base for host #{host.name.inspect} " <<
-            "seems to not exists, try configuring an absolute path or create it\n (#{e.message})"
+            Helpers.warn "WARN: app_base for host #{host.name.inspect} seems to" <<
+            " not exists, try configuring an absolute path or create it\n (#{e.message})"
             return
           end
           base_path = base_path.parent
@@ -352,12 +364,12 @@ module Trinidad
           return if base_path.to_s == host.app_base
           host.app_base = base_path.realpath.to_s
           unless web_app_hosts.include?(host)
-            Trinidad::Helpers.warn "NOTE: changed (configured) app_base for host " <<
-            "#{host.name.inspect} to #{host.app_base.inspect} due web_app at #{app_path.to_s.inspect}"
+            Helpers.warn "NOTE: changed (configured) app_base for host #{host.name.inspect}" <<
+            " to #{host.app_base.inspect} to include web_app root: #{app_path.to_s.inspect}"
           end
         else
-          Trinidad::Helpers.warn "WARN: app_base for host #{host.name.inspect} " <<
-          "#{host.app_base.inspect} is not a parent directory for web_app at #{app_path.to_s.inspect}"
+          Helpers.warn "WARN: app_base for host #{host.name.inspect} #{host.app_base.inspect}" <<
+          " is not a parent directory for web_app root: #{app_path.to_s.inspect}"
         end
       else
         host.app_base = app_path.parent.realpath.to_s
@@ -393,14 +405,10 @@ module Trinidad
 
       hosts = tomcat.engine.find_children
       for name in names # host_names
-        #if host = tomcat.engine.find_child(name.to_s)
-          #return host
-        #else
         host = hosts.find do |host|
           host.name == name || (host.aliases || []).include?(name)
         end
         return host if host
-        #end
       end
       nil
     end
