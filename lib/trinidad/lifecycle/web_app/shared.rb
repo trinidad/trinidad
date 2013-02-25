@@ -12,6 +12,12 @@ module Trinidad
           @web_app = web_app
         end
 
+        def before_init(event)
+          #context = event.lifecycle
+          #context.name = context.path if context.name
+          super
+        end
+
         # @see Trinidad::Lifecycle::Base#before_start
         def before_start(event)
           super
@@ -33,8 +39,9 @@ module Trinidad
           context_name = web_app.context_name
           # on (rolling) reloads the name may have been set already :
           if context_name && ! (context.name || '').index(context_name)
-            context.name = web_app.context_name
+            context.name = context_name
           end
+
           context.doc_base = web_app.doc_base if web_app.doc_base
           context.work_dir = web_app.work_dir if web_app.work_dir
           context.aliases  = web_app.aliases  if web_app.aliases
@@ -51,19 +58,15 @@ module Trinidad
         
         def configure_default_servlet(context)
           configure_builtin_servlet(context, 
-            web_app.default_servlet, 
-            Trinidad::WebApp::DEFAULT_SERVLET_NAME
+            web_app.default_servlet, Trinidad::WebApp::DEFAULT_SERVLET_NAME
           )
         end
         
         def configure_jsp_servlet(context)
           wrapper = configure_builtin_servlet(context, 
-            web_app.jsp_servlet, 
-            Trinidad::WebApp::JSP_SERVLET_NAME
+            web_app.jsp_servlet, Trinidad::WebApp::JSP_SERVLET_NAME
           )
-          if wrapper == false # jsp servlet removed
-            context.process_tlds = false
-          end
+          context.process_tlds = false if wrapper == false # jsp servlet removed
           wrapper
         end
         

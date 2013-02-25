@@ -22,6 +22,8 @@ require 'java'
 require 'rack'
 require 'trinidad'
 
+require 'fileutils'
+
 MOCK_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_mock')
 RAILS_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_rails')
 

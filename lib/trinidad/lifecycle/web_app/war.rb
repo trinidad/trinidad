@@ -7,6 +7,15 @@ module Trinidad
       class War < Base
         include Shared
         
+        def before_init(event)
+          # NOTE: esp. important for .war applications that the name matches the path
+          # to work-around ProxyDirContext constructor's `contextPath = contextName;`
+          # @see {#adjust_context} also need to restore possible context name change!
+          context = event.lifecycle
+          context.name = context.path if context.name
+          super
+        end
+
         def before_start(event)
           expand_war_app(event.lifecycle)
           super # Shared#before_start
@@ -24,6 +33,13 @@ module Trinidad
         
         protected
         
+        def adjust_context(context)
+          name = context.name
+          super
+        ensure # @see {#before_init}
+          context.name = name
+        end
+
         def configure_class_loader(context)
           class_loader = web_app.class_loader || JRuby.runtime.jruby_class_loader
           loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
