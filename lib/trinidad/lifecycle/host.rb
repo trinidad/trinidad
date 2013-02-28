@@ -2,8 +2,13 @@ require 'trinidad/lifecycle/base'
 
 module Trinidad
   module Lifecycle
-    # A host lifecycle listener - monitors deployed web apps.
-    class Host < Base
+    # Host listener - monitors deployed applications 
+    # (re-invented HostConfig with Ruby/Rack semantics).
+    class Host # TODO < Tomcat::HostConfig !
+
+      include Trinidad::Tomcat::LifecycleListener
+
+      EVENTS = Trinidad::Tomcat::Lifecycle # :nodoc:
       
       attr_reader :server, :app_holders
       # @deprecated (<= 1.3.5)
@@ -21,21 +26,40 @@ module Trinidad
         end
         @server, @app_holders = server, app_holders
       end
-      
-      # @see Trinidad::Lifecycle::Base#before_start
+
+      def lifecycleEvent(event) # :nodoc:
+        case event.type
+        when EVENTS::BEFORE_START_EVENT then
+          before_start(event)
+        when EVENTS::START_EVENT then
+          start(event)
+        when EVENTS::STOP_EVENT then
+          stop(event)
+        when EVENTS::PERIODIC_EVENT then
+          periodic(event)
+        end
+      end
+
       def before_start(event)
         init_monitors
       end
 
-      # @see Trinidad::Lifecycle::Base#periodic
+      def start(event); end # :nodoc:
+
       def periodic(event)
-        check_monitors
+        check_changes event.lifecycle
       end
 
-      def tomcat; @server.tomcat; end # for backwards compatibility
+      def stop(event); end # :nodoc:
+
+      def tomcat; @server.tomcat; end # :nodoc: for backwards compatibility
       
       protected
       
+      def check_changes(host)
+        check_monitors
+      end
+
       def init_monitors
         app_holders.each do |app_holder|
           monitor = app_holder.monitor
