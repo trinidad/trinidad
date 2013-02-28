@@ -531,6 +531,81 @@ describe Trinidad::Server do
     expect( app_holder.web_app.context_path ).to eql '/'
   end
 
+  it "resolves apps relative to host base (for relative/missing root)" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/server/foo'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/server/bar'
+
+    Dir.chdir(APP_STUBS_DIR + '/local') do
+      server = configured_server({
+        :hosts => {
+          :server => {
+            :app_base => APP_STUBS_DIR + '/server',
+            :name => 'serverhost',
+            :aliases => [ 'server.host' ]
+          }
+        },
+        :web_apps => {
+          :foo => {
+            :context_path => '/foo', :host_name => 'localhost'
+          },
+          :server_foo => {
+            :root_dir => '../server/foo', :host => 'server.host'
+          },
+          :bar => { :host_name => 'serverhost' }
+        }
+      })
+
+      web_apps = server.send(:create_web_apps)
+
+      expect( web_apps.size ).to eql 3
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo'
+      expect( app_holder.web_app.context_path ).to eql '/foo'
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/server/foo'
+      expect( app_holder.web_app.context_path ).to eql '/server_foo'
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/server/bar'
+      expect( app_holder.web_app.context_path ).to eql '/bar'
+    end
+  end
+
+  it "only auto-deploys apps once if configured (for app_base)" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo1'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo2'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo3'
+
+    Dir.chdir(APP_STUBS_DIR + '/local') do
+      server = configured_server({
+        :app_base => APP_STUBS_DIR + '/local',
+        :web_apps => {
+          :foo1 => { :context_path => '/foo1' },
+          :foo3 => { :root_dir => 'foo3' }
+        }
+      })
+
+      web_apps = server.send(:create_web_apps)
+
+      expect( web_apps.size ).to eql 3
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo1'
+      expect( app_holder.web_app.context_path ).to eql '/foo1'
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo3'
+      expect( app_holder.web_app.context_path ).to eql '/foo3'
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo2'
+      expect( app_holder.web_app.context_path ).to eql '/foo2'
+    end
+  end
+
   protected
 
   def configured_server(config = false)

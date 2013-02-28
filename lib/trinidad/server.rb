@@ -72,7 +72,9 @@ module Trinidad
       tomcat.hostname = config[:address] || 'localhost'
       tomcat.server.address = config[:address]
       tomcat.port = config[:port].to_i
-      tomcat.host # initializes default host
+      tomcat.host # make sure we initialize default host
+      tomcat.host.deploy_on_startup = false # we're setup our own host monitor
+      tomcat.host.auto_deploy = false # ... unless user configures otherwise !
       create_hosts(tomcat)
       tomcat.enable_naming
 
@@ -161,6 +163,14 @@ module Trinidad
         host.start_children = start unless start.nil?
         # public Context addWebapp(Host host, String url, String name, String docBase)
         tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
+      rescue java.lang.IllegalArgumentException => e
+        if e.message =~ /addChild\:/
+          context_name = web_app.context_name
+          logger.error "could not add application #{context_name.inspect} from #{web_app.root_dir}\n" <<
+                       " (same context name is used for #{host.find_child(context_name).doc_base})"
+          raise "there's already an application named #{context_name.inspect} for host #{host.name.inspect}"
+        end
+        raise e
       ensure
         host.start_children = prev_start unless start.nil?
       end
@@ -208,11 +218,9 @@ module Trinidad
     def create_web_apps
       # add default web app if needed :
       if ! web_apps && ! app_base && ! hosts
-        default_app = {
-          :context_path => config[:context_path],
-          :root_dir => web_app_root_dir(config),
-          :log => config[:log]
-        }
+        default_app = { :context_path => config[:context_path] }
+        root_dir = web_app_root_dir(config) || Dir.pwd
+        default_app[:root_dir] = root_dir if root_dir != false
         default_app[:rackup] = config[:rackup] if config[:rackup]
 
         self.web_apps = { :default => default_app }
@@ -223,24 +231,43 @@ module Trinidad
       # configured :web_apps
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name
-        apps << create_web_app(app_config)
+        apps << ( app_holder = create_web_app(app_config) ); app = app_holder.web_app
+        logger.info "deploying application from #{app.root_dir} as #{app.context_path}"
       end if web_apps
 
-      # configured :app_base or :hosts
+      # configured :app_base or :hosts - scan for applications in host's app_base directory :
       tomcat.engine.find_children.each do |host|
-        host_base = host.app_base
+        next if host.deploy_on_startup || host.auto_deploy # tomcat deploys (.war/expanded apps)
 
-        apps_path = Dir.glob(File.join(host_base, '*')).
-          select { |path| ! ( path =~ /tomcat\.\d+$/ ) } # TODO
-        apps_path.reject! { |path| apps_path.include?(path + '.war') } # TODO
+        apps_path = java.io.File.new(host.app_base).list.to_a
+        if host.deploy_ignore # respect deploy ignore pattern (even if not deploying on startup)
+          deploy_ignore_pattern = Regexp.new(host.deploy_ignore)
+          apps_path.reject! { |path| path =~ deploy_ignore_pattern }
+        end
+        # we do a bit of "default" filtering for hosts of our own :
+        work_dir = host.work_dir
+        work_dir = File.expand_path(work_dir, host.app_base) if work_dir
+        apps_path.reject! do |path|
+          if path[0, 1] == '.' then true # ignore "hidden" files
+          elsif work_dir && work_dir == path then true
+          elsif ! work_dir && path =~ /tomcat\.\d+$/ then true # [host_base]/tomcat.8080
+          elsif apps_path.include?(path + '.war') # only keep expanded .war dir if there's both
+            logger.info "expanded .war application at #{path} - only deploying directory (not .war)"
+            true
+          end
+        end
 
-        apps_path.each do |path|
-          if File.directory?(path) || path =~ /\.war$/
-            apps << create_web_app({
-              :context_name => File.basename(path),
-              :root_dir => File.expand_path(path),
-              :host_name => host.name
-            })
+        apps_path.each do |path| # host web apps (from dir or .war files)
+          if File.directory?(path) || ( is_war = path =~ /\.war$/ )
+            app_root = File.expand_path(path, host.app_base)
+            if apps.find { |app_holder| app_holder.web_app.root_dir == app_root }
+              logger.debug "skipping auto-deploy of application from #{app_root} (already deployed)"
+            else
+              apps << ( app_holder = create_web_app({ 
+                :context_name => path, :root_dir => app_root, :host_name => host.name
+              }) ); app = app_holder.web_app
+              logger.info "auto-deploying application from #{app.root_dir} as #{app.context_path}"
+            end
           end
         end
       end if app_base || hosts
@@ -249,6 +276,10 @@ module Trinidad
     end
 
     def create_web_app(app_config)
+      host_name = app_config[:host_name] || 'localhost'
+      host = tomcat.engine.find_child(host_name)
+      app_config[:root_dir] = web_app_root_dir(app_config, host)
+
       web_app = WebApp.create(app_config, config)
       WebApp::Holder.new(web_app, add_web_app(web_app))
     end
@@ -271,13 +302,16 @@ module Trinidad
 
       web_app_hosts = []
       # create hosts as they are specified for each app in :web_apps :
-      # e.g. :app1 => { :root_dir => 'app1', :hosts => 'virtual.host' }
+      # e.g. :app1 => { :root_dir => 'app1', :host => 'virtual.host' }
       web_apps.each do |_, app_config|
         if host_names = app_config[:hosts] || app_config[:host]
-          app_root = File.expand_path web_app_root_dir(app_config)
           if host = find_host(host_names, tomcat)
+            app_root = web_app_root_dir(app_config, host)
             set_host_app_base(app_root, host, default_host, web_app_hosts)
           else
+            app_root = web_app_root_dir(app_config)
+            raise "no root for app #{app_config.inspect}" unless app_root
+            app_root = File.expand_path(app_root)
             # for created hosts -> web-app per host by default
             # thus new host's app_base will point to root_dir :
             host = create_host(app_root, host_names, tomcat)
@@ -291,7 +325,8 @@ module Trinidad
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Trinidad::Tomcat::StandardHost.new
       host.app_base = nil # reset default app_base
-      host.auto_deploy = false # disable by default
+      host.auto_deploy = false # no auto-deployment scanning
+      host.deploy_on_startup = false # disabled by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
       host
@@ -335,6 +370,10 @@ module Trinidad
       Trinidad::Logging.configure(log_level)
     end
 
+    def logger
+      @logger ||= Logging::LogFactory.getLog('org.apache.catalina.startup.Tomcat')
+    end
+
     private
     
     DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
@@ -346,16 +385,20 @@ module Trinidad
     def set_host_app_base(app_root, host, default_host, web_app_hosts)
       if host.app_base # we'll try setting a common parent :
         require 'pathname'; app_path = Pathname.new(app_root)
+        base_path = Pathname.new(host.app_base)
+        unless app_path.exist?
+          app_path = app_path.relative_path_from(base_path) rescue app_path
+        end
         app_real_path = begin; app_path.realpath.to_s; rescue
-          Helpers.warn "WARN: web app root #{app_path.to_s.inspect} does not exists" 
+          logger.warn "web app root #{app_root} does not exist"
           return
         end
-        base_path = Pathname.new host.app_base; base_parent = false
+        base_parent = false
         2.times do
           begin
-            break if base_parent = app_real_path.index(base_path.realpath.to_s) == 0
+            break if base_parent = ( app_real_path.index(base_path.realpath.to_s) == 0 )
           rescue => e
-            Helpers.warn "WARN: app_base for host #{host.name.inspect} seems to" <<
+            logger.warn "app_base for host #{host.name.inspect} seems to" <<
             " not exists, try configuring an absolute path or create it\n (#{e.message})"
             return
           end
@@ -365,12 +408,12 @@ module Trinidad
           return if base_path.to_s == host.app_base
           host.app_base = base_path.realpath.to_s
           unless web_app_hosts.include?(host)
-            Helpers.warn "NOTE: changed (configured) app_base for host #{host.name.inspect}" <<
-            " to #{host.app_base.inspect} to include web_app root: #{app_path.to_s.inspect}"
+            logger.info "changed (configured) app_base for host #{host.name.inspect}" <<
+                        " (#{host.app_base}) to include web_app root: #{app_path}"
           end
         else
-          Helpers.warn "WARN: app_base for host #{host.name.inspect} #{host.app_base.inspect}" <<
-          " is not a parent directory for web_app root: #{app_path.to_s.inspect}"
+          logger.warn "app_base for host #{host.name.inspect} #{host.app_base.inspect}" <<
+                      " is not a parent directory for web_app root: #{app_path}"
         end
       else
         host.app_base = app_path.parent.realpath.to_s
@@ -414,8 +457,20 @@ module Trinidad
       nil
     end
 
-    def web_app_root_dir(config, default = Dir.pwd)
-      config[:root_dir] || config[:web_app_dir] || default
+    def web_app_root_dir(config, host = nil)
+      path = config[:root_dir] || config[:web_app_dir] || begin
+        path = config[:context_path]
+        ( path && path[0, 1] == '/' ) ? path[1..-1] : path
+      end || ( config[:context_name] ? config[:context_name].to_s : nil )
+
+      return path if path.nil? || File.exist?(path)
+
+      if host
+        base = host.app_base
+        ( path && base ) ? File.join(base, path) : path
+      else
+        path
+      end
     end
     
     def generate_default_keystore(config)
