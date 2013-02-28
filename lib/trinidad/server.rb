@@ -246,12 +246,11 @@ module Trinidad
         end
         # we do a bit of "default" filtering for hosts of our own :
         work_dir = host.work_dir
-        work_dir = File.expand_path(work_dir, host.app_base) if work_dir
         apps_path.reject! do |path|
           if path[0, 1] == '.' then true # ignore "hidden" files
           elsif work_dir && work_dir == path then true
           elsif ! work_dir && path =~ /tomcat\.\d+$/ then true # [host_base]/tomcat.8080
-          elsif apps_path.include?(path + '.war') # only keep expanded .war dir if there's both
+          elsif path[-4..-1] == '.war' && apps_path.include?(path[0...-4]) # only keep expanded .war
             logger.info "expanded .war application at #{path} - only deploying directory (not .war)"
             true
           end
@@ -259,8 +258,16 @@ module Trinidad
 
         apps_path.each do |path| # host web apps (from dir or .war files)
           app_root = File.expand_path(path, host.app_base)
-          if File.directory?(app_root) || ( is_war = app_root =~ /\.war$/ )
-            if apps.find { |app_holder| app_holder.web_app.root_dir == app_root }
+          if File.directory?(app_root) || ( is_war = ( app_root[-4..-1] == '.war' ) )
+            deployed = if is_war
+              apps.find do |app_holder|
+                root_dir = app_holder.web_app.root_dir
+                root_dir == app_root || root_dir == app_root[0...-4] # remove .war
+              end
+            else
+              apps.find { |app_holder| app_holder.web_app.root_dir == app_root }
+            end
+            if deployed
               logger.debug "skipping auto-deploy of application from #{app_root} (already deployed)"
             else
               apps << ( app_holder = create_web_app({ 
@@ -370,9 +377,7 @@ module Trinidad
       Trinidad::Logging.configure(log_level)
     end
 
-    def logger
-      @logger ||= self.class.logger
-    end
+    def logger; @logger ||= self.class.logger; end
 
     def self.logger
       Logging::LogFactory.getLog('org.apache.catalina.startup.Tomcat')

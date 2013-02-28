@@ -624,6 +624,24 @@ describe Trinidad::Server do
     end
   end
 
+  it "only deploys expanded .war directory (and ignores hidden folders)" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo'
+    FileUtils.touch APP_STUBS_DIR + '/local/foo.war'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/.foo' # hidden dir
+    #FileUtils.mkdir_p APP_STUBS_DIR + '/local/work' # and host work_dir
+
+    Dir.chdir(APP_STUBS_DIR + '/local') do
+      server = configured_server :app_base => ( APP_STUBS_DIR + '/local' )
+      web_apps = server.send(:create_web_apps)
+
+      expect( web_apps.size ).to eql 1
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo'
+      expect( app_holder.web_app.context_path ).to eql '/foo'
+    end
+  end
+
   protected
 
   def configured_server(config = false)
