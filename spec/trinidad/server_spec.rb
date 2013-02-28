@@ -19,6 +19,17 @@ describe Trinidad::Server do
   end
   after { FileUtils.rm_r APP_STUBS_DIR }
 
+  # less deploting app logging noise during spex :
+
+  @@server_log = Trinidad::Server.logger
+  @@server_logger_level = nil
+  before(:all) do
+    @@server_logger_level = @@server_log.logger.level
+    @@server_log.logger.level = java.util.logging.Level::WARNING
+  end
+  after(:all) { @@server_log.logger.level = @@server_logger_level }
+
+
   it "always uses symbols as configuration keys" do
     Trinidad.configure { |c| c.port = 4000 }
     server = configured_server
@@ -211,7 +222,7 @@ describe Trinidad::Server do
       FileUtils.mkdir 'apps_base'
       FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
 
-      server = deployed_server :apps_base => 'apps_base'
+      server = deployed_server :app_base => 'apps_base'
 
       listeners = find_listeners(server, Trinidad::Lifecycle::Default)
       listeners.first.webapp.should be_a(Trinidad::RackupWebApp)
@@ -351,14 +362,16 @@ describe Trinidad::Server do
     FileUtils.mkdir_p APP_STUBS_DIR + '/foo/mock2'
     FileUtils.mkdir_p APP_STUBS_DIR + '/bar/main'
     FileUtils.mkdir_p APP_STUBS_DIR + '/baz/main'
+    absolute_dir = java.lang.System.get_property('java.io.tmpdir')
+    FileUtils.mkdir_p app_dir = File.join(absolute_dir, '/domains/local/app')
+    FileUtils.mkdir_p File.join(absolute_dir, '/domains/server')
 
     Dir.chdir(APP_STUBS_DIR) do
       server = deployed_server({
         :hosts => {
-          '/var/domains/local' => [ 'localhost', 'local.host' ],
+          "#{absolute_dir}/domains/local" => [ 'localhost', 'local.host' ],
           :serverhost => {
-            :app_base => '/var/domains/server',
-            :aliases => [ 'server.host' ]
+            :app_base => "#{absolute_dir}/domains/server", :aliases => [ 'server.host' ]
           }
         },
         :web_apps => {
@@ -374,7 +387,7 @@ describe Trinidad::Server do
           :baz => {
             :root_dir => 'baz/main', :host_name => 'serverhost'
           },
-          :all => { :root_dir => 'all/app' }
+          :app => { :root_dir => 'app' }
         }
       })
 
@@ -383,7 +396,7 @@ describe Trinidad::Server do
         find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
 
       app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
-      expected = [ 'foo/mock1', 'foo/mock2', 'all/app' ].map { |dir| File.expand_path(dir) }
+      expected = [ 'foo/mock1', 'foo/mock2' ].map { |dir| File.expand_path(dir) } << app_dir
       expect( app_dirs ).to eql expected
 
       server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
@@ -391,9 +404,14 @@ describe Trinidad::Server do
         find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
 
       app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
-      expected = [ 'bar/main', 'baz/main', 'all/app' ].map { |dir| File.expand_path(dir) }
+      expected = [ 'bar/main', 'baz/main' ].map { |dir| File.expand_path(dir) }
       expect( app_dirs ).to eql expected
     end
+  end
+
+  after do 
+    temp_domains = java.lang.System.get_property('java.io.tmpdir') + '/domains'
+    FileUtils.rm_rf( temp_domains ) if File.exist?(temp_domains)
   end
 
   it "creates several hosts when they are set in the web_apps configuration" do
@@ -465,7 +483,7 @@ describe Trinidad::Server do
     FileUtils.mkdir_p foo_dir = APP_STUBS_DIR + '/foo'
     FileUtils.mkdir_p bar1_dir = APP_STUBS_DIR + '/bar1'
     FileUtils.mkdir_p bar2_dir = APP_STUBS_DIR + '/bar2'
-    war_dir = "#{APP_STUBS_DIR}/my-app#0.1.war"
+    FileUtils.touch war_dir = "#{APP_STUBS_DIR}/my-app#0.1.war"
 
     server = configured_server({
       :web_apps => {

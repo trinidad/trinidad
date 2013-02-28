@@ -258,8 +258,8 @@ module Trinidad
         end
 
         apps_path.each do |path| # host web apps (from dir or .war files)
-          if File.directory?(path) || ( is_war = path =~ /\.war$/ )
-            app_root = File.expand_path(path, host.app_base)
+          app_root = File.expand_path(path, host.app_base)
+          if File.directory?(app_root) || ( is_war = app_root =~ /\.war$/ )
             if apps.find { |app_holder| app_holder.web_app.root_dir == app_root }
               logger.debug "skipping auto-deploy of application from #{app_root} (already deployed)"
             else
@@ -371,7 +371,11 @@ module Trinidad
     end
 
     def logger
-      @logger ||= Logging::LogFactory.getLog('org.apache.catalina.startup.Tomcat')
+      @logger ||= self.class.logger
+    end
+
+    def self.logger
+      Logging::LogFactory.getLog('org.apache.catalina.startup.Tomcat')
     end
 
     private
@@ -423,7 +427,7 @@ module Trinidad
     def select_host_apps(app_holders, host)
       app_holders.select do |app_holder|
         host_name = app_holder.web_app.host_name
-        host_name.nil? || host_name == host.name
+        ( host_name || 'localhost' ) == host.name
       end
     end
 
@@ -463,7 +467,8 @@ module Trinidad
         ( path && path[0, 1] == '/' ) ? path[1..-1] : path
       end || ( config[:context_name] ? config[:context_name].to_s : nil )
 
-      return path if path.nil? || File.exist?(path)
+      return nil if path.nil?
+      return File.expand_path(path) if File.exist?(path)
 
       if host
         base = host.app_base
