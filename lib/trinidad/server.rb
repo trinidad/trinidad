@@ -72,9 +72,7 @@ module Trinidad
       tomcat.hostname = config[:address] || 'localhost'
       tomcat.server.address = config[:address]
       tomcat.port = config[:port].to_i
-      tomcat.host # make sure we initialize default host
-      tomcat.host.deploy_on_startup = false # we're setup our own host monitor
-      tomcat.host.auto_deploy = false # ... unless user configures otherwise !
+      default_host(tomcat)
       create_hosts(tomcat)
       tomcat.enable_naming
 
@@ -88,17 +86,15 @@ module Trinidad
     # #deprecated renamed to {#initialize_tomcat}
     def load_tomcat_server; initialize_tomcat; end
 
-    def setup_host_monitor(app_holders)
+    def add_host_monitor(app_holders)
       for host in tomcat.engine.find_children
-        if host.is_a?(Trinidad::Tomcat::Host)
-          host_apps = select_host_apps(app_holders, host)
-          host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
-        end
+        host_apps = select_host_apps(app_holders, host)
+        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
       end
     end
-    protected :setup_host_monitor
+    protected :add_host_monitor
     # @deprecated replaced with {#setup_host_monitor}
-    def load_host_monitor(web_apps); setup_host_monitor(web_apps); end
+    def load_host_monitor(web_apps); add_host_monitor(web_apps); end
 
     def add_ajp_connector(tomcat = @tomcat)
       add_service_connector(@config[:ajp], 'AJP/1.3', tomcat)
@@ -182,9 +178,8 @@ module Trinidad
     end
     
     def deploy_web_apps(tomcat = self.tomcat)
-      web_app_holders = create_web_apps
-      setup_host_monitor(web_app_holders)
-      web_app_holders
+      add_host_monitor web_apps = create_web_apps
+      web_apps
     end
 
     def start
@@ -237,8 +232,6 @@ module Trinidad
 
       # configured :app_base or :hosts - scan for applications in host's app_base directory :
       tomcat.engine.find_children.each do |host|
-        next if host.deploy_on_startup || host.auto_deploy # tomcat deploys (.war/expanded apps)
-
         apps_path = java.io.File.new(host.app_base).list.to_a
         if host.deploy_ignore # respect deploy ignore pattern (even if not deploying on startup)
           deploy_ignore_pattern = Regexp.new(host.deploy_ignore)
@@ -293,6 +286,7 @@ module Trinidad
 
     def create_hosts(tomcat = @tomcat)
       hosts.each do |app_base, host_config|
+        next if app_base == :default # @see #default_host
         if host = find_host(app_base, host_config, tomcat)
           setup_host(app_base, host_config, host)
         else
@@ -332,8 +326,7 @@ module Trinidad
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Trinidad::Tomcat::StandardHost.new
       host.app_base = nil # reset default app_base
-      host.auto_deploy = false # no auto-deployment scanning
-      host.deploy_on_startup = false # disabled by default
+      host.deployXML = false # disabled by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
       host
@@ -384,7 +377,15 @@ module Trinidad
     end
 
     private
-    
+
+    def default_host(tomcat = @tomcat)
+      host = tomcat.host # make sure we initialize default host
+      host.deployXML = false
+      host_config = @config[:host] || ( @config[:hosts] && @config[:hosts][:default] )
+      host_config.each { |name, value| host.send("#{name}=", value) } if host_config
+      host
+    end
+
     DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
 
     def default_host_base?(host)

@@ -628,10 +628,11 @@ describe Trinidad::Server do
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo'
     FileUtils.touch APP_STUBS_DIR + '/local/foo.war'
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/.foo' # hidden dir
-    #FileUtils.mkdir_p APP_STUBS_DIR + '/local/work' # and host work_dir
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/work' # and host work_dir
 
     Dir.chdir(APP_STUBS_DIR + '/local') do
-      server = configured_server :app_base => ( APP_STUBS_DIR + '/local' )
+      server = configured_server :app_base => ( APP_STUBS_DIR + '/local' ), 
+                                 :host => { :work_dir => 'work' } # default host
       web_apps = server.send(:create_web_apps)
 
       expect( web_apps.size ).to eql 1
