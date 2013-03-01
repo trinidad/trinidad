@@ -251,14 +251,11 @@ module Trinidad
 
         apps_path.each do |path| # host web apps (from dir or .war files)
           app_root = File.expand_path(path, host.app_base)
-          if File.directory?(app_root) || ( is_war = ( app_root[-4..-1] == '.war' ) )
-            deployed = if is_war
-              apps.find do |app_holder|
-                root_dir = app_holder.web_app.root_dir
-                root_dir == app_root || root_dir == app_root[0...-4] # remove .war
-              end
-            else
-              apps.find { |app_holder| app_holder.web_app.root_dir == app_root }
+          if File.directory?(app_root) || ( app_root[-4..-1] == '.war' )
+            app_base_name = File.basename(app_root)
+            deployed = apps.find do |app_holder|; web_app = app_holder.web_app
+              web_app.root_dir == app_root || 
+                web_app.context_path == Trinidad::Tomcat::ContextName.new(app_base_name).path
             end
             if deployed
               logger.debug "skipping auto-deploy of application from #{app_root} (already deployed)"

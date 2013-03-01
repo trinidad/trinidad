@@ -219,15 +219,15 @@ describe Trinidad::Server do
 
   it "loads rack apps from the apps_base directory" do
     begin
-      FileUtils.mkdir 'apps_base'
-      FileUtils.cp_r MOCK_WEB_APP_DIR, 'apps_base/test'
+      FileUtils.mkdir 'app_base'
+      FileUtils.cp_r MOCK_WEB_APP_DIR, 'app_base/test'
 
-      server = deployed_server :app_base => 'apps_base'
+      server = deployed_server :app_base => 'app_base'
 
       listeners = find_listeners(server, Trinidad::Lifecycle::Default)
       listeners.first.webapp.should be_a(Trinidad::RackupWebApp)
     ensure
-      FileUtils.rm_rf 'apps_base'
+      FileUtils.rm_rf 'app_base'
     end
   end
 
@@ -631,7 +631,7 @@ describe Trinidad::Server do
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/work' # and host work_dir
 
     Dir.chdir(APP_STUBS_DIR + '/local') do
-      server = configured_server :app_base => ( APP_STUBS_DIR + '/local' ), 
+      server = configured_server :app_base => Dir.pwd, 
                                  :host => { :work_dir => 'work' } # default host
       web_apps = server.send(:create_web_apps)
 
@@ -639,6 +639,23 @@ describe Trinidad::Server do
 
       app_holder = web_apps.shift
       expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo'
+      expect( app_holder.web_app.context_path ).to eql '/foo'
+    end
+  end
+
+  it "only deploys configured .war file (with custom context path)" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo'
+    FileUtils.touch APP_STUBS_DIR + '/local/foo_production-0.1.war'
+
+    Dir.chdir(APP_STUBS_DIR + '/local') do
+      server = configured_server :app_base => Dir.pwd, 
+        :web_apps => { :foo => { :context_path => '/foo', :root_dir => 'foo_production-0.1.war' } }
+      web_apps = server.send(:create_web_apps)
+
+      expect( web_apps.size ).to eql 1
+
+      app_holder = web_apps.shift
+      expect( app_holder.web_app.root_dir ).to eql APP_STUBS_DIR + '/local/foo_production-0.1.war'
       expect( app_holder.web_app.context_path ).to eql '/foo'
     end
   end

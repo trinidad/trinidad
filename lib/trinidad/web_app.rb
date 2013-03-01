@@ -691,13 +691,15 @@ module Trinidad
     end
 
     def context_path
-      path = super
-      path.to_s[-4..-1] == '.war' ? path.to_s[0...-4] : path
+      @path ||= begin
+        context_name = Trinidad::Tomcat::ContextName.new(super)
+        context_name.path # removes .war handles ## versioning
+      end
     end
 
     def work_dir
-      @work_dir ||= self[:work_dir] || # [expanded .war dir]/WEB-INF
-        File.join( root_dir.sub(/\.war$/, ''), 'WEB-INF' )
+      @work_dir ||= self[:work_dir] || nil
+        # File.join( root_dir.sub(/\.war$/, ''), 'WEB-INF' )
     end
     
     def log_dir

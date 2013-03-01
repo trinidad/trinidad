@@ -979,14 +979,14 @@ describe Trinidad::WebApp do
     #  app.context_path.should == '/foo'
     #end
     
-    it "removes the war extension from the working directory if it's a war application" do
+    it "by default keep working directory nil" do
       app = new_web_app :context_path => '/foo', :root_dir => './foo.war'
-      app.work_dir.should == File.expand_path('foo/WEB-INF')
+      expect( app.work_dir ).to be nil
     end
 
     it "uses the war file to monitorize an application packed as a war" do
       app = new_web_app :root_dir => './foo.war'
-      app.monitor.should == File.expand_path('foo.war')
+      expect( app.monitor ).to eql File.expand_path('foo.war')
     end
 
     it "is configured to get unpacked by default" do # @see ContextConfig#fixDocBase

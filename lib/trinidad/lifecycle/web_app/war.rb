@@ -15,16 +15,6 @@ module Trinidad
           context.name = context.path if context.name
           super
         end
-
-        def before_start(event)
-          expand_war_app(event.lifecycle)
-          super # Shared#before_start
-        end
-        
-        def after_start(event)
-          super
-          remove_war_app(event.lifecycle)
-        end
         
         def configure(context)
           super # Shared#configure
@@ -38,6 +28,13 @@ module Trinidad
           super
         ensure # @see {#before_init}
           context.name = name
+          # NOTE: mimics HostConfig#deploWAR and should be removed
+          # once Lifecycle::Host inherits func from HostConfig ...
+          # context_name = Trinidad::Tomcat::ContextName.new(name)
+          # context.setName context_name.getName()
+          # context.setPath context_name.getPath()
+          # context.setWebappVersion context_name.getVersion()
+          # context.setDocBase context_name.getBaseName() + '.war'
         end
 
         def configure_class_loader(context)

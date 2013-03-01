@@ -16,5 +16,6 @@ module Trinidad
     include_package 'org.apache.naming.resources'
 
     java_import 'org.apache.catalina.connector.Connector'
+    java_import 'org.apache.catalina.util.ContextName'
   end
 end
