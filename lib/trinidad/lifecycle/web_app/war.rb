@@ -48,24 +48,6 @@ module Trinidad
           # NOTE: do not remove defaults (welcome files)
         end
         
-        private
-
-        def expand_war_app(context)
-          unless File.exist?(context.doc_base)
-            host = context.parent
-            war_file = java.io.File.new(web_app.root_dir)
-            war = java.net.URL.new("jar:#{war_file.toURI.toURL.toString}!/")
-            path_name = File.basename(context.doc_base)
-
-            Trinidad::Tomcat::ExpandWar.expand(host, war, path_name)
-          end
-        end
-        
-        def remove_war_app(context)
-          require 'fileutils'
-          FileUtils.rm_rf web_app.root_dir.gsub(/\.war$/, '')
-        end
-        
       end
     end
     War = Trinidad::Lifecycle::WebApp::War # backwards compatibility

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Lifecycle::WebApp::War do
 
-  it "configures the war classloader" do
+  it "configures classloader" do
     context = new_web_app_context('/')
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
     
@@ -10,27 +10,37 @@ describe Trinidad::Lifecycle::WebApp::War do
     expect( context.loader ).to_not be nil
   end
 
-  it "creates the log directory under the WEB-INF directory" do
-    begin
-      Dir.mkdir('apps_base')
-      Dir.mkdir('apps_base/foo')
-      Dir.mkdir('apps_base/foo/WEB-INF')
+  it "configures class-loader (on configure)" do
+    context = new_web_app_context('/')
+    context.name = 'default'
+    listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
-      web_app = new_web_app({
-        :context_path => '/foo.war',
-        :root_dir => File.expand_path('apps_base/foo.war'),
-        :environment => 'production'
-      })
-      context = new_web_app_context('/foo.war')
-      listener = Trinidad::Lifecycle::WebApp::War.new(web_app)
-      logger = listener.send :configure_logging, context
-      logger.info "greetings!"
+    listener.send(:configure, context)
 
-      File.exist?('apps_base/foo/WEB-INF/log').should be true
-    ensure
-      FileUtils.rm_rf('apps_base')
-    end
+    expect( context.loaded ).to_not be nil
   end
+
+  # it "creates the log directory under the WEB-INF directory" do
+  #   begin
+  #     Dir.mkdir('apps_base')
+  #     Dir.mkdir('apps_base/foo')
+  #     Dir.mkdir('apps_base/foo/WEB-INF')
+  #
+  #     web_app = new_web_app({
+  #       :context_path => '/foo.war',
+  #       :root_dir => File.expand_path('apps_base/foo.war'),
+  #       :environment => 'production'
+  #     })
+  #     context = new_web_app_context('/foo.war')
+  #     listener = Trinidad::Lifecycle::WebApp::War.new(web_app)
+  #     logger = listener.send :configure_logging, context
+  #     logger.info "greetings!"
+  #
+  #     File.exist?('apps_base/foo/WEB-INF/log').should be true
+  #   ensure
+  #     FileUtils.rm_rf('apps_base')
+  #   end
+  # end
 
   it "makes sure context name is same as path" do
     # NOTE: this is important due :

@@ -692,18 +692,29 @@ module Trinidad
 
     def context_path
       @path ||= begin
-        context_name = Trinidad::Tomcat::ContextName.new(super)
+        path = File.basename(super)
+        context_name = Trinidad::Tomcat::ContextName.new(path)
         context_name.path # removes .war handles ## versioning
       end
     end
 
     def work_dir
-      @work_dir ||= self[:work_dir] || nil
-        # File.join( root_dir.sub(/\.war$/, ''), 'WEB-INF' )
+      self[:work_dir]
     end
-    
+
     def log_dir
-      @log_dir ||= self[:log_dir] || File.join(work_dir || root_dir, 'log')
+      @log_dir ||= self[:log_dir] || begin 
+        if work_dir then work_dir
+        else
+          if root_dir[-4..-1] == '.war'
+            parent_dir = File.dirname(root_dir)
+            expanded_dir = File.join(parent_dir, context_path)
+            File.exist?(expanded_dir) ? expanded_dir : parent_dir
+          else
+            File.join(root_dir, 'log')
+          end
+        end
+      end
     end
     
     def monitor
