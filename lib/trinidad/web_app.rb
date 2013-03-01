@@ -13,7 +13,7 @@ module Trinidad
           RailsWebApp.new(config, default_config)
     end
 
-    def initialize(config, default_config)
+    def initialize(config, default_config = Trinidad.configuration)
       @config, @default_config = config, default_config || {}
       complete_config!
       # NOTE: we should maybe @config.freeze here ?!
@@ -683,11 +683,21 @@ module Trinidad
   # A web application for deploying (java) .war files.
   class WarWebApp < WebApp
     
-    #def doc_base; self[:doc_base] || nil; end
+    def root_dir
+      @root_dir ||= ( config[:root_dir] || begin
+        path = config[:context_path]
+        path.to_s if path.to_s[-4..-1] == '.war'
+      end || default_confit[:root_dir] )
+    end
+
+    def context_path
+      path = super
+      path.to_s[-4..-1] == '.war' ? path.to_s[0...-4] : path
+    end
 
     def work_dir
-      @work_dir ||= self[:work_dir] || nil
-        # File.join(root_dir.gsub(/\.war$/, ''), 'WEB-INF')
+      @work_dir ||= self[:work_dir] || # [expanded .war dir]/WEB-INF
+        File.join( root_dir.sub(/\.war$/, ''), 'WEB-INF' )
     end
     
     def log_dir
@@ -695,7 +705,7 @@ module Trinidad
     end
     
     def monitor
-      File.expand_path(root_dir) # the .war file itself
+      root_dir ? File.expand_path(root_dir) : nil # the .war file itself
     end
     
     def class_loader
@@ -714,15 +724,9 @@ module Trinidad
       Trinidad::Lifecycle::WebApp::War.new(self)
     end
 
-    def warbler?; nil; end # TODO detect warbler created .war
-
     private
-    
-    def self.context_path(config, default_config = nil)
-      # due compatibility when used to specify path to .war file :
-      "/#{File.basename(super.gsub(/\.war$/, ''))}"
-      # context_path: '/home/app/myapp.war' -> '/myapp'
-    end
+
+    def warbler?; nil; end # TODO detect warbler created .war ?!
     
   end
   

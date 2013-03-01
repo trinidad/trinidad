@@ -456,12 +456,6 @@ describe Trinidad::WebApp do
     app.servlet[:mapping].should == '/fake'
   end
 
-  it "is a war application if the context path ends with .war" do
-    app = Trinidad::WebApp.create({ :context_path => 'foo.war' })
-    app.should be_a(Trinidad::WarWebApp)
-    app.war?.should be true
-  end
-
   it "uses the application directory as working directory" do
     app = Trinidad::WebApp.create({ :root_dir => 'foo' })
     app.work_dir.should == File.expand_path('foo/tmp')
@@ -486,11 +480,6 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({ :context_name => 'default' })
     app.context_path.should == '/'
   end
-  
-  it "removes the war extension from the context path if it's a war application" do
-    app = Trinidad::WebApp.create({ :context_path => 'foo.war' })
-    app.context_path.should == '/foo'
-  end
 
   it "converts context name to_s" do
     app = Trinidad::WebApp.create({ :context_name => :home, :context_path => :'/home' })
@@ -506,13 +495,6 @@ describe Trinidad::WebApp do
   it "missing context path assumes root" do
     app = Trinidad::WebApp.create({})
     app.context_path.should == '/'
-  end
-  
-  it "removes the war extension from the working directory if it's a war application" do
-    app = Trinidad::WebApp.create({
-      :context_path => 'foo.war', :web_app_dir => 'foo.war'
-    })
-    app.work_dir.should == File.expand_path('foo/WEB-INF')
   end
 
   it "uses development as default environment when the option is missing" do
@@ -547,13 +529,6 @@ describe Trinidad::WebApp do
       :monitor => 'foo.txt'
     })
     app.monitor.should == File.expand_path('foo.txt', MOCK_WEB_APP_DIR)
-  end
-  
-  it "uses the war file to monitorize an application packed as a war" do
-    app = Trinidad::WebApp.create({
-      :root_dir => 'foo.war', :context_path => 'foo.war',
-    })
-    app.monitor.should == File.expand_path('foo.war')
   end
 
   it "is threadsafe when min and max runtimes are 1" do
@@ -976,6 +951,80 @@ describe Trinidad::WebApp do
     app.aliases.should == "/assets1=/home/public,/assets2=#{Dir.pwd}/app/public-ext,/assets3=/var/www/public"
   end
   
+  describe "WarWebApp" do
+
+    it "is a war application if the context path ends with .war" do
+      app = Trinidad::WebApp.create :context_path => './foo.war'
+      app.should be_a(Trinidad::WarWebApp)
+      expect( app.war? ).to be true
+
+      app = Trinidad::WebApp.create :context_path => 'foo.war'
+      app.should be_a(Trinidad::WarWebApp)
+    end
+
+    it "is a war application if the context path ends with .war" do
+      app = Trinidad::WebApp.create :context_path => 'foo.war'
+      app.should be_a(Trinidad::WarWebApp)
+      app.war?.should be true
+    end
+
+    it "is a war application if root dir ends with .war" do
+      app = Trinidad::WebApp.create :context_path => '/foo', :root_dir => './foo-0.1.war'
+      app.should be_a(Trinidad::WarWebApp)
+      expect( app.war? ).to be true
+    end
+
+    #it "removes the war extension from the context path if it's a war application" do
+    #  app = Trinidad::WebApp.create :context_path => 'foo.war'
+    #  app.context_path.should == '/foo'
+    #end
+    
+    it "removes the war extension from the working directory if it's a war application" do
+      app = new_web_app :context_path => '/foo', :root_dir => './foo.war'
+      app.work_dir.should == File.expand_path('foo/WEB-INF')
+    end
+
+    it "uses the war file to monitorize an application packed as a war" do
+      app = new_web_app :root_dir => './foo.war'
+      app.monitor.should == File.expand_path('foo.war')
+    end
+
+    it "is configured to get unpacked by default" do # @see ContextConfig#fixDocBase
+      server = Trinidad::Server.new :context_path => 'foo.war'
+      app_holder = server.send(:deploy_web_apps).first
+      
+      expect( app_holder.context.getUnpackWAR ).to be true
+      expect( server.tomcat.host.isUnpackWARs ).to be true
+
+      expect( app_holder.web_app.doc_base[-4..-1] ).to eql '.war' # context.doc_base
+
+      appBase = server.tomcat.host.app_base
+      canonicalAppBase = java.io.File.new(appBase)
+      if canonicalAppBase.isAbsolute()
+        canonicalAppBase = canonicalAppBase.getCanonicalFile()
+      else
+        baseDir = server.tomcat.engine.getBaseDir()
+        canonicalAppBase = java.io.File.new(baseDir, appBase).getCanonicalFile()
+      end
+
+      docBase = app_holder.web_app.doc_base # context.getDocBase()
+
+      file = java.io.File.new(docBase)
+      if ! file.isAbsolute() 
+        docBase = java.io.File.new(canonicalAppBase, docBase).getPath()
+      else
+        docBase = file.getCanonicalPath()
+      end
+
+      expect( docBase.to_java.startsWith(canonicalAppBase.getPath()) ).to be true
+    end
+
+    private
+
+    def new_web_app(config); Trinidad::WarWebApp.new(config); end
+
+  end
+
   let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
   
   private

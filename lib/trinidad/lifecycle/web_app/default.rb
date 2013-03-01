@@ -31,7 +31,7 @@ module Trinidad
         def configure_deployment_descriptor(context)
           descriptor = web_app.deployment_descriptor
           if descriptor && File.exist?(descriptor)
-            listeners = context.findLifecycleListeners
+            listeners = context.find_lifecycle_listeners
             context_config = listeners && listeners.find do |listener|
               listener.is_a?(Trinidad::Tomcat::ContextConfig)
             end
