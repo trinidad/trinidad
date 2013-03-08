@@ -15,9 +15,11 @@ describe Trinidad::Lifecycle::WebApp::War do
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
+    listener.stubs(:configure_default_servlet)
+    listener.stubs(:configure_jsp_servlet)
     listener.send(:configure, context)
 
-    expect( context.loaded ).to_not be nil
+    expect( context.loader ).to_not be nil
   end
 
   # it "creates the log directory under the WEB-INF directory" do
