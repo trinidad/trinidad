@@ -675,7 +675,12 @@ module Trinidad
     end
 
     def self.threadsafe_match?(file)
-      File.exist?(file) && file_line_match?(file, /^[^#]*threadsafe!/)
+      File.exist?(file) && (
+        file_line_match?(file, /^[^#]*threadsafe!/) || ( # Rails 4.0
+          file_line_match?(file, /^[^#]*config\.eager_load = true/) &&
+          file_line_match?(file, /^[^#]*config\.cache_classes = true/)
+        )
+      )
     end
     
   end
