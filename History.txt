@@ -1,3 +1,32 @@
+== Trinidad 1.4.5.B1 (2013-03-08)
+
+* Rails 4.0 threadsafe! detection
+* only configure logging err handler if STDOUT/STDERR changed from JVM default
+* correctly handle .war file + expanded .war dir (double) deploys
+* better web app root resolution (relative to host's app base directory)
+* (always) correctly categorize deployed apps into hosts
+* support for more fine grained host configuration (including default host)
+* (once again) working plain-old .war deployment support
+* make sure context name (once set) is not changed and is kept esp. during 
+  rolling reloads even if (slightly) different from configured context_name
+* fail-safe (zero-downtime) support for rolling reload 
+  when a new version of the app fails to boot the old one is kept
+* depend on latest (>= 1.2.2) jars and jruby-rack >= 1.1.13
+* review extensions resolution, ignore extension (warn) when it doesn't exist
+* patch DirectJDKLog to disable log source thus we won't generate a dummy 
+  throwable just to obtain the caller stack trace (that ain't really used)
+* handle immediate log level change with JUL's LogFactory
+* avoid work_dir deletion on context destory (during rolling reloads)
+* do not allow public.root == '/' to be used as FS root (#93)
+
+== Trinidad_jars 1.2.2 (2013-03-08)
+
+* Tomcat 7.0.37 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
+== Trinidad_jars 1.2.1 (2013-02-21)
+
+* Tomcat 7.0.35 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
 == Trinidad_jars 1.2.0 (2013-01-14)
 
 * Tomcat 7.0.33 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html

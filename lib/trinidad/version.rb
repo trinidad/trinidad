@@ -1,3 +1,3 @@
 module Trinidad
-  VERSION = '1.4.5.PRE'
+  VERSION = '1.4.5.B1'
 end

@@ -1,11 +1,20 @@
 # Trinidad
 
-Trinidad allows you to run Rails or Rack applications within an embedded 
-Apache Tomcat container.
+Trinidad allows you to run Rails and/or Rack applications within an embedded 
+Tomcat container. Apache Tomcat (formerly also Jakarta Tomcat) is an open source
+web server and Servlet container with a long history that dates back to the 
+previous millenia.
 
-* Mailing List: http://groups.google.com/group/rails-trinidad
-* Bug Tracker: http://github.com/trinidad/trinidad/issues
-* IRC Channel (on FreeNode): #trinidad
+Trinidad's goals with bringing Tomcat into JRuby land are mostly the following :
+
+- **flexibility** especially in terms of configuration it allows you to tune 
+  (almost) everything from a simple *trinidad.yml* (or .rb) configuration file
+- **portability** there's no vendor lock-in as we use `JRuby::Rack`, thus even
+  if you do some Java integration or use it's Rack Servlet extensions you're 
+  still able to migrate to a standalone Tomcat or any other Servlet container
+- easy Java integration (just in-case you need it, it's there)
+- **extensions** such as connection pooling (sharing pools between deployed 
+  Rails apps) and (threaded) worker adapters for `Resque` and `Delayed::Job`
 
 ## Installation
 
@@ -13,42 +22,52 @@ Apache Tomcat container.
 $ jruby -S gem install trinidad
 ```
 
+Trinidad requires (and supports) JRuby 1.6.8 or later (latest 1.7.x recommended).
+
 ## Quick Start
 
 ```
-$ cd myapp
+$ cd a-rails-app
 $ jruby -S trinidad
 ```
 
-### Setup
+## Setup
 
-If you use Bundler, you might want to add Trinidad to your *Gemfile*:
+If you use Bundler, you might want to add Trinidad to your *Gemfile* :
 
 ```
 gem 'trinidad', :require => nil
 ```
 
-**Rails**
+However this is not absolutely necessary, you might simply `gem install trinidad`
+and than run `trinidad` - keep in mind a server is not an application dependency.
 
-If you have Trinidad in your *Gemfile* you can start it with `rails server`:
+### Rails
 
-```
-$ rails s trinidad
-```
-
-or simply, if you prefer not to use the Rack handler, use:
+Trinidad supports the same Rails version as the JRuby-Rack it founds (or is 
+specified/locked in your *Gemfile*), which is **2.3**, **3.x** as well as 
+**4.0** for JRuby-Rack 1.1.x (and the coming 1.2). Merb is not supported.
 
 ```
 $ trinidad
 ```
 
-**Sinatra**
+or if you prefer to use the Rack handler (e.g. for development) use :
+
+```
+$ rails s trinidad
+```
+
+Please note all configuration options will work using the Rack handler mode, you
+should usually only use it for development/tests and run `trinidad` on production.
+
+### Sinatra
 
 ```
 $ ruby app.rb -s Trinidad
 ```
 
-or configure your application to always use Trinidad:
+or configure your application to always use Trinidad :
 
 ```ruby
 require 'sinatra'
@@ -59,30 +78,42 @@ configure do
 end
 ```
 
-**Rackup**
+### Rackup
 
-You can pass the server name as an option to `rackup`:
+Trinidad auto-detects a plain-old Rack application (if there's a *config.ru*) :
+
+```
+$ trinidad
+```
+
+You can as well pass the server name to `rackup` to start the Rack handler :
 
 ```
 $ rackup -s trinidad
 ```
 
-Or you can set Trinidad by default in your `config.ru` file:
+Or you can set Trinidad as the default server in your *config.ru* file :
 
 ```
 #\ -s trinidad
 ```
 
-We do recommend to use the plain `trinidad` command for running applications 
-(in production), since it supports runtime pooling while the rackup mode does
+Trinidad solves the Rack "chicken-egg" problem when booting from a *rackup* file
+the same way as JRuby-Rack (since it boots all applications), that is :
+- if a Bundler *Gemfile* is detected, it first does a *bundle/setup* to load rack
+- otherwise the rack (gem) version might be specified using a magic comment in
+  *config.ru* as `# rack.version: ~>1.4.0` (or the latest installed gem is used)
+
+**NOTE:** We do recommend to use the plain `trinidad` mode for running apps 
+(in production), since it supports runtime pooling while the "rackup" mode does
 not, it also provides you with better Java integration possibilities.
 
-Also note that Trinidad does not mimic JRuby-Rack's behavior of starting a pool
-for Rails but booting plain Rack applications in a thread-safe manner  by 
-default (this is due backwards compatibility). Currently, runtime pooling is the 
-default with Trinidad and stays the same no matter the type of the application
-you're running. We expect this default to most likely change in future versions
-of Trinidad as thread-safe gets more adopted by the release of Rails 4.0.
+Also note that Trinidad does not mimic JRuby-Rack's (1.1.x) backwards compatible
+behavior of starting a pool for Rails but booting a thread-safe runtime for 
+plain Rack applications by default. Currently, runtime pooling is the default 
+with Trinidad and stays the same no matter the type of the application. 
+We expect this default to (most likely) change in a future version of Trinidad 
+as thread-safe gets more adopted by (stable) releases of Rails 4.0.
 
 ## Configuration
 
@@ -116,8 +147,8 @@ the path by adding the option `default_web_xml` within your configuration file.
 
 ### YAML Configuration
 
-The server can also be configured from a .yml file. By default, if a file is 
-not specified, the server tries to load *config/trinidad.yml*.
+The server can be configured from a .yml file. By default, if a file is 
+not specified, the server tries to load **config/trinidad.yml**.
 Within this file you can specify options available on the command line and tune 
 server settings or configure multiple applications to be hosted on the server.
 
@@ -138,8 +169,8 @@ $ jruby -S trinidad --config my_trinidad.yml
 ### Ruby Configuration
 
 As an alternative to the *config/trinidad.yml* file, a .rb configuration file 
-might be used to setup Trinidad. It follows the same convention as the yaml 
-configuration - the file `config/trinidad.rb` is loaded by default if exists.
+might be used to setup Trinidad. It follows the same convention as the YAML 
+configuration - the file **config/trinidad.rb** is loaded by default if exists.
 
 ```ruby
 Trinidad.configure do |config|
@@ -244,7 +275,7 @@ Since version **1.4.0** Trinidad supports 2 reload strategies :
   the **1.3.x** line. If you use this you should account that your JVM memory
   requirements might increase quite a lot (esp. if you reload under heavy loads)
   since requests are being served while there's another version of the
-  application being loaded.
+  application being loaded. Since version **1.4.5** rolling reloads support ....
 
 Configure the reload strategy per web application or globally e.g. :
 
@@ -258,40 +289,55 @@ Configure the reload strategy per web application or globally e.g. :
 ## Virtual Hosts
 
 It's possible to use Trinidad with multiple hosts and load the applications under 
-them automatically. Please remember that each host must have its applications in 
-a different directory.
+them automatically. A (virtual) host represents an association of a network name
+(such as "www.example.com" with the particular server on which Tomcat is running.
+Please remember that each host must have its applications in a different directory.
+You can find out more at Tomcat's [documentation][5].
 
 ```ruby
 Trinidad.configure do |config|
   config.hosts = {
-    # applications_path => host_name_list 
-    # (first one is the real host name, the other ones are aliases)
-    'app_local' => ['localhost', '127.0.0.1'],
-    'apps_lol'  => ['lolhost', 'lol'],
-    'apps_foo'  => 'foo'
+    # applications path (host app base directory) => host names
+    # (first one is the "main" host name, other ones are aliases)
+    '/var/www/local/apps' => ['localhost', '127.0.0.1'],
+    '/home/trinidad/apps' => 'appshost'
+    # NOTE: by default a (default) 'localhost' host is setup
   }
 end
 ```
 
-If applications are configured via the `web_apps` section, the host for each app
-can be added with the `hosts` key under each application. 
-If several applications belong to the same host put them under the same directory
-and specify the name of the host for each one e.g. :
+Detailed host configuration is also possible using supported [host options][5] :
+
+```yaml
+---
+  port: 8080
+  hosts:
+    localhost:
+      app_base: /home/trinidad/apps
+      auto_deploy: false
+      unpackWARs: true
+```
+
+If applications are configured via the `web_apps` section, the host for each 
+application can be added with the `host` (or `hosts`) key, if a specified host 
+does not exists (e.g. not configured or not "localhost") it will be created.
+If several applications belong to the same host, they are expected to reside 
+under the same parent directory e.g. :
 
 ```ruby
 Trinidad.configure do |config|
   config.web_apps = {
     :mock1 => {
       :root_dir => 'rails_apps/mock1',
-      :hosts    => ['rails.virtual.host', 'rails.host']
+      :host     => ['rails.virtual.host', 'rails.host']
     },
     :mock2 => {
       :root_dir => 'rails_apps/mock2',
-      :hosts    => 'rails.virtual.host'
+      :host     => 'rails.virtual.host'
     },
     :mock3 => {
       :root_dir => 'rack_apps/mock3',
-      :hosts    => ['rack.virtual.host', 'rack.host']
+      :host     => ['rack.virtual.host', 'rack.host']
     }
   }
 end
@@ -299,8 +345,9 @@ end
 
 ## Extensions
 
-Trinidad allows to extend itself with more (not just Tomcat) features, 
-here is a list of the available extensions that are "officially supported":
+Trinidad allows to extend itself with more (not just Tomcat) features using 
+extensions, they're essentially components hooked into Tomcat's life-cycle.
+Here is a list of the available extensions that are "officially supported" :
 
 * Database Connection Pooling :
   http://github.com/trinidad/trinidad_dbpool_extension
@@ -323,10 +370,25 @@ here is a list of the available extensions that are "officially supported":
 * Enable remote JMX monitoring capabilities for Trinidad :
   http://github.com/trinidad/trinidad_jmx_remote_extension
 
-You can find further information on how to write extensions in the wiki: 
-http://wiki.github.com/trinidad/trinidad/extensions
+You can find further information on how to write extensions in the [wiki][4].
+
+## Support
+
+* Contact [kares][0] if your team needs JRuby or Trinidad help and support
+* [Logic Haus][1] provides JRuby related training and development services
+* [Engine Yard][2] has PaaS cloud support with JRuby and Trinidad
+* Mailing List: http://groups.google.com/group/rails-trinidad
+* Bug Tracker: http://github.com/trinidad/trinidad/issues
+* IRC [Channel on FreeNode][3]: #trinidad (or ask in #jruby)
 
 ## Copyright
 
-Copyright (c) 2012 [Team Trinidad](https://github.com/trinidad). 
+Copyright (c) 2013 [Team Trinidad](https://github.com/trinidad). 
 See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
+
+[0]: http://github.com/kares
+[1]: http://logichaus.com/jruby.html
+[2]: https://www.engineyard.com/blog/2011/leveraging-trinidad-and-jruby-on-appcloud/
+[3]: http://webchat.freenode.net/?channels=trinidad
+[4]: http://github.com/trinidad/trinidad/wiki/extensions
+[5]: http://tomcat.apache.org/tomcat-7.0-doc/config/host.html
