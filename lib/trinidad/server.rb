@@ -227,7 +227,7 @@ module Trinidad
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name
         apps << ( app_holder = create_web_app(app_config) ); app = app_holder.web_app
-        logger.info "deploying application from #{app.root_dir} as #{app.context_path}"
+        logger.info "Deploying from #{app.root_dir} as #{app.context_path}"
       end if web_apps
 
       # configured :app_base or :hosts - scan for applications in host's app_base directory :
@@ -244,7 +244,7 @@ module Trinidad
           elsif work_dir && work_dir == path then true
           elsif ! work_dir && path =~ /tomcat\.\d+$/ then true # [host_base]/tomcat.8080
           elsif path[-4..-1] == '.war' && apps_path.include?(path[0...-4]) # only keep expanded .war
-            logger.info "expanded .war application at #{path} - only deploying directory (not .war)"
+            logger.info "Expanded .war at #{path} - only deploying directory (.war ignored)"
             true
           end
         end
@@ -258,12 +258,12 @@ module Trinidad
                 web_app.context_path == Trinidad::Tomcat::ContextName.new(app_base_name).path
             end
             if deployed
-              logger.debug "skipping auto-deploy of application from #{app_root} (already deployed)"
+              logger.debug "Skipping auto-deploy from #{app_root} (already deployed)"
             else
               apps << ( app_holder = create_web_app({ 
                 :context_name => path, :root_dir => app_root, :host_name => host.name
               }) ); app = app_holder.web_app
-              logger.info "auto-deploying application from #{app.root_dir} as #{app.context_path}"
+              logger.info "Auto-Deploying from #{app.root_dir} as #{app.context_path}"
             end
           end
         end
@@ -397,7 +397,7 @@ module Trinidad
           app_path = app_path.relative_path_from(base_path) rescue app_path
         end
         app_real_path = begin; app_path.realpath.to_s; rescue
-          logger.warn "web app root #{app_root} does not exist"
+          logger.warn "Application root #{app_root} does not exist !"
           return
         end
         base_parent = false
@@ -405,8 +405,8 @@ module Trinidad
           begin
             break if base_parent = ( app_real_path.index(base_path.realpath.to_s) == 0 )
           rescue => e
-            logger.warn "app_base for host #{host.name.inspect} seems to" <<
-            " not exists, try configuring an absolute path or create it\n (#{e.message})"
+            logger.warn "Host #{host.name.inspect} app_base does not exist," <<
+            " try configuring an absolute path or create it\n (#{e.message})"
             return
           end
           base_path = base_path.parent
@@ -415,12 +415,12 @@ module Trinidad
           return if base_path.to_s == host.app_base
           host.app_base = base_path.realpath.to_s
           unless web_app_hosts.include?(host)
-            logger.info "changed (configured) app_base for host #{host.name.inspect}" <<
-                        " (#{host.app_base}) to include web_app root: #{app_path}"
+            logger.info "Changing (configured) app_base for host #{host.name.inspect}" <<
+                        " (#{host.app_base}) to include application root: #{app_path}"
           end
         else
-          logger.warn "app_base for host #{host.name.inspect} #{host.app_base.inspect}" <<
-                      " is not a parent directory for web_app root: #{app_path}"
+          logger.warn "Host #{host.name.inspect} app_base #{host.app_base.inspect}" <<
+                      " is not a parent directory for application root: #{app_path}"
         end
       else
         host.app_base = app_path.parent.realpath.to_s
