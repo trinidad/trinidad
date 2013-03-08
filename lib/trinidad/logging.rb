@@ -19,11 +19,6 @@ module Trinidad
       
       out_handler = new_console_handler JRuby.runtime.out
       out_handler.formatter = console_formatter
-
-      err_handler = new_console_handler JRuby.runtime.err
-      err_handler.formatter = console_formatter
-      err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
-        level : JUL::Level::WARNING # only >= WARNING on STDERR
       
       root_logger.synchronized do
         root_logger.handlers.to_a.each do |handler|
@@ -31,7 +26,16 @@ module Trinidad
         end
 
         root_logger.add_handler(out_handler)
-        root_logger.add_handler(err_handler)
+        if JRuby.runtime.out != Java::JavaLang::System.out ||
+           JRuby.runtime.err != Java::JavaLang::System.err
+         # NOTE: only add err handler if customized STDOUT or STDERR :
+        err_handler = new_console_handler JRuby.runtime.err
+        err_handler.formatter = console_formatter
+        err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
+          level : JUL::Level::WARNING # only >= WARNING on STDERR
+        
+         root_logger.add_handler(err_handler)
+        end
         set_log_level(root_logger, level)
       end
       silence_tomcat_loggers
