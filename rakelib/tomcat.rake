@@ -67,6 +67,7 @@ end
 namespace :'tomcat-core' do
 
   task :compile do
+    mkdir_p TOMCAT_CORE_TARGET_DIR unless File.exist?(TOMCAT_CORE_TARGET_DIR)
     javac "src/tomcat-core/java", TOMCAT_CORE_TARGET_DIR
   end
 
