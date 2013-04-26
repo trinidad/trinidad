@@ -1,3 +1,7 @@
+== Trinidad_jars 1.2.3 (2013-04-26)
+
+* Tomcat 7.0.39 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
 == Trinidad 1.4.5.B1 (2013-03-08)
 
 * Rails 4.0 threadsafe! detection
