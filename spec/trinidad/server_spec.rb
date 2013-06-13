@@ -3,10 +3,10 @@ require 'fileutils'
 
 describe Trinidad::Server do
   include FakeApp
-  
+
   JSystem = java.lang.System
   JContext = javax.naming.Context
-  
+
   before { Trinidad.configure }
   after  { Trinidad.configuration = nil }
 
@@ -14,7 +14,7 @@ describe Trinidad::Server do
 
   APP_STUBS_DIR = File.expand_path('../stubs', File.dirname(__FILE__))
 
-  before do 
+  before do
     FileUtils.mkdir(APP_STUBS_DIR) unless File.exists?(APP_STUBS_DIR)
   end
   after { FileUtils.rm_r APP_STUBS_DIR }
@@ -63,9 +63,30 @@ describe Trinidad::Server do
     #File.exist?('ssl').should be true
   end
 
-  it "enables ajp when config param is a number" do
+  it "enables AJP when config param is a number" do
     server = configured_server( :ajp => { :port => 8009 } )
     server.ajp_enabled?.should be_true
+  end
+
+  it "configures AJP only (if HTTP not set)" do
+    server = configured_server( :address => '127.0.0.1', :ajp => { :port => 8009 } )
+
+    connector = server.tomcat.connector
+    connector.get_property("address").to_s.should == '/127.0.0.1'
+
+    connectors = server.tomcat.service.find_connectors
+    connectors.should have(1).connector
+    connectors[0].protocol.should == 'AJP/1.3'
+  end
+
+  it "configures HTTP as well as AJP" do
+    server = configured_server( :address => 'localhost', :http => true, :ajp => { :port => 8009 } )
+
+    connector = server.tomcat.connector
+    connector.protocol.should == 'HTTP/1.1'
+
+    connectors = server.tomcat.service.find_connectors
+    connectors.should have(2).connector
   end
 
   it "includes a connector with https scheme when ssl is enabled" do
@@ -282,7 +303,7 @@ describe Trinidad::Server do
 
     host_listeners = server.tomcat.host.find_lifecycle_listeners.
       select {|listener| listener.instance_of?(Trinidad::Lifecycle::Host)}
-    
+
     host_listeners.should have(1).listener
     listener = host_listeners[0]
     listener.app_holders.should have(2).applications
@@ -409,7 +430,7 @@ describe Trinidad::Server do
     end
   end
 
-  after do 
+  after do
     temp_domains = java.lang.System.get_property('java.io.tmpdir') + '/domains'
     FileUtils.rm_rf( temp_domains ) if File.exist?(temp_domains)
   end
@@ -631,7 +652,7 @@ describe Trinidad::Server do
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/work' # and host work_dir
 
     Dir.chdir(APP_STUBS_DIR + '/local') do
-      server = configured_server :app_base => Dir.pwd, 
+      server = configured_server :app_base => Dir.pwd,
                                  :host => { :work_dir => 'work' } # default host
       web_apps = server.send(:create_web_apps)
 
@@ -648,7 +669,7 @@ describe Trinidad::Server do
     FileUtils.touch APP_STUBS_DIR + '/local/foo_production-0.1.war'
 
     Dir.chdir(APP_STUBS_DIR + '/local') do
-      server = configured_server :app_base => Dir.pwd, 
+      server = configured_server :app_base => Dir.pwd,
         :web_apps => { :foo => { :context_path => '/foo', :root_dir => 'foo_production-0.1.war' } }
       web_apps = server.send(:create_web_apps)
 
@@ -678,7 +699,7 @@ describe Trinidad::Server do
   end
 
   private
-  
+
   def default_context(server)
     server.tomcat.host.find_children.first
   end
@@ -695,5 +716,5 @@ describe Trinidad::Server do
     children[0].path.should == '/'
     children[0]
   end
-  
+
 end

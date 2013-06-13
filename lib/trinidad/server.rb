@@ -32,14 +32,14 @@ module Trinidad
     attr_writer :web_apps
 
     def trap?
-      @trap ||= @config[:trap] if ! defined?(@trap) || @trap.nil?
+      @trap = !! @config[:trap] if ! defined?(@trap) || @trap.nil?
       @trap
     end
     attr_writer :trap
 
     def ssl_enabled?
       if ! defined?(@ssl_enabled) || @ssl_enabled.nil?
-        @ssl_enabled ||= ( !! @config[:ssl] && ! @config[:ssl].empty? )
+        @ssl_enabled = ( !! @config[:ssl] && ! @config[:ssl].empty? )
       end
       @ssl_enabled
     end
@@ -47,7 +47,8 @@ module Trinidad
 
     def ajp_enabled?
       if ! defined?(@ajp_enabled) || @ajp_enabled.nil?
-        @ajp_enabled ||= ( !! @config[:ajp] && ! @config[:ajp].empty? )
+        ajp = @config[:ajp]
+        @ajp_enabled = ( !! ajp && ( ! ajp.respond_to?(:empty?) || ! ajp.empty? ) )
       end
       @ajp_enabled
     end
@@ -55,8 +56,8 @@ module Trinidad
 
     def http_configured?
       if ! defined?(@http_configured) || @http_configured.nil?
-        @http_configured ||=
-        ( ( !! @config[:http] && ! @config[:http].empty? ) || @config[:address] != 'localhost' )
+        http = @config[:http]
+        @http_configured = ( !! http && ( ! http.respond_to?(:empty?) || ! http.empty? ) )
       end
       @http_configured
     end
@@ -64,21 +65,31 @@ module Trinidad
 
     def tomcat; @tomcat ||= initialize_tomcat; end
 
+    LOCALHOST = 'localhost'.freeze # :nodoc:
+
     def initialize_tomcat
       set_system_properties
 
       tomcat = Trinidad::Tomcat::Tomcat.new
       tomcat.base_dir = config[:base_dir] || Dir.pwd
-      tomcat.hostname = config[:address] || 'localhost'
+      tomcat.hostname = config[:address] || LOCALHOST
       tomcat.server.address = config[:address]
       tomcat.port = config[:port].to_i
       default_host(tomcat)
       create_hosts(tomcat)
       tomcat.enable_naming
 
-      add_http_connector(tomcat) if http_configured?
-      add_ssl_connector(tomcat)  if ssl_enabled?
-      add_ajp_connector(tomcat)  if ajp_enabled?
+      http_connector = http_configured? ||
+        ( ! ajp_enabled? && config[:address] && config[:address] != LOCALHOST )
+
+      if http_connector
+        tomcat.connector = add_http_connector(tomcat)
+      end
+      if ajp_enabled?
+        connector = add_ajp_connector(tomcat)
+        tomcat.connector = connector unless http_connector
+      end
+      add_ssl_connector(tomcat) if ssl_enabled?
 
       Trinidad::Extensions.configure_server_extensions(config[:extensions], tomcat)
     end
@@ -97,52 +108,60 @@ module Trinidad
     def load_host_monitor(web_apps); add_host_monitor(web_apps); end
 
     def add_ajp_connector(tomcat = @tomcat)
-      add_service_connector(@config[:ajp], 'AJP/1.3', tomcat)
+      options = config[:ajp]
+      options = {
+        :address => @config[:address], :port => @config[:port]
+      }.merge!( options.respond_to?(:[]) ? options : {} )
+
+      add_service_connector(options, options[:protocol_handler] || 'AJP/1.3', tomcat)
     end
 
     def add_http_connector(tomcat = @tomcat)
-      options = config[:http] || {}
-      options[:address] ||= @config[:address] if @config[:address] != 'localhost'
-      options[:port] = @config[:port]
-      options[:protocol_handler] = 'org.apache.coyote.http11.Http11NioProtocol' if options[:nio]
+      options = config[:http]
+      options = {
+        :address => @config[:address], :port => @config[:port]
+      }.merge!( options.respond_to?(:[]) ? options : {} )
 
-      if options[:apr]
+      if options.delete(:nio)
+        options[:protocol_handler] ||= 'org.apache.coyote.http11.Http11NioProtocol'
+      end
+
+      if options.delete(:apr)
         tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
       end
 
-      connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
-      tomcat.connector = connector
+      add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
     end
 
     def add_ssl_connector(tomcat = @tomcat)
-      options = config[:ssl].merge({
-        :scheme => 'https',
-        :secure => true,
-        :SSLEnabled => 'true'
-      })
+      options = config[:ssl]
+      options = {
+        :scheme => 'https', :secure => true, :SSLEnabled => 'true'
+      }.merge!( options.respond_to?(:[]) ? options : {} )
 
       options[:keystoreFile] ||= options.delete(:keystore)
 
       if ! options[:keystoreFile] && ! options[:SSLCertificateFile]
-        options[:keystoreFile] = 'ssl/keystore'
-        options[:keystorePass] = 'waduswadus42'
+        options[:keystoreFile] ||= 'ssl/keystore'
+        options[:keystorePass] ||= 'waduswadus42'
         generate_default_keystore(options)
       end
 
       add_service_connector(options, nil, tomcat)
     end
 
+    # NOTE: make sure to pass an options Hash that might be changed !
     def add_service_connector(options, protocol = nil, tomcat = @tomcat)
-      opts = options.dup
-
       connector = Trinidad::Tomcat::Connector.new(protocol)
-      connector.scheme = opts.delete(:scheme) if opts[:scheme]
-      connector.secure = opts.delete(:secure) || false
-      connector.port = opts.delete(:port).to_i
+      connector.scheme = options.delete(:scheme) if options[:scheme]
+      connector.secure = options.delete(:secure) || false
+      connector.port = options.delete(:port).to_i if options[:port]
 
-      connector.protocol_handler_class_name = opts.delete(:protocol_handler) if opts[:protocol_handler]
+      if handler = options.delete(:protocol_handler)
+        connector.protocol_handler_class_name = handler
+      end
 
-      opts.each { |key, value| connector.setProperty(key.to_s, value.to_s) }
+      options.each { |key, value| connector.setProperty(key.to_s, value.to_s) }
 
       tomcat.service.add_connector(connector)
       connector
