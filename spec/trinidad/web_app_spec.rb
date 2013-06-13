@@ -2,20 +2,20 @@ require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::WebApp do
   include FakeApp
-  
+
   before { Trinidad.configuration = nil }
-  
+
   it "exposes configuration via [] and readers" do
     default_config = { :context_path => '/', :rackup => 'rackup.rb' }
     app = Trinidad::WebApp.create({ :context_path => '/root' }, default_config)
-    
+
     app[:context_path].should == '/root'
     app[:rackup].should == 'rackup.rb'
-    
+
     app.context_path.should == '/root'
     app.rackup.should == 'rackup.rb'
   end
-  
+
   it "creates a RailsWebApp if rackup option is not present" do
     app = Trinidad::WebApp.create({})
     app.should be_a(Trinidad::RailsWebApp)
@@ -47,7 +47,7 @@ describe Trinidad::WebApp do
     FileUtils.rm environment_rb if File.exist?(environment_rb)
     FileUtils.rm application_rb if File.exist?(application_rb)
   end
-  
+
   it "creates a RackupWebApp if no Rails code in environment.rb/application.rb" do
     environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
@@ -65,7 +65,7 @@ describe Trinidad::WebApp do
       #FileUtils.rm [environment_rb, application_rb]
     end
   end
-  
+
   it "creates a RailsWebApp if Rails 2.3 code in environment.rb" do
     environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     begin
@@ -88,7 +88,7 @@ describe Trinidad::WebApp do
       #FileUtils.rm environment_rb
     end
   end
-  
+
   it "creates a RailsWebApp if Rails 3.x code in environment.rb/application.rb" do
     environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
@@ -123,7 +123,7 @@ describe Trinidad::WebApp do
       #FileUtils.rm [environment_rb, application_rb]
     end
   end
-  
+
   it "detects a RailsWebApp if (minimal) Rails code in environment.rb" do
     environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     begin
@@ -145,7 +145,7 @@ describe Trinidad::WebApp do
       #FileUtils.rm environment_rb
     end
   end
-  
+
   it "ignores rack_servlet when a deployment descriptor already provides it" do
     create_rails_web_xml
 
@@ -196,7 +196,7 @@ describe Trinidad::WebApp do
     })
     app.rack_servlet.should be nil
   end
-  
+
   it "ignores rack_servlet when a deployment descriptor provides a 'rack' named filter" do
     create_config_file custom_web_xml = "filter2-web.xml", '' +
       '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -216,7 +216,7 @@ describe Trinidad::WebApp do
     })
     app.rack_servlet.should be nil
   end
-  
+
   it "ignores rack_listener when a deployment descriptor already provides it" do
     create_rails_web_xml
 
@@ -266,7 +266,7 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({}, {})
     app.rack_servlet[:load_on_startup].should == 2
   end
-  
+
   it "adds async_supported to rack_servlet config (false by default)" do
     app = Trinidad::WebApp.create({}, {})
     app.rack_servlet[:async_supported].should == false
@@ -276,7 +276,7 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({ :async_supported => true })
     app.rack_servlet[:async_supported].should == true
   end
-  
+
   it "configured RailsServletContextListener when a deployment descriptor is not provided" do
     app = Trinidad::WebApp.create({})
     app.rack_listener.should == 'org.jruby.rack.rails.RailsServletContextListener'
@@ -290,19 +290,19 @@ describe Trinidad::WebApp do
       :public => 'foo',
       :environment => :production
     })
-  
-    params = app.init_params  
+
+    params = app.init_params
     params['jruby.min.runtimes'].should == '1'
     params['jruby.max.runtimes'].should == '1'
     params['jruby.compat.version'].should == '1.9'
     params['public.root'].should == 'foo'
     params['rails.env'].should == 'production'
   end
-  
+
   it "adds the rackup script as a context parameter when it's provided" do
     FakeFS do
       create_rackup_file
-      
+
       app = Trinidad::WebApp.create({
         :web_app_dir => Dir.pwd,
         :rackup => 'config/config.ru'
@@ -322,7 +322,7 @@ describe Trinidad::WebApp do
         :jruby_min_runtimes => 2,
         :jruby_max_runtimes => 5
       }, nil)
-      
+
       app.context_params['jruby.min.runtimes'].should be nil
       app.context_params['jruby.max.runtimes'].should be nil
     end
@@ -363,7 +363,7 @@ describe Trinidad::WebApp do
     app.default_web_xml.should == "/home/kares/trinidad/default.web.xml"
     app.default_deployment_descriptor.should == "/home/kares/trinidad/default.web.xml"
   end
-  
+
   it "doesn't load any web.xml when the deployment descriptor doesn't exist" do
     app = Trinidad::WebApp.create({
       :web_app_dir => Dir.pwd,
@@ -381,13 +381,13 @@ describe Trinidad::WebApp do
 
   it "accepts and uses absolute public root path" do
     app = Trinidad::WebApp.create({
-        :public => '/var/www/public', 
+        :public => '/var/www/public',
         :root_dir => '/home/trinidad/webapp/current'
     })
     app.public_root.should == '/var/www/public'
     app.public_dir.should == '/var/www/public'
   end
-  
+
   it "expands '/' public root as root dir (not absolute path)" do
     app = Trinidad::WebApp.create({
         :public => '/', :root_dir => '/home/trinidad/webapp/current'
@@ -395,7 +395,7 @@ describe Trinidad::WebApp do
     app.public_root.should == '/'
     app.public_dir.should == '/home/trinidad/webapp/current'
   end
-  
+
   it "uses extensions from the global configuration" do
     default_config = { :extensions => { :hotdeploy => {} } }
     app = Trinidad::WebApp.create({}, default_config)
@@ -412,7 +412,7 @@ describe Trinidad::WebApp do
   it "creates a rackup application when the rackup file is under WEB-INF directory" do
     FakeFS do
       create_rackup_file('WEB-INF')
-      
+
       app = Trinidad::WebApp.create({})
 
       app.should be_a(Trinidad::RackupWebApp)
@@ -491,7 +491,7 @@ describe Trinidad::WebApp do
     app = Trinidad::WebApp.create({ :context_path => '/home' })
     app.context_name.should be nil
   end
-  
+
   it "missing context path assumes root" do
     app = Trinidad::WebApp.create({})
     app.context_path.should == '/'
@@ -500,6 +500,35 @@ describe Trinidad::WebApp do
   it "uses development as default environment when the option is missing" do
     app = Trinidad::WebApp.create({})
     app.environment.should == 'development'
+  end
+
+  it "converts environment to a string" do
+    app = Trinidad::WebApp.create(:environment => :staging)
+    app.environment.should == 'staging'
+  end
+
+  it 'resolves environment from web.xml' do
+    FileUtils.touch env_web_xml = "#{MOCK_WEB_APP_DIR}/config/env.web.xml"
+    begin
+      create_config_file env_web_xml, '' <<
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<web-app>' +
+        '  <context-param>' +
+        '    <param-name>rack.env</param-name>' +
+        '    <param-value>production2</param-value>' +
+        '  </context-param>' +
+        '</web-app>'
+      app = Trinidad::WebApp.create({
+        :context_path => '/',
+        :web_app_dir => MOCK_WEB_APP_DIR,
+        :environment => 'testing',
+        :default_web_xml => 'config/env.web.xml'
+      })
+
+      app.environment.should == 'production2'
+    ensure
+      FileUtils.rm env_web_xml
+    end
   end
 
   it "includes the ruby version as a parameter to load the jruby compatibility version" do
@@ -511,7 +540,7 @@ describe Trinidad::WebApp do
   it "uses tmp/restart.txt as a monitor file for context reloading" do
     app = Trinidad::WebApp.create({}, { :web_app_dir => MOCK_WEB_APP_DIR })
     app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
-    
+
     app = Trinidad::WebApp.create({ :root_dir => MOCK_WEB_APP_DIR }, nil)
     app.monitor.should == File.expand_path('tmp/restart.txt', MOCK_WEB_APP_DIR)
   end
@@ -522,7 +551,7 @@ describe Trinidad::WebApp do
       :monitor => 'foo.txt'
     })
     app.monitor.should == File.expand_path('tmp/foo.txt', MOCK_WEB_APP_DIR)
-    
+
     app = Trinidad::WebApp.create({
       :root_dir => MOCK_WEB_APP_DIR,
       :work_dir => MOCK_WEB_APP_DIR,
@@ -566,7 +595,7 @@ describe Trinidad::WebApp do
         :jruby_min_runtimes => 1,
         :jruby_max_runtimes => 2
       })
-      
+
       app.jruby_min_runtimes.should == 1
       app.jruby_max_runtimes.should == 1 # overrides default config
       app.threadsafe?.should be true
@@ -638,13 +667,13 @@ EOF
           :jruby_min_runtimes => 2, :jruby_max_runtimes => 4
         }
       )
-      
+
       app.jruby_min_runtimes.should == 1
       app.jruby_max_runtimes.should == 1 # overrides default config
       app.threadsafe?.should be true
     end
   end
-  
+
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
     create_rails_environment
 
@@ -668,7 +697,7 @@ EOF
     app.jruby_max_runtimes.should == 2
     app.threadsafe?.should be false
   end
-  
+
   it "does not set threadsafe when the option is not enabled" do
     create_rails_environment_non_threadsafe
 
@@ -690,14 +719,14 @@ EOF
     app.jruby_max_runtimes.should == 1
     app.threadsafe?.should be true
   end
-  
+
   it "detects a rackup web app even if :rackup present in main config" do
     FakeFS do
       create_rackup_file 'main'
       # FakeFS seems to now work reliably :
       FileUtils.rm_r 'config' if File.exists?('config')
-      
-      app = Trinidad::WebApp.create({ 
+
+      app = Trinidad::WebApp.create({
         :web_app_dir => Dir.pwd
       }, {
         :rackup => 'main/config.ru'
@@ -713,7 +742,7 @@ EOF
       :root_dir => MOCK_WEB_APP_DIR,
       :environment => :production
     })
-  
+
     app.context_params['app.root'].should == MOCK_WEB_APP_DIR
   end
 
@@ -722,7 +751,7 @@ EOF
       :root_dir => File.join(File.dirname(__FILE__), '../web_app_rails'),
       :environment => :staging
     })
-  
+
     app.context_params['rails.root'].should == RAILS_WEB_APP_DIR
   end
 
@@ -730,7 +759,7 @@ EOF
     app = Trinidad::WebApp.create({
       :root_dir => MOCK_WEB_APP_DIR + '../../spec/web_app_mock'
     })
-  
+
     if JRuby::Rack::VERSION == '1.1.10'
       app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::RailsFilesystemLayout'
       app.context_params['gem.path'].should_not be nil # due a jruby-rack bug
@@ -754,7 +783,7 @@ EOF
       app.context_params['jruby.rack.layout_class'].should == 'JRuby::Rack::FileSystemLayout'
     end
   end
-  
+
   it "does look for jruby context param values from system properties" do
     app = Trinidad::WebApp.create({})
     app.context_params['jruby.compat.version'].should == RUBY_VERSION
@@ -762,14 +791,14 @@ EOF
     begin
       java.lang.System.setProperty('jruby.compat.version', '1_9')
       java.lang.System.setProperty('jruby.runtime.acquire.timeout', '4.2')
-      
+
       app.reset!
       app.context_params['jruby.compat.version'].should == '1_9'
       app.context_params['jruby.runtime.acquire.timeout'].should == '4.2'
-      
+
       app2 = Trinidad::WebApp.create({ :jruby_runtime_acquire_timeout => 9.5 })
       app2.context_params['jruby.runtime.acquire.timeout'].should == '9.5'
-      
+
       app3 = Trinidad::WebApp.create({}, { :jruby_runtime_acquire_timeout => 1.25 })
       app3.context_params['jruby.runtime.acquire.timeout'].should == '1.25'
     ensure
@@ -777,7 +806,7 @@ EOF
       java.lang.System.clearProperty('jruby.runtime.acquire.timeout')
     end
   end
-  
+
   it "accepts and expands java_classes and java_lib" do
     app = Trinidad::WebApp.create({
       :root_dir => '/home/kares',
@@ -786,11 +815,11 @@ EOF
     })
     app.java_classes.should == 'java/classes'
     app.java_lib.should == 'java/lib'
-    
+
     app.java_classes_dir.should == '/home/kares/java/classes'
     app.java_lib_dir.should == '/home/kares/java/lib'
   end
-  
+
   it "accepts absolute paths for java_classes and java_lib" do
     app = Trinidad::WebApp.create({
       :root_dir => Dir.pwd,
@@ -808,13 +837,13 @@ EOF
     })
     app.java_classes_dir.should == '/home/trinidad/shared/classes'
   end
-  
+
   it "uses sensible defaults for java_classes and java_lib" do
     app = Trinidad::WebApp.create({ :root_dir => Dir.pwd })
     app.java_lib.should =='lib/java'
     app.java_classes.should == 'lib/java/classes'
   end
-  
+
   it "handles (old) :classes_dir and :libs_dir syntax" do
     app = Trinidad::WebApp.create({
       :root_dir => Dir.pwd,
@@ -824,7 +853,7 @@ EOF
     app.java_classes.should == 'klasses'
     app.java_lib.should == 'thelib'
   end
-  
+
   it "sets public root" do
     app = Trinidad::WebApp.create({
       :root_dir => Dir.pwd, :public => 'assets'
@@ -836,7 +865,7 @@ EOF
 
   it "accepts public configuration" do
     app = Trinidad::WebApp.create({
-      :root_dir => Dir.pwd, :public => { 
+      :root_dir => Dir.pwd, :public => {
         :root => 'assets',
         :cache => false
       }
@@ -848,7 +877,7 @@ EOF
 
   it "accepts public configuration cache parameters" do
     app = Trinidad::WebApp.create({
-      :root_dir => Dir.pwd, :public => { 
+      :root_dir => Dir.pwd, :public => {
         :cached => true,
         :cache_ttl => 60 * 1000,
         :cache_max_size => 100 * 1000,
@@ -878,7 +907,7 @@ EOF
 
     app.caching_allowed?.should == true
   end
-  
+
   it "parses (context-param) xml values correctly" do
     FileUtils.touch custom_web_xml = "#{MOCK_WEB_APP_DIR}/config/custom.web.xml"
     begin
@@ -919,18 +948,18 @@ EOF
         :web_app_dir => MOCK_WEB_APP_DIR,
         :default_web_xml => 'config/custom.web.xml'
       })
-      
+
       web_app.web_xml_context_param('jruby.rack.logging').should be nil
       web_app.web_xml_context_param('jruby.rack.logging.name').should == '/root'
-      
+
       web_app.web_xml_filter?('org.jruby.rack.RackFilter').should be true
       web_app.web_xml_filter?('org.jruby.rack.Rack').should be false
       web_app.web_xml_filter?(nil, 'Rack').should be false
       web_app.web_xml_filter?(nil, 'RackFilter').should be true
-      
+
       web_app.web_xml_listener?('org.jruby.rack.rails').should be false
       web_app.web_xml_listener?('org.jruby.rack.rails.RailsServletContextListener').should be true
-      
+
       web_app.web_xml_servlet?('org.jruby.rack.RackServlet').should be false
       web_app.web_xml_servlet?(nil, 'RackServlet').should be false
       web_app.web_xml_servlet?('org.kares.jruby.CustomServlet').should be true
@@ -941,7 +970,7 @@ EOF
       FileUtils.rm custom_web_xml
     end
   end
-  
+
   it "configures a custom default servlet (by default)" do
     create_rails_web_xml
 
@@ -963,7 +992,7 @@ EOF
     })
     app.default_servlet.should be true # true - keep as is
   end
-  
+
   it "'removes' default servlet when a deployment descriptor provides a default named servlet" do
     create_config_file custom_web_xml = "extended-web.xml", '' +
       '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -984,7 +1013,7 @@ EOF
     })
     app.default_servlet.should be false # false - remove default
   end
-  
+
   it "returns default servlet setup when configured" do
     create_rails_web_xml
 
@@ -1002,7 +1031,7 @@ EOF
       :mapping => [ '/', '/assets' ]
     }
   end
-  
+
   it "allows aliases to be specified" do
     app = Trinidad::WebApp.create({
       :root_dir => Dir.pwd,
@@ -1022,7 +1051,7 @@ EOF
     })
     app.aliases.should == "/assets1=/home/public,/assets2=#{Dir.pwd}/app/public-ext,/assets3=/var/www/public"
   end
-  
+
   describe "WarWebApp" do
 
     it "is a war application if the context path ends with .war" do
@@ -1050,7 +1079,7 @@ EOF
     #  app = Trinidad::WebApp.create :context_path => 'foo.war'
     #  app.context_path.should == '/foo'
     #end
-    
+
     it "by default keep working directory nil" do
       app = new_web_app :context_path => '/foo', :root_dir => './foo.war'
       expect( app.work_dir ).to be nil
@@ -1064,7 +1093,7 @@ EOF
     it "is configured to get unpacked by default" do # @see ContextConfig#fixDocBase
       server = Trinidad::Server.new :context_path => 'foo.war'
       app_holder = server.send(:deploy_web_apps).first
-      
+
       expect( app_holder.context.getUnpackWAR ).to be true
       expect( server.tomcat.host.isUnpackWARs ).to be true
 
@@ -1082,7 +1111,7 @@ EOF
       docBase = app_holder.web_app.doc_base # context.getDocBase()
 
       file = java.io.File.new(docBase)
-      if ! file.isAbsolute() 
+      if ! file.isAbsolute()
         docBase = java.io.File.new(canonicalAppBase, docBase).getPath()
       else
         docBase = file.getCanonicalPath()
@@ -1098,9 +1127,9 @@ EOF
   end
 
   let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
-  
+
   private
-  
+
   def custom_context(web_app)
     context = CustomContext.new
     context.setName(web_app.context_path)
@@ -1112,7 +1141,7 @@ EOF
     tomcat.getHost().addChild(context)
     context
   end
-  
+
   class CustomContext < Java::OrgApacheCatalinaCore::StandardContext
 
     def addChild(container)
@@ -1121,5 +1150,5 @@ EOF
     end
 
   end
-  
+
 end
