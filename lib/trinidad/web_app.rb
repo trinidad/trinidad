@@ -91,7 +91,7 @@ module Trinidad
       @environment ||= begin
         if env = web_xml_environment
           if self[:environment] && env != self[:environment]
-            logger.info "ignoring set :environment '#{self[:environment]}' for " <<
+            logger.info "Ignoring set :environment '#{self[:environment]}' for " <<
               "#{context_path} since it's configured in web.xml as '#{env}'"
           end
         else
@@ -372,7 +372,7 @@ module Trinidad
             }
           else
             if ! rack_servlet.empty?
-              logger.info "ignoring :rack_servlet configuration for " <<
+              logger.info "Ignoring :rack_servlet configuration for " <<
                           "#{context_path} due #{deployment_descriptor}"
             end
             false # no need to setup a rack servlet
@@ -475,7 +475,7 @@ module Trinidad
           require 'rexml/document'
           @web_xml_doc = REXML::Document.new(File.read(descriptor))
         rescue REXML::ParseException => e
-          logger.warn "invalid deployment descriptor:[#{descriptor}]\n #{e.message}"
+          logger.warn "Invalid deployment descriptor:[#{descriptor}]\n #{e.message}"
           @web_xml_doc = false
         end
         @web_xml_doc || nil
