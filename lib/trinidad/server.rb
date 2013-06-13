@@ -346,9 +346,9 @@ module Trinidad
           host.app_base = value if default_host_base?(host)
         when :aliases
           aliases = host.find_aliases || []
-          value.each do |name|
-            next if (name = name.to_s) == host.name
-            host.add_alias(name) unless aliases.include?(name)
+          value.each do |aliaz|
+            next if (aliaz = aliaz.to_s) == host.name
+            host.add_alias(aliaz) unless aliases.include?(aliaz)
           end if host_config[:aliases]
         else
           value = value.to_s if value.is_a?(Symbol)
@@ -407,7 +407,9 @@ module Trinidad
         base_parent = false
         2.times do
           begin
-            break if base_parent = ( app_real_path.index(base_path.realpath.to_s) == 0 )
+            if app_real_path.index(base_path.realpath.to_s) == 0
+              base_parent = true; break
+            end
           rescue => e
             logger.warn "Host #{host.name.inspect} app_base does not exist," <<
             " try configuring an absolute path or create it\n (#{e.message})"
