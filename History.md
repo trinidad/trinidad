@@ -1,12 +1,12 @@
-== Trinidad_jars 1.2.4 (2013-06-12)
+## trinidad_jars 1.2.4 (2013-06-12)
 
 * Tomcat 7.0.41 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad_jars 1.2.3 (2013-04-26)
+## trinidad_jars 1.2.3 (2013-04-26)
 
 * Tomcat 7.0.39 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad 1.4.5.B1 (2013-03-08)
+## trinidad 1.4.5.B1 (2013-03-08)
 
 * Rails 4.0 threadsafe! detection
 * only configure logging err handler if STDOUT/STDERR changed from JVM default
@@ -25,24 +25,24 @@
   throwable just to obtain the caller stack trace (that ain't really used)
 * handle immediate log level change with JUL's LogFactory
 * avoid work_dir deletion on context destory (during rolling reloads)
-* do not allow public.root == '/' to be used as FS root (#93)
+* do not allow public.root ## '/' to be used as FS root (#93)
 
-== Trinidad_jars 1.2.2 (2013-03-08)
+## trinidad_jars 1.2.2 (2013-03-08)
 
 * Tomcat 7.0.37 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad_jars 1.2.1 (2013-02-21)
+## trinidad_jars 1.2.1 (2013-02-21)
 
 * Tomcat 7.0.35 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad_jars 1.2.0 (2013-01-14)
+## trinidad_jars 1.2.0 (2013-01-14)
 
 * Tomcat 7.0.33 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 * patched JULI's DirectJDKLog to not generate stack traces for every log
   by default (can be turned back using org.apache.juli.logging.logSource=true)
 * native (Java) implementations for logging classes, to keep logging AFAP
 
-== Trinidad 1.4.4 (2012-10-19)
+## trinidad 1.4.4 (2012-10-19)
 
 * make sure setting FileHandler's rotatable to false works (#82)
 * first draft for web-app logging configuration to avoid use hacks e.g.
@@ -53,13 +53,13 @@
 * check whether (jruby.) params are specified in system properties (#92)
 * fix JUL::ConsoleHandler - not setting up JRuby streams correctly (#88)
 
-== Trinidad_jars 1.1.1 (2012-10-17)
+## trinidad_jars 1.1.1 (2012-10-17)
 
 * Tomcat 7.0.32 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 * avoid using the "global" (and redundant) TRINIDAD_LIBS constant
 * load the .jar files instead of requiring them (no more $: polution)
 
-== Trinidad 1.4.3 (2012-09-20)
+## trinidad 1.4.3 (2012-09-20)
 
 * allow to keep (and configure) the jsp servlet (support for serving .jsp pages)
 * decreased jruby.runtime.acquire.timeout default from 10 to 5 seconds
@@ -101,22 +101,22 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
    it is an experimental feature that might change in the future and
    currently requires setting 'jruby.rack.handler.env' param to 'servlet'
 
-== Trinidad_jars 1.1.0 (2012-09-20)
+## trinidad_jars 1.1.0 (2012-09-20)
 
 * include java code compiled into trinidad-rb.jar for Trinidad
 * otherwise same as previous version (1.0.7) uses Tomcat 7.0.30
 
-== Trinidad 1.4.2 (2012-09-19) YANKED
+## trinidad 1.4.2 (2012-09-19) YANKED
 
-== Trinidad_jars 1.0.7 (2012-09-12)
+## trinidad_jars 1.0.7 (2012-09-12)
 
 * Tomcat 7.0.30 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad_jars 1.0.6 (2012-08-21)
+## trinidad_jars 1.0.6 (2012-08-21)
 
 * Tomcat 7.0.29 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
-== Trinidad 1.4.1 (2012-08-17)
+## trinidad 1.4.1 (2012-08-17)
 
 * make sure file logging rotates correctly when file handler attempts rolling
   after midnight (#81)
@@ -131,7 +131,7 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
   - add a trap? helper (for easier overrides)
   - introduce a stop! for stopping and destroying a the server
 
-== Trinidad 1.4.0 (2012-07-24)
+## trinidad 1.4.0 (2012-07-24)
 
 * fix incorrect context-param parsing and only configure logging when
   deployment descriptor did not specified jruby.rack.logging param (#76)
@@ -164,20 +164,20 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
   - introduced Trinidad::WebApp::Holder to be used instead of bare Hash
 * add async_supported attribute for servlet (3.0) configuration
 
-== Trinidad_jars 1.0.5 (2012-07-03)
+## trinidad_jars 1.0.5 (2012-07-03)
 
 * Upgrade to Tomcat 7.0.28
 * Patched org.apache.juli.FileHandler to allow daily rolling customization
 
-== Trinidad_jars 1.0.4 (2012-06-14)
+## trinidad_jars 1.0.4 (2012-06-14)
 
 * Upgrade to Tomcat 7.0.27
 
-== Trinidad_jars 1.0.3 (2012-04-04)
+## trinidad_jars 1.0.3 (2012-04-04)
 
 * Upgrade to Tomcat 7.0.26
 
-== Trinidad 1.3.5 (2012-04-04)
+## trinidad 1.3.5 (2012-04-04)
 
 * Correctly detect :rackup from main config for web apps (#66)
 * Rearrange trinidad.gemspec to be (always) usable with Bundler's :git paths.
@@ -185,163 +185,163 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 * Make sure tomcat exits on initialization failure.
 * Yield from block passed to Trinidad's Rack::Handler
 
-== Trinidad 1.3.4 (2012-02-20)
+## trinidad 1.3.4 (2012-02-20)
 
 * Do not explicitely load rack/handler/trinidad.rb, it solves load issues with trinidad_init_services.
 
-== Trinidad 1.3.3 (2012-02-16)
+## trinidad 1.3.3 (2012-02-16)
 
 * Fix issues loading the default configuration file from the rack handler
 
-== Trinidad 1.3.2 (2012-01-13)
+## trinidad 1.3.2 (2012-01-13)
 
 * Fix #29: Rack::Handler.register not found error
 
-== Trinidad 1.3.1 (2012-01-06)
+## trinidad 1.3.1 (2012-01-06)
 
 * Fix Rack handler configuration issues
 
-== Trinidad_jars 1.0.2 (2011-12-31)
+## trinidad_jars 1.0.2 (2011-12-31)
 
 * Bump Tomcat's version to 7.0.23
 
-== Trinidad 1.3.0 (2011-12-30)
+## trinidad 1.3.0 (2011-12-30)
 
 * Support for virtual hosts
 * Ruby configuration DSL
 * Rack handler
 
-== Trinidad 1.2.3 (2011-07-13)
+## trinidad 1.2.3 (2011-07-13)
 
 * fix JRuby class loader generation with hot deploy
 
-== Trinidad 1.2.2 (2011-07-12)
+## trinidad 1.2.2 (2011-07-12)
 
 * Better log formatter
 * Allow to use an ERB template as configuration file
 * Fix trinidad_init_services compatibility issues
 
-== Trinidad 1.2.1 (2011-06-15)
+## trinidad 1.2.1 (2011-06-15)
 
 * Allow to specify the monitor file from the command line
 
-== Trinidad 1.2.0 (2011-05-24)
+## trinidad 1.2.0 (2011-05-24)
 
 * Zero downtime hot deploy
 * Autodetect framework and threadsafe environment
 * Upgrade jruby-rack dependency to 1.0.9
 
-== Trinidad 1.1.1 (2011-03-27)
+## trinidad 1.1.1 (2011-03-27)
 
 * Remove shared runtime initialization
 
-== Trinidad 1.1.0 (2011-03-18)
+## trinidad 1.1.0 (2011-03-18)
 
 * Hot deployment integrated in the core gem
 * Load config/trinidad.yml by default without the `-f` option if it exists
 * Load config.ru for applications under the `apps_base` directory when the option is enabled
 * Share the JRuby runtime with JRuby-Rack
 
-== Trinidad_jars 1.0.1 (2011-03-17)
+## trinidad_jars 1.0.1 (2011-03-17)
 
 * Upgrade to Tomcat 7.0.11
 
-== Trinidad_jars 1.0.0 (2011-01-18)
+## trinidad_jars 1.0.0 (2011-01-18)
 
 * Upgrade to Tomcat 7.0.6, first stable release of the Tomcat 7 branch.
 
-== 1.0.5 (2011-01-13)
+## trinidad 1.0.5 (2011-01-13)
 
 * Fix trailing spaces on arguments. Thank you Windows.
 
-== 1.0.4 (2011-01-11)
+## trinidad 1.0.4 (2011-01-11)
 
 * Add 'jruby.compat.version' parameter to let jruby-rack loads on 1.9 mode
 
-== 1.0.3 (2010-12-08)
+## trinidad 1.0.3 (2010-12-08)
 
 * fix TRINIDAD-31: fix bug causing trailing slashes errors loading assets
 
-== 1.0.2 (2010-11-11)
+## trinidad 1.0.2 (2010-11-11)
 
 * stop using application directory as work directory to prevent TRINIDAD-27 and other issues
 
-== Trinidad_jars 0.3.3 (2010-11-11)
+## trinidad_jars 0.3.3 (2010-11-11)
 
 * fix TRINIDAD-27: Tomcat 7.0.2 deletes working directory upon shutdown
 
-== 1.0.1 (2010-11-04)
+## trinidad 1.0.1 (2010-11-04)
 
 * fix problem loading lifecycle
 
-== 1.0.0 (2010-11-04)
+## trinidad 1.0.0 (2010-11-04)
 
 * Warbler support
 * Add APR listener to run under native connectors
 * fixes #24: setting address doesn't affect listening socket
 * fix issues configuring the logger out of the lifecycle listener
 
-== 0.9.12 (2010-10-21)
+## trinidad 0.9.12 (2010-10-21)
 
 * fix problems loading tomcat classes from rack application
 * fix xml parsing of web.xml. Thanks to Karol Bucek
 
-== 0.9.11 (2010-10-20)
+## trinidad 0.9.11 (2010-10-20)
 
 * configure applications base directory to run several applications into the same container
 
-== 0.9.10 (2010-10-02)
+## trinidad 0.9.10 (2010-10-02)
 
 * configure logging as expected by rails applications
 
-== 0.9.9 (2010-09-29)
+## trinidad 0.9.9 (2010-09-29)
 
 * set tomcat's server address properly
 
-== 0.9.8 (2010-09-27)
+## trinidad 0.9.8 (2010-09-27)
 
 * fix http connector protocol enabling nio
 
-== 0.9.7 (2010-09-27)
+## trinidad 0.9.7 (2010-09-27)
 
 * add option --adress to set the Trinidad's host
 
-== Trinidad_jars 0.3.2 (2010-09-26)
+## trinidad_jars 0.3.2 (2010-09-26)
 
 * fix TRINIDAD-21: trinidad_jars 0.3.1 breaks logging extension
 
-== 0.9.6 (2010-09-12)
+## trinidad 0.9.6 (2010-09-12)
 
 * add option to specify the application directory path from the command line
 
-== Trinidad_jars 0.3.1 (2010-09-12)
+## trinidad_jars 0.3.1 (2010-09-12)
 
 * update to Tomcat 7.0.2
 * fix TRINIDAD-17: NPE when web app has a context path
 
-== 0.9.5 (2010-08-08)
+## trinidad 0.9.5 (2010-08-08)
 
 * fix TRINIDAD-15: trinidad defines String#camelize incompatibly with ActiveSupport: Argument is missing
 * update JRuby-Rack dependency to avoid compatibility issues with rvm'
 
-== 0.9.4 (2010-08-04)
+## trinidad 0.9.4 (2010-08-04)
 
 * fix error configuring ssl
 
-== 0.9.3 (2010-07-27)
+## trinidad 0.9.3 (2010-07-27)
 
 * Tomcat updated to version 7.0.0
 * fix TRINIDAD-9: Tomcat SSL configure options keystore and keystoreFile
 * fix TRINIDAD-10: When a web.xml is provided the tomcat's context doesn't start properly
 
-== 0.9.2 (2010-05-24)
+## trinidad 0.9.2 (2010-05-24)
 
 * Autoload the rackup file when it's under the directory WEB-INF.
 * Let jruby-rack reads the rackup file instead of passing its content as an init parameter.
 * Allow to configure the rack servlet from the configuration options.
 * Allow to use crt files to configure SSL
 
-== 0.9.1 (2010-05-09)
+## trinidad 0.9.1 (2010-05-09)
 
 * Move all configuration logic to a Lifecycle listener:
     - Keeps the initial configuration so the provided web xml files are no more needed.
@@ -350,7 +350,7 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 * Allow to specify webapp extensions in the extensions root section.
 * Allow to configure the Http connector.
 
-== 0.9.0 (2010-04-28)
+## trinidad 0.9.0 (2010-04-28)
 
 * Tomcat updated to version 6.0.26, added constant to get its version.
 * Jars cleaned, 300kb less to load :)
@@ -358,63 +358,63 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 * Fixes bug merging configuration files
 * Configuring application through web.xml to avoid weird lifecycle problems
 
-== 0.8.3 (2010-04-17)
+## trinidad 0.8.3 (2010-04-17)
 
 * Extensions improvements:
     - Enable command line extensions.
     - Allow to overload the server.
 
-== 0.8.2 (2010-04-09)
+## trinidad 0.8.2 (2010-04-09)
 
 * Fixes yaml parser error. Thank to @elskwid
 
-== 0.8.1 (2010-04-06)
+## trinidad 0.8.1 (2010-04-06)
 
 * Uses JRuby-Rack gem
 
-== 0.8.0 (2010-04-04)
+## trinidad 0.8.0 (2010-04-04)
 
 * Support for extensions (database connection pooling is the first one using it)
 * Splitting the gem in two, the core gem and the jars gem
 
-== 0.7.0 (2009-12-01)
+## trinidad 0.7.0 (2009-12-01)
 
 * Support to run different applications within the same Tomcat container
 
-== 0.6.0 (2009-11-02)
+## trinidad 0.6.0 (2009-11-02)
 
 * Rackup compatibe frameworks support
 
-== 0.5.0 (2009-10-27)
+## trinidad 0.5.0 (2009-10-27)
 
-* JRuby-rack updated to version 0.9.5
+* JRuby-Rack updated to version 0.9.5
 * Added Rack dependency to avoid using vendorized version
 
-== 0.4.1 (2009-07-26)
+## trinidad 0.4.1 (2009-07-26)
 
 * using jruby-rack development version to solve some bugs related with it.
 
-== 0.4.0 (2009-07-16)
+## trinidad 0.4.0 (2009-07-16)
 
 * support for ssl connections
 * support for ajp connections
 
-== 0.3.0 (2009-07-07)
+## trinidad 0.3.0 (2009-07-07)
 
 * project renamed due to tomcat legal issues
 
-== 0.2.0 (2009-06-23)
+## trinidad 0.2.0 (2009-06-23)
 
 * custom configuration from a yaml file
 * load options from a custom web.xml
 
-== 0.1.2
+## trinidad 0.1.2
 
 * Autoload application custom jars and classes.
 * Added some specs.
 * Server refactor.
 
-== 0.1
+## trinidad 0.1
 
 * Initial release.
 * Running default rails applications.
