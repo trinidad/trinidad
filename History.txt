@@ -1,3 +1,7 @@
+== Trinidad_jars 1.2.4 (2013-06-12)
+
+* Tomcat 7.0.41 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
 == Trinidad_jars 1.2.3 (2013-04-26)
 
 * Tomcat 7.0.39 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
@@ -11,13 +15,13 @@
 * (always) correctly categorize deployed apps into hosts
 * support for more fine grained host configuration (including default host)
 * (once again) working plain-old .war deployment support
-* make sure context name (once set) is not changed and is kept esp. during 
+* make sure context name (once set) is not changed and is kept esp. during
   rolling reloads even if (slightly) different from configured context_name
-* fail-safe (zero-downtime) support for rolling reload 
+* fail-safe (zero-downtime) support for rolling reload
   when a new version of the app fails to boot the old one is kept
 * depend on latest (>= 1.2.2) jars and jruby-rack >= 1.1.13
 * review extensions resolution, ignore extension (warn) when it doesn't exist
-* patch DirectJDKLog to disable log source thus we won't generate a dummy 
+* patch DirectJDKLog to disable log source thus we won't generate a dummy
   throwable just to obtain the caller stack trace (that ain't really used)
 * handle immediate log level change with JUL's LogFactory
 * avoid work_dir deletion on context destory (during rolling reloads)
@@ -41,10 +45,10 @@
 == Trinidad 1.4.4 (2012-10-19)
 
 * make sure setting FileHandler's rotatable to false works (#82)
-* first draft for web-app logging configuration to avoid use hacks e.g. 
+* first draft for web-app logging configuration to avoid use hacks e.g.
   for disabling rotation (this feature is not yet official and might change)
 * fix new lines (ala default Rails.logger) in console output
-* set correct (JRuby-Rack) layout for web apps and use app.root 
+* set correct (JRuby-Rack) layout for web apps and use app.root
   (besides rails.root)
 * check whether (jruby.) params are specified in system properties (#92)
 * fix JUL::ConsoleHandler - not setting up JRuby streams correctly (#88)
@@ -70,10 +74,10 @@
   - support for providing aliases (to achieve desired backward compatibility)
   - support for allowing caching and tuning (asset) cache parameters
 * allow absolute paths with :default_web_xml / :web_xml configuration option
-* replace :libs_dir and :classes_dir with :java_lib and :java_classes options 
+* replace :libs_dir and :classes_dir with :java_lib and :java_classes options
   (backwards compatible) with sensible defaults *lib/java* and *lib/java/classes*
 * make sure application :work_dir is actually being set on the context
-  and change it by default to to [RAILS_ROOT]/tmp 
+  and change it by default to to [RAILS_ROOT]/tmp
 * web application's :web_app_dir deprecated in favor of the :root_dir option
 * make sure the rack servlet loads on startup by default
 * allow init_params: to be configured with (rack/default) servlet options
@@ -94,7 +98,7 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
  - support for fully leveraging the Servlet API for parameters/cookies
    this is useful for Java integration cases when a servlet/filter consumes
    the input stream before Rails (e.g. valves such as AccessLogValve).
-   it is an experimental feature that might change in the future and 
+   it is an experimental feature that might change in the future and
    currently requires setting 'jruby.rack.handler.env' param to 'servlet'
 
 == Trinidad_jars 1.1.0 (2012-09-20)
@@ -114,28 +118,28 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 
 == Trinidad 1.4.1 (2012-08-17)
 
-* make sure file logging rotates correctly when file handler attempts rolling 
+* make sure file logging rotates correctly when file handler attempts rolling
   after midnight (#81)
-* refined (backwards-compatible) extension API 
-  - options attr reader 
-  - override_tomcat? no longer needed simply return a tomcat duck 
+* refined (backwards-compatible) extension API
+  - options attr reader
+  - override_tomcat? no longer needed simply return a tomcat duck
   - expose camelize + symbolize helpers
   - WebAppExtension should only get a single context argument on configure
 * better rails (2.3/3.x) detection with environment.rb
-* minor server updates 
-  - expose configured web_apps 
-  - add a trap? helper (for easier overrides) 
+* minor server updates
+  - expose configured web_apps
+  - add a trap? helper (for easier overrides)
   - introduce a stop! for stopping and destroying a the server
 
 == Trinidad 1.4.0 (2012-07-24)
 
-* fix incorrect context-param parsing and only configure logging when 
+* fix incorrect context-param parsing and only configure logging when
   deployment descriptor did not specified jruby.rack.logging param (#76)
 * deep symbolize_options should account for arrays of hashes (#80)
 * requires latest Tomcat 7.0.28 (jars 1.0.5) due context reloading fix
 * requires latest jruby-rack 1.1.7 due delegating RackLogger to JUL
 * Trinidad::WebApp API revisited some changes are non-backwards compatible !
-* enable running multiple applications with different ruby versions (using the 
+* enable running multiple applications with different ruby versions (using the
   jruby_compat_version configuration option)
 * allow arbitrary keys to be stored with Trinidad::Configuration
 * changed Trinidad::Lifecycle::Base to be a (ruby-like) base lifecycle listener
@@ -145,14 +149,14 @@ Requires JRuby-Rack >= 1.1.10 and thus includes the following features :
 * reinvented server/application logging with Trinidad::Logging :
   - refactored Trinidad's global logging configuration with JUL
   - application logs into log/env.log by default with daily rolling
-  - console logs are now less chatty and only print logs from applications 
+  - console logs are now less chatty and only print logs from applications
     running in development mode (configuration to come in a later release)
   - make sure Trinidad's custom log formatter prints thrown exceptions
   - use local timestamps with (file) log formatter by default
 * Trinidad::Server#add_web_app for code re-use during rolling redeploys
 * refactored application (monitor based `touch 'tmp/restart.txt'`) reloading
   - bring back synchronous context reloading and make it default
-  - "zero downtime" async rolling reload is still supported and configurable via 
+  - "zero downtime" async rolling reload is still supported and configurable via
     the reload_strategy: rolling configuration option
   - updated the context restart code - hot deploys should now work reliably (#75)
   - moved Trinidad::Lifecycle::Host under Trinidad::Lifecycle::WebApp::Host
