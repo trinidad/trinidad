@@ -20,7 +20,7 @@ module Trinidad
       @hosts ||= @config[:hosts]
     end
     attr_writer :hosts
-    
+
     def app_base
       @app_base ||= @config[:app_base] || @config[:apps_base]
     end
@@ -30,7 +30,7 @@ module Trinidad
       @web_apps ||= @config[:web_apps] || @config[:webapps]
     end
     attr_writer :web_apps
-    
+
     def trap?
       @trap ||= @config[:trap] if ! defined?(@trap) || @trap.nil?
       @trap
@@ -55,13 +55,13 @@ module Trinidad
 
     def http_configured?
       if ! defined?(@http_configured) || @http_configured.nil?
-        @http_configured ||= 
+        @http_configured ||=
         ( ( !! @config[:http] && ! @config[:http].empty? ) || @config[:address] != 'localhost' )
       end
       @http_configured
     end
     attr_writer :http_configured
-    
+
     def tomcat; @tomcat ||= initialize_tomcat; end
 
     def initialize_tomcat
@@ -113,7 +113,7 @@ module Trinidad
       connector = add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
       tomcat.connector = connector
     end
-    
+
     def add_ssl_connector(tomcat = @tomcat)
       options = config[:ssl].merge({
         :scheme => 'https',
@@ -131,7 +131,7 @@ module Trinidad
 
       add_service_connector(options, nil, tomcat)
     end
-    
+
     def add_service_connector(options, protocol = nil, tomcat = @tomcat)
       opts = options.dup
 
@@ -150,7 +150,7 @@ module Trinidad
     private :add_service_connector
 
     def add_web_app(web_app, host = nil, start = nil)
-      host ||= begin 
+      host ||= begin
         name = web_app.host_name
         name ? find_host(name, tomcat) : tomcat.host
       end
@@ -176,7 +176,7 @@ module Trinidad
       end
       context
     end
-    
+
     def deploy_web_apps(tomcat = self.tomcat)
       add_host_monitor web_apps = create_web_apps
       web_apps
@@ -207,7 +207,7 @@ module Trinidad
     def stop!
       (@tomcat.destroy; true) if stop
     end
-    
+
     protected
 
     def create_web_apps
@@ -254,13 +254,13 @@ module Trinidad
           if File.directory?(app_root) || ( app_root[-4..-1] == '.war' )
             app_base_name = File.basename(app_root)
             deployed = apps.find do |app_holder|; web_app = app_holder.web_app
-              web_app.root_dir == app_root || 
+              web_app.root_dir == app_root ||
                 web_app.context_path == Trinidad::Tomcat::ContextName.new(app_base_name).path
             end
             if deployed
               logger.debug "Skipping auto-deploy from #{app_root} (already deployed)"
             else
-              apps << ( app_holder = create_web_app({ 
+              apps << ( app_holder = create_web_app({
                 :context_name => path, :root_dir => app_root, :host_name => host.name
               }) ); app = app_holder.web_app
               logger.info "Auto-Deploying from #{app.root_dir} as #{app.context_path}"
@@ -293,7 +293,7 @@ module Trinidad
 
       default_host = tomcat.host
       default_app_base = ( default_host.app_base == DEFAULT_HOST_APP_BASE )
-      if self.app_base || 
+      if self.app_base ||
         ( default_app_base && ! File.exists?(DEFAULT_HOST_APP_BASE) )
         tomcat.host.app_base = self.app_base || Dir.pwd
       end
@@ -328,7 +328,7 @@ module Trinidad
       tomcat.engine.add_child host if tomcat
       host
     end
-    
+
     def setup_host(app_base, host_config, host)
       if host_config.is_a?(Array)
         name = host_config.shift
@@ -362,7 +362,7 @@ module Trinidad
     end
     # @deprecated renamed to {#set_system_properties}
     def load_default_system_properties; set_system_properties; end
-    
+
     def configure_logging(log_level)
       Trinidad::Logging.configure(log_level)
     end
@@ -379,7 +379,11 @@ module Trinidad
       host = tomcat.host # make sure we initialize default host
       host.deployXML = false
       host_config = @config[:host] || ( @config[:hosts] && @config[:hosts][:default] )
-      host_config.each { |name, value| host.send("#{name}=", value) } if host_config
+      if host_config.is_a?(String)
+        host.name = host_config
+      elsif host_config
+        host_config.each { |name, value| host.send("#{name}=", value) }
+      end
       host
     end
 
@@ -480,7 +484,7 @@ module Trinidad
         path
       end
     end
-    
+
     def generate_default_keystore(config)
       keystore_file = java.io.File.new(config[:keystoreFile])
 
@@ -501,11 +505,11 @@ module Trinidad
       key_tool = Java::SunSecurityTools::KeyTool
       key_tool.main key_tool_args.to_java(:string)
     end
-    
+
     def trap_signals
       trap('INT') { stop! }
       trap('TERM') { stop! }
     end
-    
+
   end
 end
