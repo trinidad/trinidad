@@ -1,3 +1,12 @@
+## trinidad 1.4.5 (2013-06-14)
+
+* server should set up AJP only (if HTTP not explicitly configured) (#113)
+  make sure that address/port are being set on AJP as well
+* make sure environment is converted to_s + check if specified in web.xml (#112)
+* config[:host] might be a string (e.g. using rackup mode)
+
+also see all changes in 1.4.5.B1 if upgrading from a previous stable
+
 ## trinidad_jars 1.2.4 (2013-06-12)
 
 * Tomcat 7.0.41 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
@@ -25,7 +34,7 @@
   throwable just to obtain the caller stack trace (that ain't really used)
 * handle immediate log level change with JUL's LogFactory
 * avoid work_dir deletion on context destory (during rolling reloads)
-* do not allow public.root ## '/' to be used as FS root (#93)
+* do not allow public.root ('/') to be used as FS root (#93)
 
 ## trinidad_jars 1.2.2 (2013-03-08)
 
