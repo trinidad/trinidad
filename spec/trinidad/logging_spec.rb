@@ -24,7 +24,7 @@ describe Trinidad::Logging do
     
     logger = JUL::Logger.getLogger('')
     logger.level.name.should.== 'WARNING'
-    logger.handlers.size.should == 2
+    logger.handlers.size.should == 1
   end
   
   after { Trinidad.configuration = nil }
