@@ -10,7 +10,7 @@ module Trinidad
     end
 
     def configure(config = Trinidad.configuration)
-      configure_logging config[:log]
+      configure_logging config[:logging] || config[:log]
       @config = config.freeze
     end
      # @deprecated replaced with {#configure}
@@ -197,7 +197,8 @@ module Trinidad
     end
 
     def deploy_web_apps(tomcat = self.tomcat)
-      add_host_monitor web_apps = create_web_apps
+      web_apps = create_web_apps
+      add_host_monitor web_apps
       web_apps
     end
 
@@ -382,8 +383,8 @@ module Trinidad
     # @deprecated renamed to {#set_system_properties}
     def load_default_system_properties; set_system_properties; end
 
-    def configure_logging(log_level)
-      Trinidad::Logging.configure(log_level)
+    def configure_logging(logging)
+      Trinidad::Logging.configure(logging)
     end
 
     def logger; @logger ||= self.class.logger; end
