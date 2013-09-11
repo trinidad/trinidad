@@ -16,7 +16,7 @@ end
 gem 'sinatra', :require => nil, :group => :test
 
 group :integration do
-  gem "rails", "~> 3.2.11"
-  gem "jruby-openssl"
-  #eval(File.read("spec/integration/rails32/Gemfile"), binding)
+  gem "rails", "~> 3.2.13"
+  gem "jruby-openssl" if JRUBY_VERSION < '1.7.0'
+  # eval(File.read("spec/integration/rails32/Gemfile"), binding)
 end
