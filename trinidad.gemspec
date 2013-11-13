@@ -25,7 +25,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('jruby-rack', ">= 1.1.13")
 
   gem.add_development_dependency('rake')
-  gem.add_development_dependency('rspec', '~> 2.12.0')
+  gem.add_development_dependency('rspec', '~> 2.14.1')
   gem.add_development_dependency('mocha', '~> 0.12.1')
   gem.add_development_dependency('fakefs', '>= 0.4.0')
 
