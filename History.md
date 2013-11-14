@@ -1,3 +1,7 @@
+## trinidad_jars 1.2.5 (2013-11-14)
+
+* Tomcat 7.0.42 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
 ## trinidad 1.4.5 (2013-06-14)
 
 * server should set up AJP only (if HTTP not explicitly configured) (#113)
