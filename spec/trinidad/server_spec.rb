@@ -378,6 +378,83 @@ describe Trinidad::Server do
     expect( server_host.create_dirs ).to be false
   end
 
+  it "assigns apps to default host with configured address" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/app1'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/app2'
+    
+    Dir.chdir(APP_STUBS_DIR) do
+      server = deployed_server({
+        :address => '0.0.0.0',
+        :web_apps => {
+          :app1 => {
+            :root_dir => 'local/app1'
+          },
+          :app2 => {
+            :root_dir => 'local/app2', :host => '0.0.0.0'
+          }
+        }
+      })
+
+      default_host = server.tomcat.host
+      host_listener = default_host.find_lifecycle_listeners.
+        find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+
+      app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+      expected = [ 'local/app1', 'local/app2' ].map { |dir| File.expand_path(dir) }
+      expect( app_dirs ).to eql expected
+
+      other_host = server.tomcat.engine.find_children.find { |host| host != default_host }
+      expect( other_host ).to be nil
+    end
+  end
+
+  it "assigns apps to host(s) correctly" do
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/app11'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/local/app12'
+    FileUtils.mkdir_p APP_STUBS_DIR + '/all/app'
+    absolute_dir = java.lang.System.get_property('java.io.tmpdir')
+    FileUtils.mkdir_p File.join(absolute_dir, '/domains/127.0.0.1')
+    FileUtils.mkdir_p File.join(absolute_dir, '/domains/0.0.0.0')
+
+    Dir.chdir(APP_STUBS_DIR) do
+      server = deployed_server({
+        :hosts => {
+          "#{absolute_dir}/domains/127.0.0.1" => [ 'localhost', '127.0.0.1' ],
+          :serverhost => {
+            :app_base => "#{absolute_dir}/domains/0.0.0.0", :aliases => [ '0.0.0.0' ]
+          }
+        },
+        :web_apps => {
+          :app11 => {
+            :root_dir => 'local/app11', :host => 'localhost'
+          },
+          :app12 => {
+            :root_dir => 'local/app12'
+          },
+          :app => {
+            :root_dir => 'all/app', :hosts => [ '0.0.0.0' ]
+          },
+        }
+      })
+
+      default_host = server.tomcat.host
+      host_listener = default_host.find_lifecycle_listeners.
+        find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+
+      app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+      expected = [ 'local/app11', 'local/app12' ].map { |dir| File.expand_path(dir) }
+      expect( app_dirs ).to eql expected
+
+      server_host = server.tomcat.engine.find_children.find { |host| host != default_host }
+      host_listener = server_host.find_lifecycle_listeners.
+        find { |listener| listener.instance_of?(Trinidad::Lifecycle::Host) }
+
+      app_dirs = host_listener.app_holders.map { |holder| holder.web_app.root_dir }
+      expected = [ 'all/app' ].map { |dir| File.expand_path(dir) }
+      expect( app_dirs ).to eql expected
+    end
+  end
+
   it "selects apps for given host" do
     FileUtils.mkdir_p APP_STUBS_DIR + '/foo/mock1'
     FileUtils.mkdir_p APP_STUBS_DIR + '/foo/mock2'

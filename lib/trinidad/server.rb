@@ -99,7 +99,7 @@ module Trinidad
 
     def add_host_monitor(app_holders)
       for host in tomcat.engine.find_children
-        host_apps = select_host_apps(app_holders, host)
+        host_apps = select_host_apps(app_holders, host, tomcat)
         host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
       end
     end
@@ -293,7 +293,7 @@ module Trinidad
     end
 
     def create_web_app(app_config)
-      host_name = app_config[:host_name] || 'localhost'
+      host_name = app_config[:host_name] || tomcat.host.name
       host = tomcat.engine.find_child(host_name)
       app_config[:root_dir] = web_app_root_dir(app_config, host)
 
@@ -453,10 +453,10 @@ module Trinidad
       end
     end
 
-    def select_host_apps(app_holders, host)
+    def select_host_apps(app_holders, host, tomcat = self.tomcat)
       app_holders.select do |app_holder|
         host_name = app_holder.web_app.host_name
-        ( host_name || 'localhost' ) == host.name
+        host_name ? host_name == host.name : host == tomcat.host # default host
       end
     end
 
