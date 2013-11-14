@@ -456,7 +456,7 @@ module Trinidad
     def select_host_apps(app_holders, host)
       app_holders.select do |app_holder|
         host_name = app_holder.web_app.host_name
-        ( host_name || 'localhost' ) == host.name
+        [host_name, 'localhost', '0.0.0.0'].include?(host.name)
       end
     end
 
