@@ -24,14 +24,18 @@ module Trinidad
       config.key?(key) ? config[key] : default_config[key]
     end
 
+    def []=(key, value)
+      config[key.to_sym] = value
+    end
+
     def key?(key, use_default = true)
       key = key.to_sym
       return true if config.has_key?(key)
       use_default ? default_config.key?(key) : false
     end
 
-    %w{ root_dir rackup async_supported reload_strategy host_name }.each do |method|
-      class_eval "def #{method}; self[:'#{method}']; end"
+    %w{ root_dir rackup async_supported reload_strategy host_name }.each do
+      |method| class_eval "def #{method}; self[:'#{method}']; end"
     end
 
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
@@ -53,6 +57,8 @@ module Trinidad
     # NOTE: should be set to application root (base) directory thus
     # JRuby-Rack correctly resolves relative paths for the context!
     def doc_base; self[:doc_base] || root_dir; end
+
+    def allow_linking; key?(:allow_linking) ? self[:allow_linking] : true; end
 
     def jruby_min_runtimes
       if min = config[:jruby_min_runtimes]

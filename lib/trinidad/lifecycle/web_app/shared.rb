@@ -1,7 +1,7 @@
 module Trinidad
   module Lifecycle
     module WebApp
-      # Shared web application lifecycle hook, 
+      # Shared web application lifecycle hook,
       # does #configure before the context starts.
       module Shared
 
@@ -23,7 +23,7 @@ module Trinidad
           super
           configure(event.lifecycle)
         end
-        
+
         # Configure the web application before it's started.
         def configure(context)
           adjust_context(context)
@@ -34,7 +34,7 @@ module Trinidad
         end
 
         protected
-        
+
         def adjust_context(context)
           context_name = web_app.context_name
           # on (rolling) reloads the name may have been set already :
@@ -45,7 +45,8 @@ module Trinidad
           context.doc_base = web_app.doc_base if web_app.doc_base
           context.work_dir = web_app.work_dir if web_app.work_dir
           context.aliases  = web_app.aliases  if web_app.aliases
-          
+          context.allow_linking = web_app.allow_linking
+
           context.caching_allowed = web_app.caching_allowed?
           context.cache_ttl = web_app.cache_ttl if web_app.cache_ttl
           if max_size = web_app.cache_max_size
@@ -55,25 +56,25 @@ module Trinidad
             context.cache_object_max_size = object_max_size
           end
         end
-        
+
         def configure_default_servlet(context)
-          configure_builtin_servlet(context, 
+          configure_builtin_servlet(context,
             web_app.default_servlet, Trinidad::WebApp::DEFAULT_SERVLET_NAME
           )
         end
-        
+
         def configure_jsp_servlet(context)
-          wrapper = configure_builtin_servlet(context, 
+          wrapper = configure_builtin_servlet(context,
             web_app.jsp_servlet, Trinidad::WebApp::JSP_SERVLET_NAME
           )
           context.process_tlds = false if wrapper == false # jsp servlet removed
           wrapper
         end
-        
+
         def configure_logging(context)
           Trinidad::Logging.configure_web_app(web_app, context)
         end
-        
+
         private
 
         def configure_builtin_servlet(context, servlet_config, name)
@@ -98,7 +99,7 @@ module Trinidad
               wrapper.servlet_class = servlet_class
             end
             # do not remove wrapper but only "update" the default :
-            wrapper.load_on_startup = ( servlet_config[:load_on_startup] || 
+            wrapper.load_on_startup = ( servlet_config[:load_on_startup] ||
                 name_wrapper.load_on_startup ).to_i
             add_init_params(wrapper, servlet_config[:init_params])
             if mapping = servlet_config[:mapping]
@@ -110,13 +111,13 @@ module Trinidad
             wrapper
           end
         end
-        
+
         def remove_defaults(context)
           context.remove_welcome_file('index.htm')
           context.remove_welcome_file('index.html')
           context.remove_welcome_file('index.jsp')
         end
-        
+
         def add_init_params(wrapper, params)
           return unless params
           params.each do |param, value|
@@ -124,22 +125,22 @@ module Trinidad
             wrapper.add_init_parameter(param.to_s, val)
           end
         end
-        
+
         def add_servlet_mapping(context, mapping, name)
-          if mapping.is_a?(String) || mapping.is_a?(Symbol) 
+          if mapping.is_a?(String) || mapping.is_a?(Symbol)
             context.add_servlet_mapping(mapping.to_s, name)
           else
             mapping.each { |m| add_servlet_mapping(context, m, name) }
           end
         end
-        
+
         # Remove all servlet mappings for given (servlet) name.
         def remove_servlet_mapping(context, name)
           find_servlet_mapping(context, name).each do
             |pattern| context.remove_servlet_mapping(pattern)
           end
         end
-        
+
         # Find all servlet mappings for given (servlet) name.
         def find_servlet_mapping(context, name)
           name_mapping = []
@@ -149,12 +150,12 @@ module Trinidad
           end
           name_mapping
         end
-        
+
         def logger
           @logger ||= Trinidad::Logging::LogFactory.
             getLog('org.apache.catalina.core.StandardContext')
         end
-        
+
       end
     end
   end
