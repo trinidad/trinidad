@@ -10,9 +10,10 @@ Gem::Specification.new do |gem|
   gem.description = "Trinidad allows you to run Rails or Rack applications within " <<
     "an embedded Apache Tomcat container. Serves your requests with the elegance of a cat !"
 
-  gem.authors  = ["David Calavera"]
+  gem.authors  = ['David Calavera']
   gem.email    = 'calavera@apache.org'
-  gem.homepage = 'http://github.com/trinidad/trinidad'
+  gem.homepage = 'https://github.com/trinidad/trinidad'
+  gem.licenses = ['MIT', 'Apache-2.0']
 
   gem.require_paths = %w[lib]
   gem.executables = ["trinidad"]

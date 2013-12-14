@@ -11,9 +11,10 @@ Gem::Specification.new do |gem|
   gem.summary     = "Jars packaged for Trinidad"
   gem.description = "Bundled version of Tomcat and a slice of Java required by Trinidad."
 
-  gem.authors  = ["David Calavera"]
+  gem.authors  = ['David Calavera']
   gem.email    = 'calavera@apache.org'
-  gem.homepage = 'http://github.com/trinidad/trinidad'
+  gem.homepage = 'https://github.com/trinidad/trinidad'
+  gem.licenses = ['MIT', 'Apache-2.0']
 
   gem.require_paths = %w[lib] # due require 'trinidad/jars'
 
