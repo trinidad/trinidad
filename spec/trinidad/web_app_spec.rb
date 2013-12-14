@@ -706,6 +706,76 @@ EOF
     end
   end
 
+  it "detects threadsafe Rails 4.x" do
+    FakeFS do
+      create_config_file "config/environments/production.rb", <<-EOF
+AdAPI::Application.configure do
+  # Settings specified here will take precedence over those in config/application.rb.
+
+  # Code is not reloaded between requests.
+  config.cache_classes= true
+
+  # Eager load code on boot. This eager loads most of Rails and
+  # your application in memory, allowing both thread web servers
+  # and those relying on copy on write to perform better.
+  # Rake tasks automatically ignore this option for performance.
+  config.eager_load  =  true # ok
+
+  # Full error reports are disabled and caching is turned on.
+  config.consider_all_requests_local       = false
+  config.action_controller.perform_caching = true
+
+  # ...
+end
+EOF
+      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+
+      app = Trinidad::WebApp.create({
+          :root_dir => Dir.pwd, :environment => 'production',
+        }, {
+          :jruby_min_runtimes => 1, :jruby_max_runtimes => 5
+        }
+      )
+
+      expect( app.threadsafe? ).to be true
+      app.jruby_min_runtimes.should == 1
+      app.jruby_max_runtimes.should == 1 # overrides default config
+
+      app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
+      expect( app.threadsafe? ).to be true
+    end
+  end
+
+  it "detects non-threadsafe Rails 4.x" do
+    FakeFS do
+      create_config_file "config/environments/production.rb", <<-EOF
+AdAPI::Application.configure do
+  # Settings specified here will take precedence over those in config/application.rb.
+
+  # Code is not reloaded between requests.
+  config.cache_classes= true
+
+  # Eager load code on boot. This eager loads most of Rails and
+  # your application in memory, allowing both thread web servers
+  # and those relying on copy on write to perform better.
+  # Rake tasks automatically ignore this option for performance.
+  config.eager_load = false
+  # config.eager_load = true
+
+  # Full error reports are disabled and caching is turned on.
+  config.consider_all_requests_local       = false
+  config.action_controller.perform_caching = true
+
+  # ...
+end
+EOF
+      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+
+      app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
+      expect( app.threadsafe? ).to be false
+    end
+  end
+
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
     create_rails_environment
 
