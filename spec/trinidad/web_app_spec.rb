@@ -580,6 +580,38 @@ describe Trinidad::WebApp do
     app.threadsafe?.should be false
   end
 
+  it "can specify threadsafe as an option" do
+    app = Trinidad::WebApp.create({}, {
+      :root_dir => MOCK_WEB_APP_DIR, :threadsafe => true
+    })
+
+    app.threadsafe?.should be true
+
+    app = Trinidad::RailsWebApp.new({
+      :root_dir => MOCK_WEB_APP_DIR, :threadsafe => true
+    })
+
+    app.threadsafe?.should be true
+
+    app = Trinidad::RailsWebApp.new({}, {
+      :root_dir => MOCK_WEB_APP_DIR, :threadsafe => false
+    })
+
+    app.threadsafe?.should be false
+
+    app = Trinidad::RackWebApp.new({
+      :root_dir => MOCK_WEB_APP_DIR, :threadsafe => false
+    })
+
+    app.threadsafe?.should be false
+
+    app = Trinidad::RackWebApp.new({}, {
+      :root_dir => MOCK_WEB_APP_DIR, :threadsafe => true
+    })
+
+    app.threadsafe?.should be true
+  end
+
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the specified environment" do
     FakeFS do
       create_rails_environment('environments/staging.rb')

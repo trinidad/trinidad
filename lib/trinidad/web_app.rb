@@ -400,7 +400,7 @@ module Trinidad
     end
 
     def threadsafe?
-      jruby_min_runtimes == 1 && jruby_max_runtimes == 1
+      jruby_min_runtimes == 1 && jruby_max_runtimes == 1 # handles [:threadsafe]
     end
 
     protected
@@ -644,7 +644,7 @@ module Trinidad
   end
 
   # Rack web application (looks for a "rackup" *config.ru* file).
-  class RackupWebApp < WebApp
+  class RackWebApp < WebApp
 
     def context_params
       add_context_param 'app.root', app_root
@@ -661,6 +661,7 @@ module Trinidad
     def web_xml_environment; web_xml_context_param('rack.env'); end
 
   end
+  RackupWebApp = RackWebApp
 
   # Rails web application specifics (supports same versions as JRuby-Rack).
   class RailsWebApp < WebApp
