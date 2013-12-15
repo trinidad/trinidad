@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012 Team Trinidad and contributors http://github.com/trinidad
- * 
+ * Copyright (c) 2013 Team Trinidad and contributors http://github.com/trinidad
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -8,10 +8,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +37,13 @@ import java.util.logging.LogRecord;
 
 /**
  * Default logging record formatter for Trinidad.
- * 
+ *
  * @author kares
  */
 public class DefaultFormatter extends Formatter {
 
-    private static final String LINE_SEP = System.getProperty("line.separator");
-
     private final FieldPosition dummyPosition;
-    
+
     {
         FieldPosition fieldPosition;
         try {
@@ -53,19 +51,19 @@ public class DefaultFormatter extends Formatter {
             Field instance = klass.getDeclaredField("INSTANCE");
             instance.setAccessible(true);
             fieldPosition = (FieldPosition) instance.get(null);
-        } 
+        }
         catch (Exception e) {
             fieldPosition = new FieldPosition(0);
         }
         dummyPosition = fieldPosition;
     }
-    
+
     private final DateFormat dateFormat;
 
     public DefaultFormatter(String format) {
         this( format != null ? new SimpleDateFormat(format) : new SimpleDateFormat() );
     }
-    
+
     public DefaultFormatter(String format, String timeZone) {
         this( format );
         if ( timeZone != null ) {
@@ -80,14 +78,14 @@ public class DefaultFormatter extends Formatter {
             dateFormat.setTimeZone( TimeZone.getTimeZone(timeZones[0]) );
         }
     }
-    
+
     public DefaultFormatter(String format, Calendar calendar) {
         this( format );
         if ( calendar != null ) {
             dateFormat.setCalendar( calendar );
         }
     }
-    
+
     public DefaultFormatter(DateFormat dateFormat) {
         if ( dateFormat == null ) {
             throw new IllegalArgumentException("no format given");
@@ -98,7 +96,7 @@ public class DefaultFormatter extends Formatter {
     public DateFormat getDateFormat() {
         return dateFormat;
     }
-    
+
     @Override
     public String format(final LogRecord record) {
         String message = record.getMessage();
@@ -109,32 +107,36 @@ public class DefaultFormatter extends Formatter {
         }
         msg.append(' ').append(record.getLevel().getName()).append(':'); // WARNING:
         msg.append(' ').append(formatMessage(record)); // message
-        if ( ! endsWithLineSep(msg) ) msg.append(LINE_SEP);
+        if ( ! endsWithLineSeparator(msg) ) msg.append(LINE_SEPARATOR);
         final String thrown = formatThrown(record);
         if ( thrown != null ) msg.append(thrown);
         return msg.toString();
     }
-    
+
     protected String formatThrown(final LogRecord record) {
-        final Throwable thrown = record.getThrown();
-        if ( thrown != null ) {
-            StringWriter stringWriter = new StringWriter(1024);
-            PrintWriter printWriter = new PrintWriter(stringWriter);
-            thrown.printStackTrace(printWriter);
-            printWriter.println();
-            printWriter.close();
-            return stringWriter.toString();
-        }
-        return null;
+        return formatThrown( record.getThrown() );
     }
-    
-    private static boolean endsWithLineSep(StringBuffer msg) {
+
+    static String formatThrown(final Throwable thrown) {
+        if ( thrown == null ) return null;
+        StringWriter stringWriter = new StringWriter(512);
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        thrown.printStackTrace(printWriter);
+        printWriter.println();
+        printWriter.close();
+        return stringWriter.toString();
+    }
+
+    static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    static boolean endsWithLineSeparator(final CharSequence msg) {
         final int len = msg.length();
-        if ( LINE_SEP != null && len > LINE_SEP.length() ) {
-            final int end = len - LINE_SEP.length();
-            return msg.substring(end).equals(LINE_SEP);
+        final String ls = LINE_SEPARATOR;
+        if ( ls != null && len > ls.length() ) {
+            final int end = len - ls.length();
+            return ls.equals( msg.subSequence(end, len) );
         }
         return false;
     }
-    
+
 }
