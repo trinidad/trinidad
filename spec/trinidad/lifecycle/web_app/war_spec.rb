@@ -5,7 +5,7 @@ describe Trinidad::Lifecycle::WebApp::War do
   it "configures classloader" do
     context = new_web_app_context('/')
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
-    
+
     listener.send :configure_class_loader, context
     expect( context.loader ).to_not be nil
   end
@@ -70,7 +70,7 @@ describe Trinidad::Lifecycle::WebApp::War do
     context = new_web_app_context('/')
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
-    
+
     event = mock 'event'
     event.stubs(:type).returns Trinidad::Tomcat::Lifecycle::BEFORE_INIT_EVENT
     event.stubs(:lifecycle).returns context
@@ -84,7 +84,16 @@ describe Trinidad::Lifecycle::WebApp::War do
     expect( context.path ).to eql '/'
     expect( context.name ).to eql '/'
   end
-  
+
+  it "keeps the standard manager", :integration => false do
+    context = new_web_app_context('/')
+    context.name = 'default'
+    listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
+    listener.send(:adjust_context, context)
+
+    expect( context.manager ).to be nil # initialized on context.start
+  end
+
   private
 
   let(:tomcat) { Trinidad::Tomcat::Tomcat.new }
@@ -96,7 +105,7 @@ describe Trinidad::Lifecycle::WebApp::War do
   def new_web_app_context(context_path)
     tomcat.add_webapp(context_path, MOCK_WEB_APP_DIR)
   end
-  
+
 end
 
 describe "Trinidad::Lifecycle::War" do

@@ -55,6 +55,10 @@ module Trinidad
           if object_max_size = web_app.cache_object_max_size
             context.cache_object_max_size = object_max_size
           end
+
+          if manager = web_app.context_manager
+            context.manager = manager # replace "standard" (session) manager
+          end
         end
 
         def configure_default_servlet(context)

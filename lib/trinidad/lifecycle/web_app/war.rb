@@ -6,7 +6,7 @@ module Trinidad
     module WebApp
       class War < Base
         include Shared
-        
+
         def before_init(event)
           # NOTE: esp. important for .war applications that the name matches the path
           # to work-around ProxyDirContext constructor's `contextPath = contextName;`
@@ -15,21 +15,21 @@ module Trinidad
           context.name = context.path if context.name
           super
         end
-        
+
         def configure(context)
           super # Shared#configure
           configure_class_loader(context)
         end
-        
+
         protected
-        
+
         def adjust_context(context)
           name = context.name
           super
         ensure # @see {#before_init}
           context.name = name
-          # NOTE: mimics HostConfig#deploWAR and should be removed
-          # once Lifecycle::Host inherits func from HostConfig ...
+          # NOTE: mimics HostConfig#deployWAR and might/should be removed
+          # once Lifecycle::Host inherits functionality from HostConfig ...
           # context_name = Trinidad::Tomcat::ContextName.new(name)
           # context.setName context_name.getName()
           # context.setPath context_name.getPath()
@@ -47,7 +47,7 @@ module Trinidad
         def remove_defaults(context = nil)
           # NOTE: do not remove defaults (welcome files)
         end
-        
+
       end
     end
     War = Trinidad::Lifecycle::WebApp::War # backwards compatibility

@@ -179,6 +179,9 @@ module Trinidad
       end
     end
 
+    # TODO: internal API - should be configurable/adjustable with context.yml !
+    def context_manager; Java::RbTrinidadContext::DefaultManager.new end
+
     def logging
       @logging ||= begin
         defaults = {
@@ -757,6 +760,8 @@ module Trinidad
     def context_params
       warbler? ? super : @context_params ||= {}
     end
+
+    def context_manager; nil end
 
     def layout_class
       'JRuby::Rack::WebInfLayout'
