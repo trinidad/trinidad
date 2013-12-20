@@ -4,7 +4,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   include FakeApp
 
   let(:tomcat) do
-    tomcat = Trinidad::Tomcat::Tomcat.new
+    tomcat = Java::RbTrinidad::Jerry.new
     tomcat.host.app_base = Dir.pwd
     tomcat
   end

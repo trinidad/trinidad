@@ -96,7 +96,7 @@ describe Trinidad::Lifecycle::WebApp::War do
 
   private
 
-  let(:tomcat) { Trinidad::Tomcat::Tomcat.new }
+  let(:tomcat) { Trinidad::Tomcat.new }
 
   def new_web_app(config = {})
     Trinidad::WarWebApp.new(config)

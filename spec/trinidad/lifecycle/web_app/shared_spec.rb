@@ -6,8 +6,8 @@ describe Trinidad::Lifecycle::WebApp::Shared do
   ListenerImpl = Trinidad::Lifecycle::WebApp::Default
 
   before do
-    @context = Trinidad::Tomcat::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
-    Trinidad::Tomcat::Tomcat.init_webapp_defaults(@context)
+    @context = Trinidad::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
+    Trinidad::Tomcat.init_webapp_defaults(@context)
 
     @options = {
         :root_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO'

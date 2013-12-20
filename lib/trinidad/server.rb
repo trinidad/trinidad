@@ -65,14 +65,12 @@ module Trinidad
 
     def tomcat; @tomcat ||= initialize_tomcat; end
 
-    LOCALHOST = 'localhost'.freeze # :nodoc:
-
     def initialize_tomcat
       set_system_properties
 
-      tomcat = Trinidad::Tomcat::Tomcat.new
+      tomcat = Tomcat.new # @see Trinidad::Tomcat
       tomcat.base_dir = config[:base_dir] || Dir.pwd
-      tomcat.hostname = config[:address] || LOCALHOST
+      tomcat.hostname = config[:address] || 'localhost'
       tomcat.server.address = config[:address]
       tomcat.port = config[:port].to_i
       default_host(tomcat)
@@ -80,7 +78,7 @@ module Trinidad
       tomcat.enable_naming
 
       http_connector = http_configured? ||
-        ( ! ajp_enabled? && config[:address] && config[:address] != LOCALHOST )
+        ( ! ajp_enabled? && config[:address] && config[:address] != 'localhost' )
 
       if http_connector
         tomcat.connector = add_http_connector(tomcat)
