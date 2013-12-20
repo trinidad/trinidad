@@ -188,30 +188,7 @@ module Trinidad
     end
 
     # A message formatter only prints the log message (and the thrown value).
-    class MessageFormatter < JUL::Formatter # :nodoc:
-
-      def format(record)
-        msg = formatMessage(record)
-        msg << formatThrown(record).to_s
-        # since we're going to print Rails.logger logs and they tend
-        # to already have the ending "\n" handle such cases nicely :
-        if context_name(record.getLoggerName)
-          (lns = LINE_SEP) == msg[-1, 1] ? msg : msg << lns
-        else
-          msg << LINE_SEP
-        end
-      end
-
-      # e.g. org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/foo]
-      # or org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[default]
-      WEB_APP_LOGGER_NAME = /^org\.apache\.catalina\.core\.ContainerBase.*?\[(.*?)\]$/
-
-      private
-      def context_name(name)
-        ( match = (name || '').match(WEB_APP_LOGGER_NAME) ) && match[1]
-      end
-
-    end
+    MessageFormatter = Java::RbTrinidadLogging::MessageFormatter
 
     DefaultFormatter = Java::RbTrinidadLogging::DefaultFormatter
 
