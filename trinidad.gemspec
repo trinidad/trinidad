@@ -22,8 +22,8 @@ Gem::Specification.new do |gem|
   gem.rdoc_options = ["--charset=UTF-8"]
   gem.extra_rdoc_files = %w[README.md LICENSE]
 
-  gem.add_dependency('trinidad_jars', ">= 1.2.3")
-  gem.add_dependency('jruby-rack', ">= 1.1.13")
+  gem.add_dependency('trinidad_jars', '>= 1.3.0', '< 1.5.0')
+  gem.add_dependency('jruby-rack', '~> 1.1.13')
 
   gem.add_development_dependency('rake')
   gem.add_development_dependency('rspec', '~> 2.14.1')
