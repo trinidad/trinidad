@@ -89,7 +89,7 @@ module Trinidad
       end
       add_ssl_connector(tomcat) if ssl_enabled?
 
-      Trinidad::Extensions.configure_server_extensions(config[:extensions], tomcat)
+      Extensions.configure_server_extensions(config[:extensions], tomcat)
     end
     protected :initialize_tomcat
     # #deprecated renamed to {#initialize_tomcat}
@@ -98,7 +98,7 @@ module Trinidad
     def add_host_monitor(app_holders)
       for host in tomcat.engine.find_children
         host_apps = select_host_apps(app_holders, host, tomcat)
-        host.add_lifecycle_listener(Trinidad::Lifecycle::Host.new(self, *host_apps))
+        host.add_lifecycle_listener(Lifecycle::Host.new(self, *host_apps))
       end
     end
     protected :add_host_monitor
@@ -125,7 +125,7 @@ module Trinidad
       end
 
       if options.delete(:apr)
-        tomcat.server.add_lifecycle_listener(Trinidad::Tomcat::AprLifecycleListener.new)
+        tomcat.server.add_lifecycle_listener(Tomcat::AprLifecycleListener.new)
       end
 
       add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
@@ -150,7 +150,7 @@ module Trinidad
 
     # NOTE: make sure to pass an options Hash that might be changed !
     def add_service_connector(options, protocol = nil, tomcat = @tomcat)
-      connector = Trinidad::Tomcat::Connector.new(protocol)
+      connector = Tomcat::Connector.new(protocol)
       connector.scheme = options.delete(:scheme) if options[:scheme]
       connector.secure = options.delete(:secure) || false
       connector.port = options.delete(:port).to_i if options[:port]
@@ -187,7 +187,7 @@ module Trinidad
       ensure
         host.start_children = prev_start unless start.nil?
       end
-      Trinidad::Extensions.configure_webapp_extensions(web_app.extensions, tomcat, context)
+      Extensions.configure_webapp_extensions(web_app.extensions, tomcat, context)
       if lifecycle = web_app.define_lifecycle
         context.add_lifecycle_listener(lifecycle)
       end
@@ -273,7 +273,7 @@ module Trinidad
             app_base_name = File.basename(app_root)
             deployed = apps.find do |app_holder|; web_app = app_holder.web_app
               web_app.root_dir == app_root ||
-                web_app.context_path == Trinidad::Tomcat::ContextName.new(app_base_name).path
+                web_app.context_path == Tomcat::ContextName.new(app_base_name).path
             end
             if deployed
               logger.debug "Skipping auto-deploy from #{app_root} (already deployed)"
@@ -339,7 +339,7 @@ module Trinidad
     end
 
     def create_host(app_base, host_config, tomcat = @tomcat)
-      host = Trinidad::Tomcat::StandardHost.new
+      host = Tomcat::StandardHost.new
       host.app_base = nil # reset default app_base
       host.deployXML = false # disabled by default
       setup_host(app_base, host_config, host)

@@ -3,7 +3,7 @@ require 'trinidad/configuration'
 module Trinidad
   class WebApp
 
-    @@defaults = Trinidad::Configuration::DEFAULTS
+    @@defaults = Configuration::DEFAULTS
 
     attr_reader :config, :default_config
 
@@ -194,7 +194,7 @@ module Trinidad
             :rotate => true
           }
         }
-        Trinidad::Configuration.merge_options(defaults, self[:logging])
+        Configuration.merge_options(defaults, self[:logging])
       end
     end
 
@@ -280,7 +280,7 @@ module Trinidad
     def generate_class_loader; class_loader!; end
 
     def define_lifecycle
-      Trinidad::Lifecycle::WebApp::Default.new(self)
+      Lifecycle::WebApp::Default.new(self)
     end
 
     # Reset the hold web application state so it gets re-initialized.
@@ -518,7 +518,7 @@ module Trinidad
     end
 
     def logger
-      @logger ||= Trinidad::Logging::LogFactory.getLog('')
+      @logger ||= Logging::LogFactory.getLog('')
     end
 
     protected
@@ -725,7 +725,7 @@ module Trinidad
     def context_path
       @path ||= begin
         path = File.basename(super)
-        context_name = Trinidad::Tomcat::ContextName.new(path)
+        context_name = Tomcat::ContextName.new(path)
         context_name.path # removes .war handles ## versioning
       end
     end
@@ -768,7 +768,7 @@ module Trinidad
     end
 
     def define_lifecycle
-      Trinidad::Lifecycle::WebApp::War.new(self)
+      Lifecycle::WebApp::War.new(self)
     end
 
     private
