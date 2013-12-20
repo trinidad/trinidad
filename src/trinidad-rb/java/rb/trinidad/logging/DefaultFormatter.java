@@ -23,8 +23,6 @@
 
 package rb.trinidad.logging;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.FieldPosition;
@@ -34,6 +32,8 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+
+import static rb.trinidad.logging.LoggingHelpers.*;
 
 /**
  * Default logging record formatter for Trinidad.
@@ -108,35 +108,13 @@ public class DefaultFormatter extends Formatter {
         msg.append(' ').append(record.getLevel().getName()).append(':'); // WARNING:
         msg.append(' ').append(formatMessage(record)); // message
         if ( ! endsWithLineSeparator(msg) ) msg.append(LINE_SEPARATOR);
-        final String thrown = formatThrown(record);
+        final CharSequence thrown = formatThrown(record);
         if ( thrown != null ) msg.append(thrown);
         return msg.toString();
     }
 
-    protected String formatThrown(final LogRecord record) {
-        return formatThrown( record.getThrown() );
-    }
-
-    static String formatThrown(final Throwable thrown) {
-        if ( thrown == null ) return null;
-        StringWriter stringWriter = new StringWriter(512);
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        thrown.printStackTrace(printWriter);
-        printWriter.println();
-        printWriter.close();
-        return stringWriter.toString();
-    }
-
-    static final String LINE_SEPARATOR = System.getProperty("line.separator");
-
-    static boolean endsWithLineSeparator(final CharSequence msg) {
-        final int len = msg.length();
-        final String ls = LINE_SEPARATOR;
-        if ( ls != null && len > ls.length() ) {
-            final int end = len - ls.length();
-            return ls.equals( msg.subSequence(end, len) );
-        }
-        return false;
+    protected CharSequence formatThrown(final LogRecord record) {
+        return LoggingHelpers.formatThrown( record.getThrown() );
     }
 
 }
