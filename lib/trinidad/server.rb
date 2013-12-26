@@ -187,7 +187,11 @@ module Trinidad
         # generate one for development/testing SSL :
         options[:keystoreFile] = DEFAULT_KEYSTORE_FILE
         options[:keystorePass] ||= 'waduswadus42' # NOTE change/ask for default
-        generate_default_keystore(options) unless File.exist?(DEFAULT_KEYSTORE_FILE)
+        if File.exist?(DEFAULT_KEYSTORE_FILE)
+          logger.info "Using (default) keystore at #{DEFAULT_KEYSTORE_FILE.inspect}"
+        else
+          generate_default_keystore(options)
+        end
       end
 
       add_service_connector(options, 'HTTP/1.1', tomcat)
@@ -569,7 +573,7 @@ module Trinidad
         "-storepass", pass,
         "-keypass", pass ]
 
-      logger.info "Generating a keystore for localhost #{dname.inspect} at " <<
+      logger.info "Generating a (default) keystore for localhost #{dname.inspect} at " <<
                   "#{file.canonical_path} (password: '#{pass}')"
 
       Java::SunSecurityTools::KeyTool.main key_tool_args.to_java(:string)
