@@ -62,16 +62,6 @@ describe Trinidad::Server do
     server.ssl_enabled?.should be false
   end
 
-#  it "enables SSL when config :ssl param is true" do
-#    server = configured_server({ :ssl => true, :web_app_dir => MOCK_WEB_APP_DIR })
-#    expect( server.ssl_enabled? ).to be true
-#  end
-#
-#  it "disabled SSL when config :ssl param is false" do
-#    server = configured_server({ :ssl => false, :web_app_dir => MOCK_WEB_APP_DIR })
-#    expect( server.ssl_enabled? ).to be false
-#  end
-
   it "enables SSL when config :ssl present" do
     server = configured_server({ :ssl => { :port => 8443 }, :web_app_dir => MOCK_WEB_APP_DIR })
     server.ssl_enabled?.should be true
@@ -104,7 +94,7 @@ describe Trinidad::Server do
     server.ajp_enabled?.should be_true
   end
 
-  it "configures AJP only (if HTTP not set)" do
+  it "configures AJP only (if :http not set)" do
     server = configured_server( :address => '127.0.0.1', :ajp => { :port => 8009 } )
 
     connector = server.tomcat.connector
@@ -113,6 +103,8 @@ describe Trinidad::Server do
     connectors = server.tomcat.service.find_connectors
     connectors.should have(1).connector
     connectors[0].protocol.should == 'AJP/1.3'
+
+    expect( server.tomcat.connector ).to be connectors[0]
   end
 
   it "configures HTTP as well as AJP" do
@@ -123,6 +115,51 @@ describe Trinidad::Server do
 
     connectors = server.tomcat.service.find_connectors
     connectors.should have(2).connector
+
+    # connectors[1].get_property("address").to_s.should == '/localhost'
+  end
+
+  it "configures SSL only (if :http not set)" do
+    server = configured_server( :https => { :port => 3443, :address => '' } )
+
+    connectors = server.tomcat.service.find_connectors
+    connectors.should have(1).connector
+    expect( connectors[0].protocol ).to eql 'HTTP/1.1'
+    expect( connectors[0].secure ).to be true
+
+    expect( server.tomcat.connector ).to be connectors[0]
+  end
+
+  it "inherits :address for SSL connector" do
+    server = configured_server( :address => '10.10.10.10', :https => { :port => 3443 } )
+
+    connectors = server.tomcat.service.find_connectors
+    connectors[0].get_property("address").to_s.should == '/10.10.10.10'
+  end
+
+  it "inherits :port for SSL connector (unless :http configured)" do
+    begin; FileUtils.touch 'dummy.ks'
+      server = configured_server( :port => 3001, :https => { :keystore => 'dummy.ks' } )
+    ensure; FileUtils.rm 'dummy.ks'; end
+
+    connectors = server.tomcat.service.find_connectors
+    expect( connectors[0].port ).to eql 3001
+    expect( connectors.size ).to eql 1
+
+    server = configured_server( :port => 3001, :http => true, :https => { :port => 4001 } )
+
+    connectors = server.tomcat.service.find_connectors
+    expect( connectors[0].port ).to eql 3001
+    expect( connectors[1].port ).to eql 4001
+  end
+
+  it "sets default https port 3443" do
+    Trinidad.configure { |c| c.https = true }
+    server = configured_server
+
+#    connectors = server.tomcat.service.find_connectors
+#    connectors.should have(1).connector
+#    expect( connectors[0].port ).to eql 3443
   end
 
   it "includes a connector with https scheme when :ssl is enabled" do

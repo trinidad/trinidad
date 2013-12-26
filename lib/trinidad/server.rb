@@ -86,13 +86,24 @@ module Trinidad
       tomcat.connector = add_http_connector(tomcat) if http_connector
 
       if ssl_enabled?
-        # options = config.key?(:https) ? config[:https] : config[:ssl]
-        connector = add_ssl_connector(tomcat)
+        options = config.key?(:https) ? config[:https] : config[:ssl]
+        options = {} if options == true
+        unless http_connector
+          options[:port] = config[:port] || 3443 unless options.key?(:port)
+        end
+        options[:address] = config[:address] unless options.key?(:address)
+        connector = add_ssl_connector(options, tomcat)
         tomcat.connector = connector unless http_connector
         http_connector = true # tomcat.connector http: , https: or ajp:
       end
+
       if ajp_enabled?
-        connector = add_ajp_connector(tomcat)
+        options = config[:ajp]; options = {} if options == true
+        unless http_connector
+          options[:port] = config[:port] || 8009 unless options.key?(:port)
+        end
+        options[:address] = config[:address] unless options.key?(:address)
+        connector = add_ajp_connector(options, tomcat)
         tomcat.connector = connector unless http_connector
       end
 
