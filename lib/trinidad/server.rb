@@ -71,15 +71,16 @@ module Trinidad
 
       tomcat = Tomcat.new # @see Trinidad::Tomcat
       tomcat.base_dir = config[:base_dir] || Dir.pwd
-      tomcat.hostname = config[:address] || 'localhost'
-      tomcat.server.address = config[:address]
-      tomcat.port = config[:port].to_i
+      address = config[:address] if config.key?(:address)
+      tomcat.hostname = address || 'localhost'
+      tomcat.server.address = address || nil unless address.nil?
+      tomcat.port = config[:port].to_i if config.key?(:port)
       default_host(tomcat)
       create_hosts(tomcat)
       tomcat.enable_naming
 
       http_connector = http_configured? ||
-        ( ! ajp_enabled? && config[:address] && config[:address] != 'localhost' )
+        ( ! ajp_enabled? && address && address != 'localhost' ) # TODO
 
       if http_connector
         tomcat.connector = add_http_connector(tomcat)
@@ -180,7 +181,7 @@ module Trinidad
         host.start_children = start unless start.nil?
         # public Context addWebapp(Host host, String url, String name, String docBase)
         tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
-      rescue java.lang.IllegalArgumentException => e
+      rescue Java::JavaLang::IllegalArgumentException => e
         if e.message =~ /addChild\:/
           context_name = web_app.context_name
           logger.error "could not add application #{context_name.inspect} from #{web_app.root_dir}\n" <<

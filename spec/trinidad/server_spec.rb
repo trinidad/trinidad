@@ -57,17 +57,23 @@ describe Trinidad::Server do
     JSystem.get_property("catalina.useNaming").should == "true"
   end
 
-  it "disables SSL when config param is nil" do
+  it "disables SSL when config :ssl param is nil" do
     server = configured_server
     server.ssl_enabled?.should be false
   end
 
-  it "enables SSL when config param is a number" do
-    server = configured_server({
-      :ssl => { :port => 8443 },
-      :web_app_dir => MOCK_WEB_APP_DIR
-    })
+#  it "enables SSL when config :ssl param is true" do
+#    server = configured_server({ :ssl => true, :web_app_dir => MOCK_WEB_APP_DIR })
+#    expect( server.ssl_enabled? ).to be true
+#  end
+#
+#  it "disabled SSL when config :ssl param is false" do
+#    server = configured_server({ :ssl => false, :web_app_dir => MOCK_WEB_APP_DIR })
+#    expect( server.ssl_enabled? ).to be false
+#  end
 
+  it "enables SSL when config :ssl present" do
+    server = configured_server({ :ssl => { :port => 8443 }, :web_app_dir => MOCK_WEB_APP_DIR })
     server.ssl_enabled?.should be true
   end
 
@@ -119,9 +125,9 @@ describe Trinidad::Server do
     connectors.should have(2).connector
   end
 
-  it "includes a connector with https scheme when ssl is enabled" do
+  it "includes a connector with https scheme when :ssl is enabled" do
     Trinidad.configure do |c|
-      c.ssl = {:port => 8443}
+      c.ssl = { :port => 8443 }
     end
     server = configured_server
 
@@ -130,7 +136,7 @@ describe Trinidad::Server do
     connectors[0].scheme.should == 'https'
   end
 
-  it "includes a connector with protocol AJP when ajp is enabled" do
+  it "includes an AJP protocol connector with when :ajp is enabled" do
     Trinidad.configure do |c|
       c.ajp = {:port => 8009}
     end
@@ -174,14 +180,14 @@ describe Trinidad::Server do
     default_context_should_be_loaded(server.tomcat.host.find_children)
   end
 
-  it "uses the default HttpConnector when http is not configured" do
+  it "uses the default (blocking) connector when http is not configured" do
     server = Trinidad::Server.new
     server.http_configured?.should be false
 
     server.tomcat.connector.protocol_handler_class_name.should == 'org.apache.coyote.http11.Http11Protocol'
   end
 
-  it "uses the NioConnector when the http configuration sets nio to true" do
+  it "uses the NIO connector when the http configuration sets nio to true" do
     server = configured_server :web_app_dir => MOCK_WEB_APP_DIR, :http => { :nio => true }
     server.http_configured?.should be true
 
@@ -212,6 +218,18 @@ describe Trinidad::Server do
 
     connector = server.tomcat.connector
     connector.get_property("address").to_s.should == '/10.0.0.1'
+  end
+
+  it "keeps TC's server address as localhost when no :address given" do
+    server = configured_server({ :root_dir => MOCK_WEB_APP_DIR })
+    tomcat = server.send :initialize_tomcat
+    expect( tomcat.server.address ).to eql 'localhost'
+  end
+
+  it "sets TC's server address based on :address option" do
+    server = configured_server({ :root_dir => MOCK_WEB_APP_DIR, :address => '127.0.0.1' })
+    tomcat = server.send :initialize_tomcat
+    expect( tomcat.server.address ).to eql '127.0.0.1'
   end
 
   it "adds the default lifecycle listener to each webapp" do
