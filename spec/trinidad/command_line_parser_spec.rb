@@ -2,9 +2,9 @@ require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::CommandLineParser do
   include FakeApp
-  
+
   before { Trinidad.configuration = nil }
-  
+
   subject { Trinidad::CommandLineParser }
 
   it "overrides java_classes option" do
@@ -20,14 +20,14 @@ describe Trinidad::CommandLineParser do
     options = subject.parse(args)
     options[:java_classes].should == 'my_classes'
   end
-  
+
   it "overrides java_lib option" do
     args = "--java_lib my_libs".split
 
     options = subject.parse(args)
     options[:java_lib].should == 'my_libs'
   end
-  
+
   it "overrides java_lib option with lib option (deprecated)" do
     args = "--lib my_libs".split
 
@@ -69,7 +69,7 @@ describe Trinidad::CommandLineParser do
     args = '--ssl'.split
 
     options = subject.parse(args)
-    options[:ssl].should == { :port => 8443 }
+    options[:ssl].should == { :port => 3443 }
   end
 
   it "adds custom ssl port to options" do
@@ -135,7 +135,7 @@ describe Trinidad::CommandLineParser do
     options[:jruby_min_runtimes].should == 2
     options[:jruby_max_runtimes].should == 6
   end
-  
+
   it "loads the given extensions to add its options to the parser" do
     args = "--load foo,bar --foo".split
     options = subject.parse(args)
@@ -162,7 +162,7 @@ describe Trinidad::CommandLineParser do
     args = '--apps_base foo'.split
     subject.parse(args)[:apps_base].should == 'foo'
   end
-  
+
   it "accepts the option --apps to set the applications base directory (deprecated)" do
     args = '--apps foo'.split
     subject.parse(args)[:apps_base].should == 'foo'
