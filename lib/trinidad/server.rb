@@ -39,11 +39,14 @@ module Trinidad
 
     def ssl_enabled?
       if ! defined?(@ssl_enabled) || @ssl_enabled.nil?
-        @ssl_enabled = ( !! @config[:ssl] && ! @config[:ssl].empty? )
+        ssl = @config.key?(:https) ? @config[:https] : @config[:ssl]
+        @ssl_enabled = ( !! ssl && ( ! ssl.respond_to?(:empty?) || ! ssl.empty? ) )
       end
       @ssl_enabled
     end
     attr_writer :ssl_enabled
+    alias_method :https_enabled?, :ssl_enabled?
+    alias_method :https_enabled=, :ssl_enabled=
 
     def ajp_enabled?
       if ! defined?(@ajp_enabled) || @ajp_enabled.nil?
@@ -79,17 +82,19 @@ module Trinidad
       create_hosts(tomcat)
       tomcat.enable_naming
 
-      http_connector = http_configured? ||
-        ( ! ajp_enabled? && address && address != 'localhost' ) # TODO
+      http_connector = http_configured? || ( ! ajp_enabled? && ! ssl_enabled? )
+      tomcat.connector = add_http_connector(tomcat) if http_connector
 
-      if http_connector
-        tomcat.connector = add_http_connector(tomcat)
+      if ssl_enabled?
+        # options = config.key?(:https) ? config[:https] : config[:ssl]
+        connector = add_ssl_connector(tomcat)
+        tomcat.connector = connector unless http_connector
+        http_connector = true # tomcat.connector http: , https: or ajp:
       end
       if ajp_enabled?
         connector = add_ajp_connector(tomcat)
         tomcat.connector = connector unless http_connector
       end
-      add_ssl_connector(tomcat) if ssl_enabled?
 
       Extensions.configure_server_extensions(config[:extensions], tomcat)
     end
@@ -107,20 +112,30 @@ module Trinidad
     # @deprecated replaced with {#setup_host_monitor}
     def load_host_monitor(web_apps); add_host_monitor(web_apps); end
 
-    def add_ajp_connector(tomcat = @tomcat)
-      options = config[:ajp]
-      options = {
-        :address => @config[:address], :port => @config[:port]
-      }.merge!( options.respond_to?(:[]) ? options : {} )
+    def add_ajp_connector(options = config[:ajp], tomcat = nil)
+      # backwards compatibility - single argument (tomcat = @tomcat)
+      if options && ! options.respond_to?(:[])
+        tomcat = options; options = config[:ajp]
+        options = {
+          :address => @config[:address], :port => @config[:port]
+        }.merge!( options.respond_to?(:[]) ? options : {} )
+      else
+        tomcat = @tomcat; options = options.dup
+      end if tomcat.nil?
 
       add_service_connector(options, 'AJP/1.3', tomcat)
     end
 
-    def add_http_connector(tomcat = @tomcat)
-      options = config[:http]
-      options = {
-        :address => @config[:address], :port => @config[:port]
-      }.merge!( options.respond_to?(:[]) ? options : {} )
+    def add_http_connector(options = config[:http], tomcat = nil)
+      # backwards compatibility - single argument (tomcat = @tomcat)
+      if options && ! options.respond_to?(:[])
+        tomcat = options; options = config[:http]
+        options = {
+          :address => @config[:address], :port => @config[:port]
+        }.merge!( options.respond_to?(:[]) ? options : {} )
+      else
+        tomcat = @tomcat; options = options.dup
+      end if tomcat.nil?
 
       if options.delete(:nio)
         options[:protocol_handler] ||= 'org.apache.coyote.http11.Http11NioProtocol'
@@ -136,11 +151,14 @@ module Trinidad
     # @private
     DEFAULT_KEYSTORE_FILE = 'ssl/keystore' # TODO review default location
 
-    def add_ssl_connector(tomcat = @tomcat)
-      options = config[:ssl]
-      options = {
-        :scheme => 'https', :secure => true
-      }.merge!( options.respond_to?(:[]) ? options : {} )
+    def add_ssl_connector(options = config[:ssl], tomcat = nil)
+      # backwards compatibility - single argument (tomcat = @tomcat)
+      if options && ! options.respond_to?(:[])
+        tomcat = options; options = config[:ssl]
+      else
+        tomcat = @tomcat
+      end if tomcat.nil?
+      options = { :scheme => 'https', :secure => true }.merge!( options.respond_to?(:[]) ? options : {} )
 
       if keystore_file = options.delete(:keystore) || options.delete(:keystore_file)
         options[:keystoreFile] ||= keystore_file
