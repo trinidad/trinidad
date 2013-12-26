@@ -61,7 +61,8 @@ module Trinidad
       end
       @http_configured
     end
-    attr_writer :http_configured
+    # @deprecated
+    def http_configured=(flag); @http_configured = flag end
 
     def tomcat; @tomcat ||= initialize_tomcat; end
 
@@ -131,18 +132,21 @@ module Trinidad
       add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
     end
 
+    # @private
+    DEFAULT_KEYSTORE_FILE = 'ssl/keystore' # TODO default location
+
     def add_ssl_connector(tomcat = @tomcat)
       options = config[:ssl]
       options = {
         :scheme => 'https', :secure => true, :SSLEnabled => 'true'
       }.merge!( options.respond_to?(:[]) ? options : {} )
 
-      options[:keystoreFile] ||= options.delete(:keystore)
-
-      if ! options[:keystoreFile] && ! options[:SSLCertificateFile]
-        options[:keystoreFile] ||= 'ssl/keystore'
-        options[:keystorePass] ||= 'waduswadus42'
-        generate_default_keystore(options)
+      keystore_file = options[:keystoreFile]
+      if ! keystore_file && ! options[:SSLCertificateFile]
+        # generate one for development/testing SSL :
+        options[:keystoreFile] = DEFAULT_KEYSTORE_FILE
+        options[:keystorePass] ||= 'waduswadus42' # NOTE change/ask for default
+        generate_default_keystore(options) unless File.exist?(DEFAULT_KEYSTORE_FILE)
       end
 
       add_service_connector(options, nil, tomcat)

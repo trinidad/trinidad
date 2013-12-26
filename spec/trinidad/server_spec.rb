@@ -10,7 +10,21 @@ describe Trinidad::Server do
   before { Trinidad.configure }
   after  { Trinidad.configuration = nil }
 
-  after { FileUtils.rm_rf( File.expand_path('../../ssl', File.dirname(__FILE__)) ) rescue nil }
+  after do
+    keystore = Trinidad::Server::DEFAULT_KEYSTORE_FILE
+    keystore = File.join('../../', keystore)
+    keystore = File.expand_path(keystore, File.dirname(__FILE__))
+    if File.exist?(keystore)
+      if File.file?(keystore)
+        File.delete(keystore)
+        if Dir.entries( File.dirname(keystore) ) == [ '.', '..' ]
+          Dir.rmdir File.dirname(keystore)
+        end
+      else
+        FileUtils.rm_rf keystore
+      end
+    end
+  end
 
   APP_STUBS_DIR = File.expand_path('../stubs', File.dirname(__FILE__))
 
@@ -43,24 +57,40 @@ describe Trinidad::Server do
     JSystem.get_property("catalina.useNaming").should == "true"
   end
 
-  it "disables ssl when config param is nil" do
+  it "disables SSL when config param is nil" do
     server = configured_server
     server.ssl_enabled?.should be false
   end
 
-  it "disables ajp when config param is nil" do
-    server = configured_server
-    server.ajp_enabled?.should be false
-  end
-
-  it "enables ssl when config param is a number" do
+  it "enables SSL when config param is a number" do
     server = configured_server({
       :ssl => { :port => 8443 },
       :web_app_dir => MOCK_WEB_APP_DIR
     })
 
     server.ssl_enabled?.should be true
-    #File.exist?('ssl').should be true
+  end
+
+  it "generates a 'default' SSL keystore (if does not exist already)" do
+    keystore = Trinidad::Server::DEFAULT_KEYSTORE_FILE
+    expect( File.exist?(keystore) ).to be false
+
+    server = configured_server({
+      :ssl => { :port => 8443 },
+      :web_app_dir => MOCK_WEB_APP_DIR
+    })
+    server.send :initialize_tomcat
+
+    expect( File.exist?(keystore) ).to be true
+    expect( File.file?(keystore) ).to be true
+
+    server = configured_server({
+      :ssl => { :port => 8443 },
+      :web_app_dir => MOCK_WEB_APP_DIR
+    })
+    server.send :initialize_tomcat
+
+    expect( File.file?(keystore) ).to be true
   end
 
   it "enables AJP when config param is a number" do
@@ -381,7 +411,7 @@ describe Trinidad::Server do
   it "assigns apps to default host with configured address" do
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/app1'
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/app2'
-    
+
     Dir.chdir(APP_STUBS_DIR) do
       server = deployed_server({
         :address => '0.0.0.0',
