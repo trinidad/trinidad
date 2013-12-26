@@ -113,7 +113,7 @@ module Trinidad
         :address => @config[:address], :port => @config[:port]
       }.merge!( options.respond_to?(:[]) ? options : {} )
 
-      add_service_connector(options, options[:protocol_handler] || 'AJP/1.3', tomcat)
+      add_service_connector(options, 'AJP/1.3', tomcat)
     end
 
     def add_http_connector(tomcat = @tomcat)
@@ -130,37 +130,48 @@ module Trinidad
         tomcat.server.add_lifecycle_listener(Tomcat::AprLifecycleListener.new)
       end
 
-      add_service_connector(options, options[:protocol_handler] || 'HTTP/1.1', tomcat)
+      add_service_connector(options, 'HTTP/1.1', tomcat)
     end
 
     # @private
-    DEFAULT_KEYSTORE_FILE = 'ssl/keystore' # TODO default location
+    DEFAULT_KEYSTORE_FILE = 'ssl/keystore' # TODO review default location
 
     def add_ssl_connector(tomcat = @tomcat)
       options = config[:ssl]
       options = {
-        :scheme => 'https', :secure => true, :SSLEnabled => 'true'
+        :scheme => 'https', :secure => true
       }.merge!( options.respond_to?(:[]) ? options : {} )
 
-      keystore_file = options[:keystoreFile]
-      if ! keystore_file && ! options[:SSLCertificateFile]
+      if keystore_file = options.delete(:keystore) || options.delete(:keystore_file)
+        options[:keystoreFile] ||= keystore_file
+      end
+      options[:keystorePass] ||= options.delete(:keystore_pass) if options.key?(:keystore_pass)
+      # handle "custom" alternative SSL (casing) options :
+      options[:SSLEnabled] = options.delete(:ssl_enabled) || true # always true
+      options[:SSLCertificateFile] ||= options.delete(:ssl_certificate_file) if options.key?(:ssl_certificate_file)
+      options[:SSLCertificateKeyFile] ||= options.delete(:ssl_certificate_key_file) if options.key?(:ssl_certificate_key_file)
+      options[:SSLVerifyClient] ||= options.delete(:ssl_verify_client) if options.key?(:ssl_verify_client)
+      options[:SSLProtocol] ||= options.delete(:ssl_protocol) if options.key?(:ssl_protocol)
+      # NOTE: there's quite more SSL prefixed options with APR ...
+
+      if ! options[:keystoreFile] && ! options[:SSLCertificateFile]
         # generate one for development/testing SSL :
         options[:keystoreFile] = DEFAULT_KEYSTORE_FILE
         options[:keystorePass] ||= 'waduswadus42' # NOTE change/ask for default
         generate_default_keystore(options) unless File.exist?(DEFAULT_KEYSTORE_FILE)
       end
 
-      add_service_connector(options, nil, tomcat)
+      add_service_connector(options, 'HTTP/1.1', tomcat)
     end
 
     # NOTE: make sure to pass an options Hash that might be changed !
     def add_service_connector(options, protocol = nil, tomcat = @tomcat)
-      connector = Tomcat::Connector.new(protocol)
-      connector.scheme = options.delete(:scheme) if options[:scheme]
-      connector.secure = options.delete(:secure) || false
+      connector = Tomcat::Connector.new(options.delete(:protocol) || protocol)
+      connector.scheme = options.delete(:scheme) if options.key?(:scheme)
+      connector.secure = options.key?(:secure) ? options.delete(:secure) : false
       connector.port = options.delete(:port).to_i if options[:port]
 
-      if handler = options.delete(:protocol_handler)
+      if handler = options.delete(:protocol_handler) || options.delete(:protocol_handler_class_name)
         connector.protocol_handler_class_name = handler
       end
 
