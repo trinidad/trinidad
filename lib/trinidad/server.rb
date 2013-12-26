@@ -405,7 +405,8 @@ module Trinidad
       host
     end
 
-    DEFAULT_HOST_APP_BASE = 'webapps' # :nodoc:
+    # @private
+    DEFAULT_HOST_APP_BASE = 'webapps'
 
     def default_host_base?(host)
       host.app_base.nil? || ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
@@ -505,25 +506,28 @@ module Trinidad
       end
     end
 
-    def generate_default_keystore(config)
-      keystore_file = java.io.File.new(config[:keystoreFile])
-
-      if ! keystore_file.parent_file.exists && ! keystore_file.parent_file.mkdir
-          raise "Unable to create keystore folder: #{keystore_file.parent_file.canonical_path}"
+    def generate_default_keystore(file, pass = nil) # or (config)
+      file, pass = file[:keystoreFile], file[:keystorePass] if pass.nil?
+      file = Java::JavaIo::File.new(file)
+      keystore_dir = file.parent_file
+      if ! keystore_dir.exists && ! keystore_dir.mkdir
+        raise "Unable to create keystore folder: #{keystore_dir.canonical_path}"
       end
 
-      key_tool_args = ["-genkey",
+      key_tool_args = [ "-genkey",
         "-alias", "localhost",
-        "-dname", "CN=localhost, OU=Trinidad, O=Trinidad, C=ES",
+        "-dname", dname = "CN=localhost, OU=Trinidad, O=Trinidad, C=ES",
         "-keyalg", "RSA",
         "-validity", "365",
         "-storepass", "key",
-        "-keystore", config[:keystoreFile],
-        "-storepass", config[:keystorePass],
-        "-keypass", config[:keystorePass]]
+        "-keystore", file.absolute_path,
+        "-storepass", pass,
+        "-keypass", pass ]
 
-      key_tool = Java::SunSecurityTools::KeyTool
-      key_tool.main key_tool_args.to_java(:string)
+      logger.info "Generating a keystore for localhost #{dname.inspect} at " <<
+                  "#{file.canonical_path} (password: '#{pass}')"
+
+      Java::SunSecurityTools::KeyTool.main key_tool_args.to_java(:string)
     end
 
     def trap_signals
