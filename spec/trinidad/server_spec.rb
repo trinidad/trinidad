@@ -157,9 +157,18 @@ describe Trinidad::Server do
     Trinidad.configure { |c| c.https = true }
     server = configured_server
 
-#    connectors = server.tomcat.service.find_connectors
-#    connectors.should have(1).connector
-#    expect( connectors[0].port ).to eql 3443
+    connectors = server.tomcat.service.find_connectors
+    connectors.should have(1).connector
+    expect( connectors[0].port ).to eql 3443
+  end
+
+  it "sets default https port 3443 when http used and global port specified" do
+    server = configured_server( :port => 3003, :http => true, :https => true )
+
+    connectors = server.tomcat.service.find_connectors
+    connectors.should have(2).connector
+    expect( connectors[0].port ).to eql 3003
+    expect( connectors[1].port ).to eql 3443
   end
 
   it "includes a connector with https scheme when :ssl is enabled" do

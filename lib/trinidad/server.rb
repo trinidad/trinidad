@@ -83,26 +83,25 @@ module Trinidad
       tomcat.enable_naming
 
       http_connector = http_configured? || ( ! ajp_enabled? && ! ssl_enabled? )
-      tomcat.connector = add_http_connector(tomcat) if http_connector
+
+      tomcat.connector = add_http_connector(config[:http], tomcat) if http_connector
 
       if ssl_enabled?
         options = config.key?(:https) ? config[:https] : config[:ssl]
         options = {} if options == true
-        unless http_connector
-          options[:port] = config[:port] || 3443 unless options.key?(:port)
+        unless options.key?(:port)
+          options[:port] = http_connector ? 3443 : config[:port] || 3443
         end
-        options[:address] = config[:address] unless options.key?(:address)
         connector = add_ssl_connector(options, tomcat)
         tomcat.connector = connector unless http_connector
-        http_connector = true # tomcat.connector http: , https: or ajp:
+        http_connector = true # tomcat.connector http: or https: or ajp:
       end
 
       if ajp_enabled?
         options = config[:ajp]; options = {} if options == true
-        unless http_connector
-          options[:port] = config[:port] || 8009 unless options.key?(:port)
+        unless options.key?(:port)
+          options[:port] = config[:port] || 8009 unless http_connector
         end
-        options[:address] = config[:address] unless options.key?(:address)
         connector = add_ajp_connector(options, tomcat)
         tomcat.connector = connector unless http_connector
       end
@@ -127,12 +126,12 @@ module Trinidad
       # backwards compatibility - single argument (tomcat = @tomcat)
       if options && ! options.respond_to?(:[])
         tomcat = options; options = config[:ajp]
-        options = {
-          :address => @config[:address], :port => @config[:port]
-        }.merge!( options.respond_to?(:[]) ? options : {} )
       else
-        tomcat = @tomcat; options = options.dup
+        tomcat = @tomcat
       end if tomcat.nil?
+
+      options = options.respond_to?(:[]) ? options.dup : {}
+      options[:address] = config[:address] unless options.key?(:address)
 
       add_service_connector(options, 'AJP/1.3', tomcat)
     end
@@ -141,12 +140,13 @@ module Trinidad
       # backwards compatibility - single argument (tomcat = @tomcat)
       if options && ! options.respond_to?(:[])
         tomcat = options; options = config[:http]
-        options = {
-          :address => @config[:address], :port => @config[:port]
-        }.merge!( options.respond_to?(:[]) ? options : {} )
       else
-        tomcat = @tomcat; options = options.dup
+        tomcat = @tomcat
       end if tomcat.nil?
+
+      options = options.respond_to?(:[]) ? options.dup : {}
+      options[:port] = config[:port] || 3000 unless options.key?(:port)
+      options[:address] = config[:address] unless options.key?(:address)
 
       if options.delete(:nio)
         options[:protocol_handler] ||= 'org.apache.coyote.http11.Http11NioProtocol'
@@ -169,7 +169,9 @@ module Trinidad
       else
         tomcat = @tomcat
       end if tomcat.nil?
+
       options = { :scheme => 'https', :secure => true }.merge!( options.respond_to?(:[]) ? options : {} )
+      options[:address] = config[:address] unless options.key?(:address)
 
       if keystore_file = options.delete(:keystore) || options.delete(:keystore_file)
         options[:keystoreFile] ||= keystore_file

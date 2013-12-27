@@ -33,7 +33,7 @@ module Trinidad
   class Configuration
 
     DEFAULTS = {
-      :port => 3000,
+      # :port => 3000, HTTP (depends on connector used)
       :address => 'localhost',
       :environment => 'development',
       :context_path => '/',
