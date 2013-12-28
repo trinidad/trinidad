@@ -1,3 +1,24 @@
+## trinidad 1.4.6 (2013-12-28)
+
+* default :port for SSL is now (a more Ruby-sh) 3443
+* better handling of port/address for connectors when only one configured
+  e.g. in case users want https:// but not http://
+* make sure we keep localhost for tomcat.server's address if not specified
+* only generate 'dummy' SSL keystore if not done already (#117)
+* getting more "strict" about jruby-rack and trinidad_jars gem versions
+* use a custom context manager to have "truly" lazy (java) sessions (#123)
+* improve thread-safe rails (4.0) auto-detection from environment files
+* allow symlinks in assets FS e.g. public/assets might be linked (#120)
+* do not default to 'localhost' (default host) but use :address as name (#119)
+
+with (latest) JRuby-Rack 1.1.13 works on JRuby 1.6.x (even < 1.6.7) as well
+
+## trinidad_jars 1.3.0 (2013-12-28)
+
+* Tomcat 7.0.47 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+* re-invent the MessageFormatter in Java
+* introduce Jerry - Tomcat's little companion
+
 ## trinidad_jars 1.2.5 (2013-11-14)
 
 * Tomcat 7.0.42 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
