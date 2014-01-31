@@ -112,12 +112,12 @@ module Trinidad
         end
 
         opts.on('--address', '--address ADDRESS', 'host address',
-          "default: #{default(:address)}") do |address|
+          "default: #{default(:address) || '*'}") do |address|
           default_options[:address] = address
         end
 
         opts.on('-p', '--port PORT', 'port to bind to',
-          "default: #{default(:port)}") do |port|
+          "default: #{default(:port) || 3000}") do |port|
           default_options[:port] = port
         end
 
