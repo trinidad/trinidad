@@ -34,17 +34,14 @@ module Trinidad
 
     DEFAULTS = {
       # :port => 3000, HTTP (depends on connector used)
-      :address => 'localhost',
+      # :address => '*',
       :environment => 'development',
       :context_path => '/',
       :public => 'public',
       :java_lib => 'lib/java',
       :default_web_xml => 'config/web.xml',
-      :jruby_min_runtimes =>
-        java.lang.System.getProperty('jruby.min.runtimes') || 1,
-      :jruby_max_runtimes =>
-        java.lang.System.getProperty('jruby.max.runtimes') || 5,
-      :log => 'INFO',
+      :jruby_min_runtimes => ENV_JAVA['jruby.min.runtimes'] || 1,
+      :jruby_max_runtimes => ENV_JAVA['jruby.max.runtimes'] || 5,
       :trap => true
     }
 

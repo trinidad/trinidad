@@ -131,7 +131,7 @@ module Trinidad
       end if tomcat.nil?
 
       options = options.respond_to?(:[]) ? options.dup : {}
-      options[:address] = config[:address] unless options.key?(:address)
+      options[:address] = config[:address] if ! options.key?(:address) && config.key?(:address)
 
       add_service_connector(options, 'AJP/1.3', tomcat)
     end
@@ -146,7 +146,7 @@ module Trinidad
 
       options = options.respond_to?(:[]) ? options.dup : {}
       options[:port] = config[:port] || 3000 unless options.key?(:port)
-      options[:address] = config[:address] unless options.key?(:address)
+      options[:address] = config[:address] if ! options.key?(:address) && config.key?(:address)
 
       if options.delete(:nio)
         options[:protocol_handler] ||= 'org.apache.coyote.http11.Http11NioProtocol'
@@ -171,7 +171,7 @@ module Trinidad
       end if tomcat.nil?
 
       options = { :scheme => 'https', :secure => true }.merge!( options.respond_to?(:[]) ? options : {} )
-      options[:address] = config[:address] unless options.key?(:address)
+      options[:address] = config[:address] if ! options.key?(:address) && config.key?(:address)
 
       if keystore_file = options.delete(:keystore) || options.delete(:keystore_file)
         options[:keystoreFile] ||= keystore_file

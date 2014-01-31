@@ -8,8 +8,7 @@ describe Trinidad::Configuration do
 
   it "configures with defaults" do
     config = Trinidad::Configuration.new
-    config[:address].should == 'localhost'
-    config[:environment].should == 'development'
+    expect( config[:environment] ).to eql 'development'
   end
 
   it "has accessors and []= for common options" do
@@ -23,10 +22,10 @@ describe Trinidad::Configuration do
   end
 
   it "sets up a global configuration instance on configure" do
-    config = Trinidad.configure({ :port => 4000 })
+    config = Trinidad.configure({ :port => 4000, :address => '127.0.0.1' })
     config.should be_a Trinidad::Configuration
-    config[:port].should == 4000
-    config[:address].should == 'localhost'
+    expect( config[:port] ).to eql 4000
+    expect( config[:address] ).to eql '127.0.0.1'
 
     Trinidad.configuration.should_not be nil
     Trinidad.configuration.should == config
