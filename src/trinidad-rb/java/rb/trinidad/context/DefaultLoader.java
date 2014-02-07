@@ -23,11 +23,16 @@
 
 package rb.trinidad.context;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
@@ -114,6 +119,7 @@ public class DefaultLoader extends WebappLoader {
         }
 
         if ( getClassLoader() != null ) {
+            performJDBCDriverCleanup(jrubyLoaders);
             removeLoadedSecurityProviderForOpenSSL(jrubyLoaders);
         }
 
@@ -209,36 +215,111 @@ public class DefaultLoader extends WebappLoader {
             log.warn("Removing 'BC' security provider loaded by class-loader: " + bcProvider.getClass().getClassLoader());
         }
         synchronized(java.security.Security.class) {
-            if ( java.security.Security.getProvider("BC") != null ) {
+            if ( java.security.Security.getProvider("BC") == bcProvider ) {
                 java.security.Security.removeProvider("BC"); // since we loaded it
             }
         }
     }
 
-    private void performJDBCDriverCleanup() {
-        // TODO unregister with DriverManager
+    private void releaseTimeoutExecutorWorkers(final Collection<JRubyClassLoader> appLoaders) {
+        try {
+            final Class<?> timeoutClass = getTimeoutLibraryImpl();
+            if ( timeoutClass != null ) {
+                Field executorField = timeoutClass.getDeclaredField("timeoutExecutor");
+                executorField.setAccessible(true);
+                ScheduledExecutorService executor = (ScheduledExecutorService) executorField.get(null);
+                if ( ! ( executor instanceof ThreadPoolExecutor ) ||
+                     ( (ThreadPoolExecutor) executor ).getPoolSize() > 0 ) {
+                    // we do need to identify all JRubyWorkerTimeout threads
 
-        performMySQLDriverCleanup();
-    }
 
-    private void performMySQLDriverCleanup() { // MySQL JDBC support
-        Thread cleanupThread = checkAbandonedConnectionCleanupThread();
-        if ( cleanupThread != null ) {
-            cleanupThread.getContextClassLoader();
+                }
+            }
+        }
+        catch (ClassNotFoundException e) {
+            log.info("JRuby's timeout library backend seems to be missing", e);
+        }
+        catch (NoSuchFieldException e) {
+            log.info("JRuby's timeout library internals seem to have changed", e);
+        }
+        catch (IllegalAccessException e) {
+
         }
     }
 
-    private Thread checkAbandonedConnectionCleanupThread() {
-        // thread's name: "Abandoned connection cleanup thread"
-
-        return null;
+    private static Class<?> getTimeoutLibraryImpl() throws ClassNotFoundException {
+        final String version = org.jruby.runtime.Constants.VERSION.substring(0, 3);
+        final String className;
+        if ( version.compareTo("1.7") < 0 ) className = "org.jruby.ext.Timeout";
+        else className = "org.jruby.ext.timeout.Timeout";
+        return Class.forName(className, true, Ruby.getClassLoader());
     }
 
-    private void shutdownMySQLAbandonedConnectionCleanupThread() {
+    private void performJDBCDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+        // TODO unregister with DriverManager
+
+        performMySQLDriverCleanup(appLoaders);
+    }
+
+    private void performMySQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+        List<Thread> cleanupThreads = findAbandonedConnectionCleanupThreads();
+        if ( cleanupThreads != null && ! cleanupThreads.isEmpty() ) {
+            shutdownMySQLAbandonedConnectionCleanupThreads(appLoaders);
+            /*
+            for ( Thread cleanupThread : cleanupThreads ) {
+                ClassLoader threadLoader = cleanupThread.getContextClassLoader();
+                // it's context class-loader will be likely our WebappClassLoader instance
+                if ( ( threadLoader == getClassLoader() || appLoaders.contains( threadLoader ) )
+                        && cleanupThread.isAlive() ) {
+                    log.debug("Matched running MySQL connection cleanup thread: " + cleanupThread);
+                    shutdownMySQLAbandonedConnectionCleanupThread(threadLoader);
+                }
+            } */
+        }
+    }
+
+    private static List<Thread> findAbandonedConnectionCleanupThreads() {
+        // thread's name: "Abandoned connection cleanup thread"
+        return findThreads("Abandoned connection cleanup thread", null);
+    }
+
+    private void shutdownMySQLAbandonedConnectionCleanupThreads(final Collection<JRubyClassLoader> appLoaders) {
         final String className = "com.mysql.jdbc.AbandonedConnectionCleanupThread";
+
+        for ( ClassLoader appLoader : appLoaders ) {
+            try {
+                // will be loaded by JRuby if `require 'jdbc/mysql'; Jdbc::MySQL.load_driver`
+                Class threadClass = Class.forName(className, false, appLoader);
+                if ( threadClass != null ) {
+                    if ( threadClass.getClassLoader() == appLoader
+                        || threadClass.getClassLoader() == getClassLoader() ) {
+                        threadClass.getMethod("shutdown").invoke(null); // stop's the thread
+                        log.info("MySQL connection cleanup thread shutdown has been triggered");
+                    }
+                }
+            }
+            catch (ClassNotFoundException e) {
+                log.debug("MySQL connection cleanup thread not present", e);
+            }
+            catch (NoSuchMethodException e) {
+                log.info("MySQL connection cleanup thread shutdown failed", e);
+            }
+            catch (IllegalAccessException e) {
+                log.info("MySQL connection cleanup thread shutdown failed", e);
+            }
+            catch (InvocationTargetException e) {
+                log.info("MySQL connection cleanup thread shutdown failed", e.getTargetException());
+            }
+        }
+    }
+
+    /*
+    private void shutdownMySQLAbandonedConnectionCleanupThread(final ClassLoader threadLoader) {
+        final String className = "com.mysql.jdbc.AbandonedConnectionCleanupThread";
+
         try {
-            Class threadClass = Class.forName(className, false, getClassLoader());
-            if (threadClass != null) {
+            Class threadClass = Class.forName(className, false, threadLoader);
+            if ( threadClass != null ) {
                 threadClass.getMethod("shutdown").invoke(null); // stop's the thread
                 log.info("MySQL connection cleanup thread shutdown has been triggered");
             }
@@ -255,7 +336,7 @@ public class DefaultLoader extends WebappLoader {
         catch (InvocationTargetException e) {
             log.info("MySQL connection cleanup thread shutdown failed", e.getTargetException());
         }
-    }
+    } */
 
     private boolean isLoadedByParentLoader(final Class<?> clazz) {
         final ClassLoader clazzLoader = clazz.getClassLoader();
@@ -284,6 +365,68 @@ public class DefaultLoader extends WebappLoader {
             clazzLoader = clazzLoader.getParent();
         }
         return false;
+    }
+
+    private static List<Thread> findThreads(final String namePart,
+        final Collection<ClassLoader> contextLoader) {
+
+        final Thread[] allThreads = allThreads();
+
+        final List<Thread> threads = new LinkedList<Thread>();
+
+        for ( int i=0; i<allThreads.length; i++ ) {
+            final Thread thread = allThreads[i];
+            if ( thread == null ) continue;
+
+            if ( namePart != null ) {
+                if ( thread.getName().indexOf(namePart) >= 0 ) {
+                    threads.add(thread);
+                }
+            }
+            if ( contextLoader != null ) {
+                if ( contextLoader.contains( thread.getContextClassLoader() ) ) {
+                    if ( namePart == null ) threads.add(thread);
+                }
+                else {
+                    threads.remove(thread);
+                }
+            }
+
+            if ( namePart == null && contextLoader == null ) threads.add(thread);
+        }
+        return threads;
+    }
+
+    private static Thread[] allThreads() {
+        // Get the current thread group
+        ThreadGroup group = Thread.currentThread().getThreadGroup();
+        // Find the root thread group
+        try {
+            while ( group.getParent() != null ) group = group.getParent();
+        }
+        catch (SecurityException se) {
+            String msg = sm.getString("webappClassLoader.getThreadGroupError", group.getName());
+            if (log.isDebugEnabled()) {
+                log.debug(msg, se);
+            }
+            else {
+                log.warn(msg);
+            }
+        }
+
+        int threadCountGuess = group.activeCount() + 50;
+        Thread[] allThreads = new Thread[threadCountGuess];
+        int threadCountActual = group.enumerate(allThreads);
+        // Make sure we don't miss any threads
+        while ( threadCountActual == threadCountGuess ) {
+            threadCountGuess *= 2;
+            allThreads = new Thread[threadCountGuess];
+            // Note tg.enumerate(Thread[]) silently ignores any threads that
+            // can't fit into the array
+            threadCountActual = group.enumerate(allThreads);
+        }
+
+        return allThreads;
     }
 
     private class ContextListener implements LifecycleListener {
