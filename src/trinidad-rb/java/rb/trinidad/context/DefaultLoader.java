@@ -23,14 +23,25 @@
 
 package rb.trinidad.context;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.loader.WebappClassLoader;
 import org.apache.catalina.loader.WebappLoader;
 
-//import org.jruby.Ruby;
+import org.jruby.Ruby;
+import org.jruby.util.JRubyClassLoader;
+//import org.jruby.rack.RackApplication;
+//import org.jruby.rack.RackApplicationFactoryDecorator;
 
 /**
  * Default (a bit JRuby-aware) web-application (class) loader.
@@ -45,12 +56,22 @@ public class DefaultLoader extends WebappLoader {
     private static final org.apache.juli.logging.Log log =
         org.apache.juli.logging.LogFactory.getLog( DefaultLoader.class );
 
+    private boolean forceSecurityProviderCleanup;
+
     public DefaultLoader() {
         super();
     }
 
     public DefaultLoader(ClassLoader parent) {
         super(parent);
+    }
+
+    public boolean isForceSecurityProviderCleanup() {
+        return forceSecurityProviderCleanup;
+    }
+
+    public void setForceSecurityProviderCleanup(boolean forceCleanup) {
+        this.forceSecurityProviderCleanup = forceCleanup;
     }
 
     @Override
@@ -63,41 +84,129 @@ public class DefaultLoader extends WebappLoader {
     protected void startInternal() throws LifecycleException {
         super.startInternal();
 
-        // Context context = getContext();
+        getContextBang().addLifecycleListener(contextListener = new ContextListener());
     }
 
     @Override
     protected void stopInternal() throws LifecycleException {
-        if ( getClassLoader() != null ) {
-            removeLoadedSecurityProviderForOpenSSL();
+        if ( contextListener != null ) {
+            getContextBang().removeLifecycleListener(contextListener);
+            contextListener = null;
         }
+
+        Collection<Ruby> managedRuntimes = null; // only 1 for threadsafe!
+        Set<JRubyClassLoader> jrubyLoaders = null;
+        if ( rackFactory != null ) {
+            if (log.isDebugEnabled()) {
+                log.debug("Resolved rack.factory: " + rackFactory + " loader: " + rackFactory.getClass().getClassLoader());
+            }
+            managedRuntimes = getManagedRuntimes(rackFactory);
+            if ( managedRuntimes != null ) {
+                jrubyLoaders = new LinkedHashSet<JRubyClassLoader>(managedRuntimes.size());
+                for ( Ruby runtime : managedRuntimes ) {
+                    jrubyLoaders.add( runtime.getJRubyClassLoader() );
+                }
+                log.debug("JRuby loader(s) used for managed runtime(s): " + managedRuntimes);
+            }
+        }
+        else {
+            log.info("Could not resolve rack.factory for context: " + getContainer());
+        }
+
+        if ( getClassLoader() != null ) {
+            removeLoadedSecurityProviderForOpenSSL(jrubyLoaders);
+        }
+
+        rackFactory = null;
         super.stopInternal();
     }
 
-    protected final Context getContext() {
-        return (Context) getContainer();
+    private transient ContextListener contextListener;
+    private transient Object rackFactory; // org.jruby.rack.RackApplicationFactoryDecorator
+
+    // NOTE: we'll need to get the JRuby-Rack stuff before stop() happens
+    // ... since atrrs get cleaned by the time our stop method is executed
+    private void contextStopEvent() {
+        rackFactory = getServletContext().getAttribute("rack.factory");
     }
 
-    private void removeLoadedSecurityProviderForOpenSSL() {
+    private Collection<Ruby> getManagedRuntimes(final Object rackFactory) {
+        try { // public Collection<RackApplication> getManagedApplications()
+            final Collection apps = (Collection)
+                rackFactory.getClass().getMethod("getManagedApplications").invoke(rackFactory);
+            final Collection<Ruby> runtimes = new LinkedHashSet<Ruby>(apps.size());
+            for ( Object app : apps ) { // most likely only one (threadsafe!)
+                Object runtime = app.getClass().getMethod("getRuntime").invoke(app);
+                runtimes.add( (Ruby) runtime );
+            }
+
+            if ( runtimes == null || runtimes.isEmpty() ) {
+                log.info("No managed runtimes found for context: " + getContainer());
+            }
+            else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Found " + runtimes.size() + " managed runtimes for context: " + getContainer());
+                }
+            }
+
+            return runtimes;
+        }
+        catch (NoSuchMethodException e) {
+            log.info("Failed getting managed runtimes from rack.factory", e);
+        }
+        catch (IllegalAccessException e) {
+            log.info("Failed getting managed runtimes from rack.factory", e);
+        }
+        catch (InvocationTargetException e) {
+            log.info("Failed getting managed runtimes from rack.factory", e.getTargetException());
+        }
+        return null;
+    }
+
+    private ClassLoader getClassLoaderBang() {
+        final ClassLoader classLoader = getClassLoader();
+        if ( classLoader == null ) {
+            throw new IllegalStateException("unexpected state " + getStateName() + " no class-loader");
+        }
+        return classLoader;
+    }
+
+    private Context getContextBang() {
+        final Context context = (Context) getContainer();
+        if ( context == null ) {
+            throw new IllegalStateException("unexpected state " + getStateName() + " no context (container)");
+        }
+        return context;
+    }
+
+    private ServletContext getServletContext() {
+        return getContextBang().getServletContext();
+    }
+
+    private void removeLoadedSecurityProviderForOpenSSL(final Collection<JRubyClassLoader> appLoaders) {
         final Provider bcProvider = java.security.Security.getProvider("BC");
         // the registered : org.bouncycastle.jce.provider.BouncyCastleProvider
         // JRuby's latest OpenSSL impl does : Security.addProvider(BC_PROVIDER)
         // @see org.jruby.ext.openssl.OpenSSLReal
         if ( bcProvider == null ) {
+            log.debug("Security provider 'BC' no registered");
             return; // not loaded at all - nothing to-do
         }
         if ( isLoadedByParentLoader(bcProvider.getClass()) ) {
+            log.debug("Security provider 'BC' loaded by parent loader");
             return; // loaded but not by us - nothing to-do
             // NOTE: JRuby handles this correctly as well, adds the BC provider
             // only if ... java.security.Security.getProvider("BC") == null
         }
 
-        final String classLoaderName = bcProvider.getClass().getClassLoader().getClass().getName();
-        if ( "org.jruby.util.JRubyClassLoader".equals(classLoaderName) ) {
-            log.info("removing 'BC' security provider (likely registered by jruby-openssl)");
+        final ClassLoader bcLoader = bcProvider.getClass().getClassLoader();
+        // make sure we do not de-register 'BC' setup by another web-app :
+        if ( appLoaders != null && appLoaders.contains(bcLoader) ) {
+            log.info("Removing 'BC' security provider (likely registered by jruby-openssl)");
         }
         else {
-            log.warn("removing 'BC' security provider loaded by class-loader: " + bcProvider.getClass().getClassLoader());
+            if ( ! isForceSecurityProviderCleanup() ) return;
+            log.warn("Removing 'BC' security provider loaded by class-loader: " + bcProvider.getClass().getClassLoader());
         }
         synchronized(java.security.Security.class) {
             if ( java.security.Security.getProvider("BC") != null ) {
@@ -106,18 +215,36 @@ public class DefaultLoader extends WebappLoader {
         }
     }
 
-    /*
-    private void shutdownAbandonedConnectionCleanupThread() {
+    private void performJDBCDriverCleanup() {
+        // TODO unregister with DriverManager
+
+        performMySQLDriverCleanup();
+    }
+
+    private void performMySQLDriverCleanup() { // MySQL JDBC support
+        Thread cleanupThread = checkAbandonedConnectionCleanupThread();
+        if ( cleanupThread != null ) {
+            cleanupThread.getContextClassLoader();
+        }
+    }
+
+    private Thread checkAbandonedConnectionCleanupThread() {
+        // thread's name: "Abandoned connection cleanup thread"
+
+        return null;
+    }
+
+    private void shutdownMySQLAbandonedConnectionCleanupThread() {
         final String className = "com.mysql.jdbc.AbandonedConnectionCleanupThread";
         try {
             Class threadClass = Class.forName(className, false, getClassLoader());
             if (threadClass != null) {
-                threadClass.getMethod("shutdown").invoke(null);
+                threadClass.getMethod("shutdown").invoke(null); // stop's the thread
                 log.info("MySQL connection cleanup thread shutdown has been triggered");
             }
         }
         catch (ClassNotFoundException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
+            log.debug("MySQL connection cleanup thread not present", e);
         }
         catch (NoSuchMethodException e) {
             log.info("MySQL connection cleanup thread shutdown failed", e);
@@ -126,13 +253,13 @@ public class DefaultLoader extends WebappLoader {
             log.info("MySQL connection cleanup thread shutdown failed", e);
         }
         catch (InvocationTargetException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
+            log.info("MySQL connection cleanup thread shutdown failed", e.getTargetException());
         }
-    } */
+    }
 
     private boolean isLoadedByParentLoader(final Class<?> clazz) {
         final ClassLoader clazzLoader = clazz.getClassLoader();
-        ClassLoader parentLoader = getWebAppLoader().getParent();
+        ClassLoader parentLoader = getClassLoaderBang().getParent();
         while ( parentLoader != null ) {
             if ( clazzLoader == parentLoader ) return true;
             parentLoader = parentLoader.getParent();
@@ -141,7 +268,7 @@ public class DefaultLoader extends WebappLoader {
     }
 
     private boolean isLoadedByThisLoader(final Object obj) {
-        final ClassLoader classLoader = getWebAppLoader();
+        final ClassLoader classLoader = getClassLoaderBang();
         return isLoadedBy(obj, classLoader, false);
     }
 
@@ -159,12 +286,15 @@ public class DefaultLoader extends WebappLoader {
         return false;
     }
 
-    private ClassLoader getWebAppLoader() {
-        final ClassLoader classLoader = getClassLoader();
-        if ( classLoader == null ) {
-            throw new IllegalStateException("unexpected state " + getStateName() + " no class-loader");
+    private class ContextListener implements LifecycleListener {
+
+        @Override
+        public void lifecycleEvent(LifecycleEvent event) {
+            if ( event.getType() == Lifecycle.STOP_EVENT ) {
+                DefaultLoader.this.contextStopEvent();
+            }
         }
-        return classLoader;
+
     }
 
 }
