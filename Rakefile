@@ -46,14 +46,17 @@ TOMCAT_CORE_JAR = File.expand_path('../trinidad-libs/tomcat-core.jar', __FILE__)
 TRINIDAD_RB_JAR = File.expand_path('../trinidad-libs/trinidad-rb.jar', __FILE__)
 
 module TrinidadRakeHelpers
-  
+
   def javac(source_dir, target_dir, class_path = TOMCAT_CORE_JAR)
+    source = '1.6'; target = '1.6' # java-compiler settings
     FileUtils.mkdir target_dir unless File.exist?(target_dir)
-    sh 'javac -Xlint:deprecation -Xlint:unchecked -g -source 1.6 -target 1.6 ' + 
-       "-classpath #{class_path} -d #{target_dir} " +
+    class_path = class_path.join(':') unless class_path.is_a?(String)
+    sh "javac -Xlint:deprecation -Xlint:unchecked " <<
+       " -g -source #{source} -target #{target} " <<
+       " -classpath #{class_path} -d #{target_dir} " <<
        Dir["#{source_dir}/**/*.java"].join(" ")
   end
-  
+
   def jar(entries, jar_path)
     work_dir = Dir.pwd
     if entries.is_a?(String) && File.directory?(entries)
@@ -67,36 +70,36 @@ module TrinidadRakeHelpers
       %x{jar #{options} #{jar_path} #{entries.join(' ')}}
     end
   end
-  
-  def log(msg)
-    puts msg
-  end
-  
+
+  def log(msg); puts msg end
+
 end
 
 namespace :'trinidad-rb' do
   include TrinidadRakeHelpers
-  
+
   TRINIDAD_RB_TARGET_DIR = File.expand_path('../target/trinidad-rb', __FILE__)
-  
+
   desc "Compile trinidad-rb java sources"
   task :compile do
-    javac "src/trinidad-rb/java", TRINIDAD_RB_TARGET_DIR
+    require 'jruby-jars'
+    class_path = [ TOMCAT_CORE_JAR, JRubyJars.core_jar_path ]
+    javac "src/trinidad-rb/java", TRINIDAD_RB_TARGET_DIR, class_path
   end
-  
+
   desc "Package trinidad-rb.jar"
   task :jar => :compile do
     rm TRINIDAD_RB_JAR if File.exist?(TRINIDAD_RB_JAR)
     jar TRINIDAD_RB_TARGET_DIR, TRINIDAD_RB_JAR
   end
-  
+
   desc "Remove trinidad-rb.jar"
   task :clear do
     rm_r TRINIDAD_RB_TARGET_DIR if File.exist?(TRINIDAD_RB_TARGET_DIR)
     rm TRINIDAD_RB_JAR if File.exist?(TRINIDAD_RB_JAR)
   end
   task :clean => :clear
-  
+
 end
 
 task :build   => 'trinidad:build'
