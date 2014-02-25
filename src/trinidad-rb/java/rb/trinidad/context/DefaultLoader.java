@@ -23,7 +23,6 @@
 
 package rb.trinidad.context;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.util.Collection;
@@ -31,8 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
@@ -121,6 +118,7 @@ public class DefaultLoader extends WebappLoader {
         if ( getClassLoader() != null ) {
             performJDBCDriverCleanup(jrubyLoaders);
             removeLoadedSecurityProviderForOpenSSL(jrubyLoaders);
+            mendContextLoaderForTimeoutWorkerThreads();
         }
 
         rackFactory = null;
@@ -221,29 +219,19 @@ public class DefaultLoader extends WebappLoader {
         }
     }
 
-    private void releaseTimeoutExecutorWorkers(final Collection<JRubyClassLoader> appLoaders) {
-        try {
-            final Class<?> timeoutClass = getTimeoutLibraryImpl();
-            if ( timeoutClass != null ) {
-                Field executorField = timeoutClass.getDeclaredField("timeoutExecutor");
-                executorField.setAccessible(true);
-                ScheduledExecutorService executor = (ScheduledExecutorService) executorField.get(null);
-                if ( ! ( executor instanceof ThreadPoolExecutor ) ||
-                     ( (ThreadPoolExecutor) executor ).getPoolSize() > 0 ) {
-                    // we do need to identify all JRubyWorkerTimeout threads
-
-
-                }
+    private void mendContextLoaderForTimeoutWorkerThreads() {
+        //List<Thread> workerThreads = findThreads("JRubyTimeoutWorker-", null);
+        //if ( workerThreads.isEmpty() ) {
+            // JRuby 9000 changing daemon thread naming convention
+            // e.g. "JRubyFiber-1" -> "Ruby-2-Fiber-1" ('2' is runtime number)
+            List<Thread> workerThreads = findThreads("TimeoutWorker-", null);
+        //}
+        for ( int i=0; i<workerThreads.size(); i++ ) {
+            final Thread worker = workerThreads.get(i);
+            if ( worker.getName().indexOf("Ruby") == -1 ) continue;
+            if ( worker.getContextClassLoader() == getClassLoader() ) {
+                worker.setContextClassLoader( getClassLoader().getParent() );
             }
-        }
-        catch (ClassNotFoundException e) {
-            log.info("JRuby's timeout library backend seems to be missing", e);
-        }
-        catch (NoSuchFieldException e) {
-            log.info("JRuby's timeout library internals seem to have changed", e);
-        }
-        catch (IllegalAccessException e) {
-
         }
     }
 
@@ -313,31 +301,6 @@ public class DefaultLoader extends WebappLoader {
         }
     }
 
-    /*
-    private void shutdownMySQLAbandonedConnectionCleanupThread(final ClassLoader threadLoader) {
-        final String className = "com.mysql.jdbc.AbandonedConnectionCleanupThread";
-
-        try {
-            Class threadClass = Class.forName(className, false, threadLoader);
-            if ( threadClass != null ) {
-                threadClass.getMethod("shutdown").invoke(null); // stop's the thread
-                log.info("MySQL connection cleanup thread shutdown has been triggered");
-            }
-        }
-        catch (ClassNotFoundException e) {
-            log.debug("MySQL connection cleanup thread not present", e);
-        }
-        catch (NoSuchMethodException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
-        }
-        catch (IllegalAccessException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
-        }
-        catch (InvocationTargetException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e.getTargetException());
-        }
-    } */
-
     private boolean isLoadedByParentLoader(final Class<?> clazz) {
         final ClassLoader clazzLoader = clazz.getClassLoader();
         ClassLoader parentLoader = getClassLoaderBang().getParent();
@@ -348,10 +311,11 @@ public class DefaultLoader extends WebappLoader {
         return false;
     }
 
+    /*
     private boolean isLoadedByThisLoader(final Object obj) {
         final ClassLoader classLoader = getClassLoaderBang();
         return isLoadedBy(obj, classLoader, false);
-    }
+    } */
 
     private static boolean isLoadedBy(final Object obj, final ClassLoader loader, final boolean checkParent) {
         if ( obj == null ) return false;
@@ -379,9 +343,7 @@ public class DefaultLoader extends WebappLoader {
             if ( thread == null ) continue;
 
             if ( namePart != null ) {
-                if ( thread.getName().indexOf(namePart) >= 0 ) {
-                    threads.add(thread);
-                }
+                if ( thread.getName().indexOf(namePart) >= 0 ) threads.add(thread);
             }
             if ( contextLoader != null ) {
                 if ( contextLoader.contains( thread.getContextClassLoader() ) ) {
@@ -433,7 +395,7 @@ public class DefaultLoader extends WebappLoader {
 
         @Override
         public void lifecycleEvent(LifecycleEvent event) {
-            if ( event.getType() == Lifecycle.STOP_EVENT ) {
+            if ( event.getType() == (Object) Lifecycle.STOP_EVENT ) {
                 DefaultLoader.this.contextStopEvent();
             }
         }
