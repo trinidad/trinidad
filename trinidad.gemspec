@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
-$:.push File.expand_path("../lib", __FILE__)
-require 'trinidad/version'
 
 Gem::Specification.new do |gem|
   gem.name = 'trinidad'
-  gem.version = Trinidad::VERSION
+
+  path = File.expand_path("lib/trinidad/version.rb", File.dirname(__FILE__))
+  gem.version = File.read(path).match( /.*VERSION\s*=\s*['"](.*)['"]/m )[1]
 
   gem.summary = "Web server for Rails/Rack applications built upon JRuby::Rack and Apache Tomcat"
   gem.description = "Trinidad allows you to run Rails or Rack applications within " <<
