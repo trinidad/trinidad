@@ -86,6 +86,8 @@ public class DefaultLoader extends WebappLoader {
     protected void startInternal() throws LifecycleException {
         super.startInternal();
 
+        getClassLoaderBang().setJarPath(null); // super set it to "/WEB-INF/lib"
+
         getContextBang().addLifecycleListener(contextListener = new ContextListener());
     }
 
@@ -167,12 +169,12 @@ public class DefaultLoader extends WebappLoader {
         return null;
     }
 
-    private ClassLoader getClassLoaderBang() {
+    private WebappClassLoader getClassLoaderBang() {
         final ClassLoader classLoader = getClassLoader();
         if ( classLoader == null ) {
             throw new IllegalStateException("unexpected state " + getStateName() + " no class-loader");
         }
-        return classLoader;
+        return (WebappClassLoader) classLoader;
     }
 
     private Context getContextBang() {
