@@ -18,7 +18,7 @@ module Trinidad
 
         def configure(context)
           super # Shared#configure
-          configure_class_loader(context)
+          # configure_class_loader(context)
         end
 
         protected
@@ -38,7 +38,7 @@ module Trinidad
         end
 
         def configure_class_loader(context)
-          class_loader = web_app.class_loader || JRuby.runtime.jruby_class_loader
+          class_loader = JRuby.runtime.jruby_class_loader
           loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
           loader.container = context
           context.loader = loader
