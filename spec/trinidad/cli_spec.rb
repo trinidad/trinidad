@@ -1,11 +1,15 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
-describe Trinidad::CommandLineParser do
+describe Trinidad::CLI do
   include FakeApp
 
   before { Trinidad.configuration = nil }
 
-  subject { Trinidad::CommandLineParser }
+  subject { Trinidad::CLI }
+
+  it 'is CommandLineParser' do
+    expect( Trinidad::CLI ).to be Trinidad::CommandLineParser
+  end
 
   it "overrides java_classes option" do
     args = "--java_classes my_classes".split

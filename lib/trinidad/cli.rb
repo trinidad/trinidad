@@ -1,12 +1,12 @@
 module Trinidad
-  class CommandLineParser
+  class CLI
 
-    def self.parse(argv)
-      CommandLineParser.new.parse!(argv)
+    def self.parse(argv = ARGV)
+      new.parse!(argv)
     end
 
     def self.load(options = {})
-      CommandLineParser.new.load!(options)
+      new.load!(options)
     end
 
     attr_reader :default_options
@@ -94,7 +94,7 @@ module Trinidad
           default_options[:monitor] = monitor
         end
 
-        opts.on('-t', '--threadsafe', 'force thread-safe mode (use single runtime)') do
+        opts.on('-t', '--threadsafe', 'force thread-safe mode (use shared runtime)') do
           default_options[:jruby_min_runtimes] = 1
           default_options[:jruby_max_runtimes] = 1
         end
@@ -126,11 +126,6 @@ module Trinidad
           default_options[:ssl] = { :port => (port || 3443).to_i }
         end
 
-        opts.on('-a', '--ajp [AJP_PORT]', 'enable the AJP web protocol',
-          "default port: 8009") do |port|
-          default_options[:ajp] = { :port => (port || 8009).to_i }
-        end
-
         opts.on('--java_lib LIB_DIR', '--lib LIB_DIR (deprecated use --java_lib)',
           'contains .jar files used by the app',
           "default: #{default(:java_lib)}") do |lib|
@@ -154,19 +149,28 @@ module Trinidad
           default_options[:apps_base] = apps_base
         end
 
-        opts.on('-g', '--log LEVEL', 'set logging level') do |log|
-          default_options[:log] = log
-        end
-
         opts.on('-v', '--version', 'show server version') do
           puts "Trinidad #{Trinidad::VERSION} (Tomcat #{Trinidad::TOMCAT_VERSION})"
           exit
         end
 
-        opts.on('-h', '--help', 'display this help') do
-          puts opts
-          exit
+        opts.on('-h', '--help', 'display this help') { puts opts; exit }
+
+        opts.on_tail; opts.on_tail 'DEPRECATED options:'
+
+        opts.on_tail('-a', '--ajp [AJP_PORT]', 'enable the AJP web protocol',
+          "default port: 8009") do |port|
+          warn "DEPRECATED option ( -a / --ajp )"
+          default_options[:ajp] = { :port => (port || 8009).to_i }
         end
+
+
+        opts.on_tail('-g', '--log LEVEL', 'set logging level') do |log|
+          warn "DEPRECATED option ( -g / --log )"
+          default_options[:log] = log
+        end
+
+        opts.on_tail
       end
     end
 
@@ -182,4 +186,6 @@ module Trinidad
     end
 
   end
+  # @private
+  CommandLineParser = CLI
 end

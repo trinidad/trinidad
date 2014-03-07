@@ -5,9 +5,12 @@ require 'trinidad/jars'
 
 require 'trinidad/version'
 
+module Trinidad
+  autoload :CLI, 'trinidad/cli'
+end
+
 require 'trinidad/helpers'
 require 'trinidad/configuration'
-require 'trinidad/command_line_parser'
 require 'trinidad/extensions'
 require 'trinidad/logging'
 require 'trinidad/server'
