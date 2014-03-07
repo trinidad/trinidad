@@ -13,8 +13,6 @@ module Trinidad
       configure_logging config[:logging] || config[:log]
       @config = config.freeze
     end
-     # @deprecated replaced with {#configure}
-    def load_config(config); configure(config); end
 
     def hosts
       @hosts ||= @config[:hosts]
@@ -109,8 +107,6 @@ module Trinidad
       Extensions.configure_server_extensions(config[:extensions], tomcat)
     end
     protected :initialize_tomcat
-    # #deprecated renamed to {#initialize_tomcat}
-    def load_tomcat_server; initialize_tomcat; end
 
     def add_host_monitor(app_holders)
       for host in tomcat.engine.find_children
@@ -119,8 +115,6 @@ module Trinidad
       end
     end
     protected :add_host_monitor
-    # @deprecated replaced with {#setup_host_monitor}
-    def load_host_monitor(web_apps); add_host_monitor(web_apps); end
 
     def add_ajp_connector(options = config[:ajp], tomcat = nil)
       # backwards compatibility - single argument (tomcat = @tomcat)
