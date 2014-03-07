@@ -220,10 +220,9 @@ module Trinidad
     #   cache: true
     #   cache_ttl: 60000
     def public_config
-      @public_config ||=
-        self[:public].is_a?(String) ?
-          { :root => self[:public] } :
-            ( self[:public] || {} )
+      @public_config ||= begin; public = self[:public]
+        public.is_a?(String) ? { :root => public } : ( public || {} )
+      end
     end
 
     def aliases # :public => { :aliases => ... }
@@ -267,17 +266,6 @@ module Trinidad
       # ((BaseDirContext) resources).setCacheTTL
       self[:cache_ttl] || public_config[:cache_ttl]
     end
-
-    def class_loader
-      @class_loader ||=
-        org.jruby.util.JRubyClassLoader.new(JRuby.runtime.jruby_class_loader)
-    end
-
-    def class_loader!
-      ( @class_loader = nil ) || class_loader
-    end
-    # @deprecated replaced with {#class_loader!}
-    def generate_class_loader; class_loader!; end
 
     def define_lifecycle
       Lifecycle::WebApp::Default.new(self)
@@ -751,10 +739,6 @@ module Trinidad
 
     def monitor
       root_dir ? File.expand_path(root_dir) : nil # the .war file itself
-    end
-
-    def class_loader
-      @class_loader ||= nil # lifecycle will setup JRuby CL
     end
 
     def context_params

@@ -6,10 +6,11 @@ module Trinidad
 
       include Trinidad::Tomcat::LifecycleListener
 
-      EVENTS = Trinidad::Tomcat::Lifecycle # :nodoc:
+      # @private
+      EVENTS = Trinidad::Tomcat::Lifecycle
 
       # The base implementation simply routes events to correspondig methods.
-      # 
+      #
       # http://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/Lifecycle.html
       # http://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/LifecycleListener.html
       def lifecycleEvent(event)
@@ -44,27 +45,27 @@ module Trinidad
           raise "unsupported event.type = #{event.type}"
         end
       end
-      
+
       # Event hook methods for a more Ruby-ish API :
-      
+
       def before_init(event); end
       def after_init(event); end
-      
+
       def before_start(event); end
       def configure_start(event); end
       def start(event); end
       def after_start(event); end
-      
+
       def before_stop(event); end
       def stop(event); end
       def configure_stop(event); end
       def after_stop(event); end
-      
+
       def before_destroy(event); end
       def after_destroy(event); end
-      
+
       def periodic(event); end
-      
+
     end
   end
 end

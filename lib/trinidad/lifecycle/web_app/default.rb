@@ -6,7 +6,7 @@ module Trinidad
     module WebApp
       class Default < Lifecycle::Base
         include Shared
-        
+
         def configure(context)
           super
           deployment_descriptor = configure_deployment_descriptor(context)
@@ -17,17 +17,17 @@ module Trinidad
           configure_context_params(context)
           configure_context_loader(context)
         end
-        
+
         def before_init(event)
           super
           set_context_xml event.lifecycle
           # AFTER_INIT_EVENT ContextConfig#init() will pick this up
         end
-        
+
         protected
-        
+
         @@_add_context_config = true # due backward compatibility
-        
+
         def configure_deployment_descriptor(context)
           descriptor = web_app.deployment_descriptor
           if descriptor && File.exist?(descriptor)
@@ -82,28 +82,27 @@ module Trinidad
         alias_method :configure_init_params, :configure_context_params
 
         def configure_context_loader(context)
-          class_loader = web_app.class_loader
+          loader = new_context_loader
+          add_application_java_classes(loader)
+          add_application_jars(loader) # classes takes precedence !
 
-          add_application_java_classes(class_loader)
-          add_application_jars(class_loader) # classes takes precedence !
-
-          loader = Trinidad::Tomcat::WebappLoader.new(class_loader)
           context.loader = loader # does loader.container = context
         end
 
-        def add_application_jars(class_loader)
+        def add_application_jars(loader)
           return unless lib_dir = web_app.java_lib_dir
+          # loader.setJarPath(lib_dir) no point since startInternal re-sets it
           Dir[ File.join(lib_dir, "**/*.jar") ].each do |jar|
             logger.debug "[#{web_app.context_path}] adding jar: #{jar}"
-            class_loader.addURL java.io.File.new(jar).to_url
+            loader.addRepository to_url_path(jar)
           end
         end
 
-        def add_application_java_classes(class_loader)
+        def add_application_java_classes(loader)
           return unless classes_dir = web_app.java_classes_dir
-          class_loader.addURL java.io.File.new(classes_dir).to_url
+          loader.addRepository to_url_path(classes_dir)
         end
-        
+
         def set_context_xml(context)
           # behave similar to a .war - checking /META-INF/context.xml on CP
           context_xml = web_app.context_xml
@@ -120,7 +119,18 @@ module Trinidad
             context.setDefaultContextXml(context_xml)
           end
         end
-        
+
+        private
+
+        def new_context_loader
+          class_loader = JRuby.runtime.jruby_class_loader
+          Java::RbTrinidadContext::DefaultLoader.new(class_loader)
+        end
+
+        def to_url_path(path)
+          java.io.File.new(path).canonical_file.to_url.to_s
+        end
+
       end
     end
     Default = Trinidad::Lifecycle::WebApp::Default # backwards compatibility

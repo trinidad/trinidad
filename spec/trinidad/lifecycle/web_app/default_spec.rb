@@ -85,7 +85,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "configures the rails context listener from the web app" do
-    listener = rails_web_app_listener({})
+    listener = rails_web_app_listener
     context = web_app_context(listener.web_app)
     listener.send :configure_rack_listener, context
 
@@ -94,7 +94,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "adds context parameters from the web app" do
-    listener = rails_web_app_listener({ :jruby_min_runtimes => 1 })
+    listener = rails_web_app_listener :jruby_min_runtimes => 1
     listener.send :configure_context_params, context
 
     context.find_parameter('jruby.min.runtimes').should == '1'
@@ -117,54 +117,44 @@ describe Trinidad::Lifecycle::WebApp::Default do
     context.find_parameter('jruby.max.runtimes').should == '4'
   end
 
-  it "doesn't load classes into a jar when the libs directory is not present" do
-    listener = rails_web_app_listener({})
-    web_app = listener.web_app
-    listener.send :add_application_jars, web_app.class_loader
+  it "doesn't load classes from a jar when the libs directory is not present" do
+    listener = rails_web_app_listener
+    loader = new_context_loader(listener)
+    listener.send :add_application_jars, loader; loader.container.start
 
-    lambda {
-      web_app.class_loader.find_class('org.ho.yaml.Yaml')
-    }.should raise_error
+    expect {
+      loader.class_loader.find_class('org.ho.yaml.Yaml')
+    }.to raise_error(java.lang.ClassNotFoundException)
   end
 
-  it "loads classes into a jar when the libs directory is provided" do
-    listener = rails_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
-      :libs_dir => 'lib'
-    })
-    web_app = listener.web_app
-    listener.send :add_application_jars, web_app.class_loader
+  it "loads classes from a jar when the libs directory is provided" do
+    listener = rails_web_app_listener :root_dir => MOCK_WEB_APP_DIR, :libs_dir => 'lib'
+    loader = new_context_loader(listener); loader.container.start
+    listener.send :add_application_jars, loader
 
-    lambda {
-      web_app.class_loader.find_class('org.ho.yaml.Yaml').should_not be nil
-    }.should_not raise_error
+    expect( loader.class_loader.find_class('org.ho.yaml.Yaml') ).to_not be nil
   end
 
   it "doesn't load java classes when the classes directory is not present" do
-    listener = rails_web_app_listener({})
-    web_app = listener.web_app
-    listener.send :add_application_java_classes, web_app.class_loader
+    listener = rails_web_app_listener
+    loader = new_context_loader(listener); loader.container.start
+    listener.send :add_application_java_classes, loader
 
-    lambda {
-      web_app.class_loader.find_class('HelloTomcat')
-    }.should raise_error
+    expect {
+      loader.class_loader.find_class('HelloTomcat')
+    }.to raise_error(java.lang.ClassNotFoundException)
   end
 
   it "loads java classes when the classes directory is provided" do
-    listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
-      :classes_dir => 'classes'
-    })
-    web_app = listener.web_app
-    listener.send :add_application_java_classes, web_app.class_loader
+    listener = rackup_web_app_listener :root_dir => MOCK_WEB_APP_DIR, :classes_dir => 'classes'
+    loader = new_context_loader(listener)
+    listener.send :add_application_java_classes, loader; loader.container.start
 
-    lambda {
-      web_app.class_loader.find_class('HelloTomcat').should_not be nil
-    }.should_not raise_error
+    expect( loader.class_loader.find_class('HelloTomcat') ).to_not be nil
   end
 
   it "creates a WebappLoader with the JRuby class loader" do
-    listener = rackup_web_app_listener({})
+    listener = rackup_web_app_listener
     listener.send :configure_context_loader, context
 
     context.loader.should be_a(Java::OrgApacheCatalinaLoader::WebappLoader)
@@ -176,7 +166,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
-    listener.send :configure_init_params, context
+    listener.send :configure_context_params, context
 
     context.find_parameter('rackup.path').should == "config.ru"
   end
@@ -557,12 +547,18 @@ describe Trinidad::Lifecycle::WebApp::Default do
     tomcat.addWebapp(web_app.context_path || '/', web_app.root_dir)
   end
 
-  def rails_web_app_listener(config)
+  def new_context_loader(listener, context = nil)
+    loader = listener.send :new_context_loader
+    context ||= web_app_context(listener.web_app)
+    context.setLoader(loader); loader
+  end
+
+  def rails_web_app_listener(config = {})
     web_app = Trinidad::RailsWebApp.new(config, nil)
     Trinidad::Lifecycle::WebApp::Default.new(web_app)
   end
 
-  def rackup_web_app_listener(config)
+  def rackup_web_app_listener(config = {})
     web_app = Trinidad::RackupWebApp.new(config, nil)
     Trinidad::Lifecycle::WebApp::Default.new(web_app)
   end
