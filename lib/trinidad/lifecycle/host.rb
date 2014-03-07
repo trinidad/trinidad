@@ -2,17 +2,15 @@ require 'trinidad/lifecycle/base'
 
 module Trinidad
   module Lifecycle
-    # Host listener - monitors deployed applications 
+    # Host listener - monitors deployed applications
     # (re-invented HostConfig with Ruby/Rack semantics).
     class Host # TODO < Tomcat::HostConfig !
 
       include Trinidad::Tomcat::LifecycleListener
 
-      EVENTS = Trinidad::Tomcat::Lifecycle # :nodoc:
-      
+      EVENTS = Trinidad::Tomcat::Lifecycle
+
       attr_reader :server, :app_holders
-      # @deprecated (<= 1.3.5)
-      alias_method :contexts, :app_holders
 
       # #server current server instance
       # #app_holders deployed web application holders
@@ -27,7 +25,9 @@ module Trinidad
         @server, @app_holders = server, app_holders
       end
 
-      def lifecycleEvent(event) # :nodoc:
+      def contexts; @app_holders.map(&:context) end
+
+      def lifecycleEvent(event)
         case event.type
         when EVENTS::BEFORE_START_EVENT then
           before_start(event)
@@ -44,18 +44,16 @@ module Trinidad
         init_monitors
       end
 
-      def start(event); end # :nodoc:
+      def start(event); end
 
       def periodic(event)
         check_changes event.lifecycle
       end
 
-      def stop(event); end # :nodoc:
+      def stop(event); end
 
-      def tomcat; @server.tomcat; end # :nodoc: for backwards compatibility
-      
       protected
-      
+
       def check_changes(host)
         check_monitors
       end
@@ -64,7 +62,7 @@ module Trinidad
         app_holders.each do |app_holder|
           monitor = app_holder.monitor
           opts = 'w+'
-          if ! File.exist?(dir = File.dirname(monitor))
+          if ! File.exist?(dir = File.dirname(monitor)) # waR?
             Dir.mkdir dir
           elsif File.exist?(monitor)
             opts = 'r'
@@ -82,7 +80,7 @@ module Trinidad
             sleep(0.5)
             next unless File.exist?(monitor)
           end
-          
+
           mtime = File.mtime(monitor)
           if mtime > app_holder.monitor_mtime && app_holder.try_lock
             app_holder.monitor_mtime = mtime
@@ -93,13 +91,13 @@ module Trinidad
 
       autoload :RestartReload, 'trinidad/lifecycle/host/restart_reload'
       autoload :RollingReload, 'trinidad/lifecycle/host/rolling_reload'
-      
+
       RELOAD_STRATEGIES = {
         :default => :RestartReload,
         :restart => :RestartReload,
         :rolling => :RollingReload,
       }
-      
+
       def reload_application!(app_holder)
         strategy = (app_holder.web_app.reload_strategy || :default).to_sym
         strategy = RELOAD_STRATEGIES[ strategy ]
@@ -108,7 +106,7 @@ module Trinidad
         new_args << server if strategy.instance_method(:initialize).arity != 0
         strategy.new(*new_args).reload!(app_holder)
       end
-      
+
     end
   end
 end
