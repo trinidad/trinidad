@@ -3,20 +3,31 @@ require 'java'
 require 'jruby-rack'
 require 'trinidad/jars'
 
-require 'trinidad/version'
-
 module Trinidad
-  autoload :CLI, 'trinidad/cli'
-end
 
-require 'trinidad/helpers'
-require 'trinidad/configuration'
-require 'trinidad/extensions'
-require 'trinidad/logging'
-require 'trinidad/server'
-require 'trinidad/web_app'
-require 'trinidad/lifecycle/base'
-require 'trinidad/lifecycle/host'
-require 'trinidad/lifecycle/web_app/shared'
-require 'trinidad/lifecycle/web_app/default'
-require 'trinidad/lifecycle/web_app/war'
+  require 'trinidad/version'
+  require 'trinidad/configuration'
+  require 'trinidad/server'
+  require 'trinidad/web_app'
+
+  autoload :CLI, 'trinidad/cli'
+  autoload :Extensions, 'trinidad/extensions'
+  autoload :Helpers, 'trinidad/helpers'
+  autoload :Logging, 'trinidad/logging'
+
+  module Lifecycle
+
+    autoload :Base, 'trinidad/lifecycle/base'
+    autoload :Host, 'trinidad/lifecycle/host'
+
+    module WebApp
+
+      require 'trinidad/lifecycle/web_app/shared'
+
+      autoload :Default, 'trinidad/lifecycle/web_app/default'
+      autoload :War, 'trinidad/lifecycle/web_app/war'
+
+    end
+
+  end
+end
