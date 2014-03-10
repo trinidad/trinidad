@@ -24,6 +24,12 @@ module Trinidad
           # AFTER_INIT_EVENT ContextConfig#init() will pick this up
         end
 
+        def before_start(event)
+          super
+          # on CONFIGURE_START context.jar_scanner is used
+          set_jar_scanner event.lifecycle
+        end
+
         protected
 
         @@_add_context_config = true # due backward compatibility
@@ -101,6 +107,10 @@ module Trinidad
         def add_application_java_classes(loader)
           return unless classes_dir = web_app.java_classes_dir
           loader.addRepository to_url_path(classes_dir)
+        end
+
+        def set_jar_scanner(context)
+          context.setJarScanner Java::RbTrinidadContext::DefaultJarScanner.new(context)
         end
 
         def set_context_xml(context)
