@@ -25,6 +25,7 @@ package rb.trinidad.context;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -50,22 +51,33 @@ public class DefaultJarScanner extends StandardJarScanner {
             org.apache.tomcat.util.scan.StandardJarScanner.class
     );
 
-    private static final Set<String> defaultJarsToSkip = new HashSet<String>();
-
     /**
      * The string resources for this package.
      */
-    private static final StringManager sm =
-        StringManager.getManager(Constants.Package);
+    private static final StringManager sm = StringManager.getManager(Constants.Package);
+
+    private static final Set<String> defaultJarsToSkip;
 
     static {
-        String jarList = System.getProperty(Constants.SKIP_JARS_PROPERTY);
-        if (jarList != null) {
-            StringTokenizer tokenizer = new StringTokenizer(jarList, ",");
-            while (tokenizer.hasMoreElements()) {
-                defaultJarsToSkip.add(tokenizer.nextToken());
+        Set<String> jarsToSkip;
+        try {
+            Field defaultJarsToSkipField = StandardJarScanner.class.getDeclaredField("defaultJarsToSkip");
+            defaultJarsToSkipField.setAccessible(true);
+            jarsToSkip = (Set<String>) defaultJarsToSkipField.get(null);
+        }
+        catch (Exception e) {
+            log.info("failed accessing defaultJarsToSkip", e);
+
+            jarsToSkip = new HashSet<>();
+            String jarList = System.getProperty(Constants.SKIP_JARS_PROPERTY);
+            if ( jarList != null ) {
+                StringTokenizer tokenizer = new StringTokenizer(jarList, ",");
+                while (tokenizer.hasMoreElements()) {
+                    jarsToSkip.add(tokenizer.nextToken());
+                }
             }
         }
+        defaultJarsToSkip = jarsToSkip;
     }
 
     /**
