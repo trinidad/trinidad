@@ -72,7 +72,9 @@ module Trinidad
 
       tomcat = Tomcat.new # @see Trinidad::Tomcat
       tomcat.base_dir = config[:base_dir] || Dir.pwd
-      address = config[:address] if config.key?(:address)
+      if config.key?(:address)
+        address = config[:address]; address = '0.0.0.0' if address == '*'
+      end
       tomcat.hostname = address || 'localhost'
       tomcat.server.address = address || nil unless address.nil?
       tomcat.port = config[:port].to_i if config.key?(:port)

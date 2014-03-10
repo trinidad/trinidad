@@ -45,7 +45,7 @@ describe Trinidad::Server do
 
 
   it "always uses symbols as configuration keys" do
-    Trinidad.configure { |c| c.port = 4000 }
+    Trinidad.configure { |config| config.port = 4000 }
     server = configured_server
     server.config[:port].should == 4000
   end
@@ -154,7 +154,7 @@ describe Trinidad::Server do
   end
 
   it "sets default https port 3443" do
-    Trinidad.configure { |c| c.https = true }
+    Trinidad.configure { |config| config.https = true }
     server = configured_server
 
     connectors = server.tomcat.service.find_connectors
@@ -172,8 +172,8 @@ describe Trinidad::Server do
   end
 
   it "includes a connector with https scheme when :ssl is enabled" do
-    Trinidad.configure do |c|
-      c.ssl = { :port => 8443 }
+    Trinidad.configure do |config|
+      config.ssl = { :port => 8443 }
     end
     server = configured_server
 
@@ -183,8 +183,8 @@ describe Trinidad::Server do
   end
 
   it "includes an AJP protocol connector with when :ajp is enabled" do
-    Trinidad.configure do |c|
-      c.ajp = {:port => 8009}
+    Trinidad.configure do |config|
+      config.ajp = {:port => 8009}
     end
     server = configured_server
 
@@ -220,7 +220,7 @@ describe Trinidad::Server do
   end
 
   it "loads the default application from the current directory if :web_apps is not present" do
-    Trinidad.configure {|c| c.web_app_dir = MOCK_WEB_APP_DIR}
+    Trinidad.configure {|config| config.web_app_dir = MOCK_WEB_APP_DIR}
     server = deployed_server
 
     default_context_should_be_loaded(server.tomcat.host.find_children)
@@ -273,7 +273,7 @@ describe Trinidad::Server do
   end
 
   it "sets TC's server address based on :address option" do
-    server = configured_server({ :root_dir => MOCK_WEB_APP_DIR, :address => '127.0.0.1' })
+    server = configured_server :root_dir => MOCK_WEB_APP_DIR, :address => '127.0.0.1'
     tomcat = server.send :initialize_tomcat
     expect( tomcat.server.address ).to eql '127.0.0.1'
   end
@@ -287,9 +287,9 @@ describe Trinidad::Server do
   end
 
   it "loads application extensions from the root of the configuration" do
-    Trinidad.configure do |c|
-      c.web_app_dir = MOCK_WEB_APP_DIR
-      c.extensions = { :foo => {} }
+    Trinidad.configure do |config|
+      config.web_app_dir = MOCK_WEB_APP_DIR
+      config.extensions = { :foo => {} }
     end
     server = deployed_server
 
@@ -317,6 +317,12 @@ describe Trinidad::Server do
     server = configured_server :address => 'trinidad.host'
     server.tomcat.host.name.should == 'trinidad.host'
     server.tomcat.server.address.should == 'trinidad.host'
+  end
+
+  it "supports setting address to '*'" do
+    server = configured_server(:address => '*')
+    server.tomcat.host.name.should == '0.0.0.0'
+    server.tomcat.server.address.should == '0.0.0.0'
   end
 
   it "loads several applications if the option :apps_base is present" do
