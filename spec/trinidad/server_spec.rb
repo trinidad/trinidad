@@ -282,21 +282,22 @@ describe Trinidad::Server do
     Trinidad.configuration.web_app_dir = MOCK_WEB_APP_DIR
     server = deployed_server
 
-    default_context(server).find_lifecycle_listeners.map {|l| l.class.name }.
+    default_context(server).find_lifecycle_listeners.map { |l| l.class.name }.
       should include('Trinidad::Lifecycle::WebApp::Default')
   end
 
   it "loads application extensions from the root of the configuration" do
     Trinidad.configure do |config|
       config.web_app_dir = MOCK_WEB_APP_DIR
-      config.extensions = { :foo => {} }
+      config.extensions = { :muu => {} }
     end
     server = deployed_server
 
-    default_context(server).doc_base.should == 'foo_web_app_extension'
+    expect( default_context(server).doc_base ).to eql 'muu'
   end
 
-  it "doesn't create a default keystore when the option SSLCertificateFile is present in the ssl configuration options" do
+  it "doesn't create a default keystore when the option SSLCertificateFile is " <<
+     "present in the ssl configuration options" do
     FileUtils.rm_rf 'ssl'
 
     server = configured_server({
