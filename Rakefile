@@ -9,7 +9,8 @@ task :default => :spec
 
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.rspec_opts = ['--color', "--format documentation"]
+  spec.rspec_opts = ['--color']
+  spec.rspec_opts << '--format documentation' if ENV['CI'] == 'true'
 end
 
 desc "Remove all build artifacts"
