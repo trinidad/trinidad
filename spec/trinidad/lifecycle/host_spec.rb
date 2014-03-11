@@ -179,20 +179,42 @@ describe Trinidad::Lifecycle::Host do
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
       set_file_mtime(monitor, -1.0)
       listener = Trinidad::Lifecycle::Host.new(server, app_holder)
+
       listener.lifecycleEvent before_start_event
 
-      app_holder.locked?.should be false
+      expect( app_holder.locked? ).to be false
 
       FileUtils.touch(monitor)
 
-      expect(Thread).to receive(:new) do
-        app_holder.locked?.should be true
-      end.and_yield
-      
+      expect(Thread).to receive(:new) do |&block|
+        expect( app_holder.locked? ).to be true
+        block.call
+      end
+
       listener.lifecycleEvent periodic_event
 
-      app_holder.locked?.should be false
+      expect( app_holder.locked? ).to be false
       app_holder.context.state_name.should == 'STARTED'
+    end
+
+    it "sets (native) thread name" do
+      context = org.apache.catalina.core.StandardContext.new
+      roller = RollingReload.new double('server', :add_web_app => context)
+
+      main_thread = Thread.current
+      expect(context).to receive(:start) do
+        expect( Thread.current ).to_not be main_thread
+        expect( thread = JRuby.reference(Thread.current) ).to_not be nil
+        expect( thread.native_thread.name ).to start_with 'Trinidad'
+        # expect( thread.native_thread.name ).to end_with '/'
+      end
+
+      old_context = double 'old_context', :name => 'default', :path => '/',
+        :parent => parent = double('parent', :remove_child => nil)
+      allow(parent).to receive(:add_child).with context
+
+      app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
+      roller.reload!(app_holder, :wait)
     end
 
     it "logs an error when new context startup fails" do
@@ -211,7 +233,7 @@ describe Trinidad::Lifecycle::Host do
 
       expect(context).to receive(:start).and_raise RuntimeError, "what's wrong ?!"
 
-      old_context = mock 'old_context', :name => 'default', :path => '/',
+      old_context = double 'old_context', :name => 'default', :path => '/',
         :parent => parent = double('parent', :remove_child => nil)
       expect(parent).to receive(:add_child).with context
 

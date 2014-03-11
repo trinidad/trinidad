@@ -9,7 +9,7 @@ module Trinidad
         @server = server
       end
 
-      def reload!(app_holder)
+      def reload!(app_holder, wait = false)
         web_app, old_context = app_holder.web_app, app_holder.context
         logger = self.class.logger
         logger.info "Context with name [#{old_context.name}] has started rolling"
@@ -22,13 +22,16 @@ module Trinidad
         new_context.add_lifecycle_listener(takeover = Takeover.new(old_context))
         app_holder.context = new_context
 
-        Thread.new do
+        thread = Thread.new do
+          if ( thread = thread.to_java ).respond_to?(:native_thread)
+            thread.native_thread.name = "#{self.class.name} #{new_context.name}"
+          end
           begin
             logger.debug "Starting a new Context for [#{new_context.path}]"
             old_context.parent.add_child new_context # NOTE: likely starts!
-            
+
             new_context.start unless new_context.state_name =~ /START|STOP|FAILED/i
-            
+
             if new_context.state_name =~ /STOP|FAILED/i
               logger.error("Context with name [#{old_context.name}] failed rolling")
               takeover.failed!(new_context)
@@ -46,15 +49,16 @@ module Trinidad
             app_holder.unlock
           end
         end
+        thread.join if wait
         false # not yet reloaded do not release lock
       end
 
       def self.logger # log into the same location as context.reload does :
         Trinidad::Logging::LogFactory.getLog('org.apache.catalina.core.StandardContext')
       end
-      
+
       class Takeover < Trinidad::Lifecycle::Base # :nodoc
-        
+
         def initialize(context)
           @old_context = context
         end
@@ -76,19 +80,19 @@ module Trinidad
         def failed!(new_context)
           # NOTE: this will also likely destroy() the child - new context :
           @old_context.parent.remove_child new_context
-          logger.info "Failed to start new Context for [#{@old_context.path}] " + 
+          logger.info "Failed to start new Context for [#{@old_context.path}] " <<
                       "(check application logs) keeping the old one running ..."
           new_context.remove_lifecycle_listener(self)
         end
-        
+
         private
-        
+
         def logger
           Trinidad::Lifecycle::Host::RollingReload.logger
         end
-        
+
       end
-      
+
     end
   end
 end
