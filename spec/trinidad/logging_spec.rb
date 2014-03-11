@@ -1,7 +1,6 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Logging do
-  include FakeApp
 
   JUL = Java::JavaUtilLogging
 

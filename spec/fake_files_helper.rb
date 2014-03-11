@@ -1,5 +1,10 @@
-require 'fakefs/safe'
-module FakeApp
+require 'fileutils'
+
+module FakeFilesHelper
+  include FileUtils
+
+  module_function
+
   def create_default_config_file
     @default ||= create_config_file 'config/trinidad.yml', <<-EOF
 ---
@@ -188,32 +193,44 @@ Rails::Application.configure do
 end
 EOF
   end
-  
+
   protected
-  
-  def create_config_file(path, content)
-    dir = File.dirname(path)
-    FileUtils.mkdir_p(dir) unless File.exist?(dir)
-    File.open(path, 'w') { |io| io.write(content) }
-    config_files << path
-  end
-  
+
+  def create_config_file(path, content); create_file(path, content) end
+
   def rm_if_exist(path)
     FileUtils.rm(path) if File.exist?(path)
   end
-  
+
   public
-  
-  def config_files
-    @config_files ||= []
+
+  def create_file(path, content)
+    unless File.exist? dir = File.dirname(path)
+      FileUtils.mkdir_p(dir); created_files << dir
+    end
+    File.open(path, 'w') { |io| io.write(content) }
+    created_files << path
   end
-  
+
+  def created_files
+    @created_files ||= []
+  end
+  alias_method :config_files, :created_files
+
+  def config_files
+    @created_files ||= []
+  end
+
   def self.included(spec)
     spec.after do
-      config_files.each do |path|
-        FileUtils.rm(path) if File.exist?(path)
+      created_files.reverse.each do |path|
+        if File.directory?(path)
+          rmdir path
+        else
+          rm path
+        end if File.exist?(path)
       end
     end
   end
-  
+
 end

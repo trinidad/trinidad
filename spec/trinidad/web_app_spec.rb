@@ -1,7 +1,6 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::WebApp do
-  include FakeApp
 
   before { Trinidad.configuration = nil }
 
@@ -228,30 +227,26 @@ describe Trinidad::WebApp do
   end
 
   it "does not ignore rack_servlet when it's commented in a deployment descriptor" do
-    FakeFS do
-      create_rails_web_xml_with_rack_servlet_commented_out
+    create_rails_web_xml_with_rack_servlet_commented_out
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.servlet.should_not be nil
-      app.servlet[:name].should == Trinidad::WebApp::RACK_SERVLET_NAME
-      app.servlet[:class].should == 'org.jruby.rack.RackServlet'
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.servlet.should_not be nil
+    app.servlet[:name].should == Trinidad::WebApp::RACK_SERVLET_NAME
+    app.servlet[:class].should == 'org.jruby.rack.RackServlet'
   end
 
   it "incorrectly formatted deployment descriptor should not be used" do
-    FakeFS do
-      create_rails_web_xml_formatted_incorrectly
+    create_rails_web_xml_formatted_incorrectly
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      app.deployment_descriptor.should_not be nil
-      app.send(:web_xml_doc).should be nil
-    end
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    app.deployment_descriptor.should_not be nil
+    app.send(:web_xml_doc).should be nil
   end
 
   it "uses RackServlet with /* when a deployment descriptor is not provided" do
@@ -300,49 +295,43 @@ describe Trinidad::WebApp do
   end
 
   it "adds the rackup script as a context parameter when it's provided" do
-    FakeFS do
-      create_rackup_file
+    create_rackup_file
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :rackup => 'config/config.ru'
-      })
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :rackup => 'config/config.ru'
+    })
 
-      app.context_params['rackup.path'].should == 'config/config.ru'
-    end
+    app.context_params['rackup.path'].should == 'config/config.ru'
   end
 
   it "ignores parameters from configuration when the deployment descriptor already contains them" do
-    FakeFS do
-      create_rackup_web_xml
+    create_rackup_web_xml
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml',
-        :jruby_min_runtimes => 2,
-        :jruby_max_runtimes => 5
-      }, nil)
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml',
+      :jruby_min_runtimes => 2,
+      :jruby_max_runtimes => 5
+    }, nil)
 
-      app.context_params['jruby.min.runtimes'].should be nil
-      app.context_params['jruby.max.runtimes'].should be nil
-    end
+    app.context_params['jruby.min.runtimes'].should be nil
+    app.context_params['jruby.max.runtimes'].should be nil
   end
 
   it "does not ignore parameters from configuration when the deployment descriptor has them commented" do
-    FakeFS do
-      create_rackup_web_xml_with_jruby_runtime_parameters_commented_out
+    create_rackup_web_xml_with_jruby_runtime_parameters_commented_out
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml',
-        :jruby_min_runtimes => 2,
-        :jruby_max_runtimes => 5
-      })
-      parameters = app.context_params
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml',
+      :jruby_min_runtimes => 2,
+      :jruby_max_runtimes => 5
+    })
+    parameters = app.context_params
 
-      parameters['jruby.min.runtimes'].should == '2'
-      parameters['jruby.max.runtimes'].should == '5'
-    end
+    parameters['jruby.min.runtimes'].should == '2'
+    parameters['jruby.max.runtimes'].should == '5'
   end
 
   it "expands relative web xml paths" do
@@ -410,22 +399,18 @@ describe Trinidad::WebApp do
   end
 
   it "creates a rackup application when the rackup file is under WEB-INF directory" do
-    FakeFS do
-      create_rackup_file('WEB-INF')
+    create_rackup_file('WEB-INF')
 
-      app = Trinidad::WebApp.create({})
+    app = Trinidad::WebApp.create({})
 
-      app.should be_a(Trinidad::RackupWebApp)
-    end
+    app.should be_a(Trinidad::RackupWebApp)
   end
 
   it "doesn't add the rackup init parameter when the rackup file is under WEB-INF directory" do
-    FakeFS do
-      create_rackup_file('WEB-INF')
-      app = Trinidad::WebApp.create({})
+    create_rackup_file('WEB-INF')
+    app = Trinidad::WebApp.create({})
 
-      app.init_params.should_not include('rackup.path')
-    end
+    app.init_params.should_not include('rackup.path')
   end
 
   it "loads rackup file from a given directory" do
@@ -613,30 +598,24 @@ describe Trinidad::WebApp do
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the specified environment" do
-    FakeFS do
-      create_rails_environment('environments/staging.rb')
-      # FakeFS seems to now work reliably :
-      #puts Dir['WEB_INF/*'].inspect # empty
-      #puts Dir['WEB-INF/**/config.ru'].inspect # not empty
-      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+    create_rails_environment('environments/staging.rb')
+    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
-      app = Trinidad::WebApp.create({
-        :root_dir => Dir.pwd,
-        :environment => 'staging',
-        }, {
-        :jruby_min_runtimes => 1,
-        :jruby_max_runtimes => 2
-      })
+    app = Trinidad::WebApp.create({
+      :root_dir => Dir.pwd,
+      :environment => 'staging',
+      }, {
+      :jruby_min_runtimes => 1,
+      :jruby_max_runtimes => 2
+    })
 
-      app.jruby_min_runtimes.should == 1
-      app.jruby_max_runtimes.should == 1 # overrides default config
-      app.threadsafe?.should be true
-    end
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 1 # overrides default config
+    app.threadsafe?.should be true
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe Rails 4.0" do
-    FakeFS do
-      create_config_file "config/environments/production.rb", <<-EOF
+    create_config_file "config/environments/production.rb", <<-EOF
 Rails40::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -691,24 +670,22 @@ Rails40::Application.configure do
   # config.logger = ActiveSupport::TaggedLogging.new(SyslogLogger.new)
 end
 EOF
-      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
-      app = Trinidad::WebApp.create({
-          :root_dir => Dir.pwd, :environment => 'production',
-        }, {
-          :jruby_min_runtimes => 2, :jruby_max_runtimes => 4
-        }
-      )
+    app = Trinidad::WebApp.create({
+        :root_dir => Dir.pwd, :environment => 'production',
+      }, {
+        :jruby_min_runtimes => 2, :jruby_max_runtimes => 4
+      }
+    )
 
-      app.jruby_min_runtimes.should == 1
-      app.jruby_max_runtimes.should == 1 # overrides default config
-      app.threadsafe?.should be true
-    end
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 1 # overrides default config
+    app.threadsafe?.should be true
   end
 
   it "detects threadsafe Rails 4.x" do
-    FakeFS do
-      create_config_file "config/environments/production.rb", <<-EOF
+    create_config_file "config/environments/production.rb", <<-EOF
 AdAPI::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -728,27 +705,25 @@ AdAPI::Application.configure do
   # ...
 end
 EOF
-      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
-      app = Trinidad::WebApp.create({
-          :root_dir => Dir.pwd, :environment => 'production',
-        }, {
-          :jruby_min_runtimes => 1, :jruby_max_runtimes => 5
-        }
-      )
+    app = Trinidad::WebApp.create({
+        :root_dir => Dir.pwd, :environment => 'production',
+      }, {
+        :jruby_min_runtimes => 1, :jruby_max_runtimes => 5
+      }
+    )
 
-      expect( app.threadsafe? ).to be true
-      app.jruby_min_runtimes.should == 1
-      app.jruby_max_runtimes.should == 1 # overrides default config
+    expect( app.threadsafe? ).to be true
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 1 # overrides default config
 
-      app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
-      expect( app.threadsafe? ).to be true
-    end
+    app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
+    expect( app.threadsafe? ).to be true
   end
 
   it "detects non-threadsafe Rails 4.x" do
-    FakeFS do
-      create_config_file "config/environments/production.rb", <<-EOF
+    create_config_file "config/environments/production.rb", <<-EOF
 AdAPI::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -769,11 +744,10 @@ AdAPI::Application.configure do
   # ...
 end
 EOF
-      FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
-      app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
-      expect( app.threadsafe? ).to be false
-    end
+    app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
+    expect( app.threadsafe? ).to be false
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
@@ -823,20 +797,17 @@ EOF
   end
 
   it "detects a rackup web app even if :rackup present in main config" do
-    FakeFS do
-      create_rackup_file 'main'
-      # FakeFS seems to now work reliably :
-      FileUtils.rm_r 'config' if File.exists?('config')
+    create_rackup_file 'main'
+    FileUtils.rm_r 'config' if File.exists?('config')
 
-      app = Trinidad::WebApp.create({
-        :web_app_dir => Dir.pwd
-      }, {
-        :rackup => 'main/config.ru'
-      })
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd
+    }, {
+      :rackup => 'main/config.ru'
+    })
 
-      app.should be_a(Trinidad::RackupWebApp)
-      app.context_params['rackup.path'].should == 'main/config.ru'
-    end
+    app.should be_a(Trinidad::RackupWebApp)
+    app.context_params['rackup.path'].should == 'main/config.ru'
   end
 
   it "sets app.root param for a rack application" do
