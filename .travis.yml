@@ -13,6 +13,8 @@ env:
   - JRUBY_OPTS="--1.8 $JRUBY_OPTS"
   - JRUBY_OPTS="$JRUBY_OPTS"
 matrix:
+  allow_failures:
+    - rvm: jruby-head # until JRuby-Rack 1.1.15
   exclude:
     - rvm: jruby-head
       env: JRUBY_OPTS="$JRUBY_OPTS"
