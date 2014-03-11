@@ -1,7 +1,6 @@
 require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::Lifecycle::WebApp::Default do
-  include FakeApp
 
   let(:tomcat) do
     tomcat = Java::RbTrinidad::Jerry.new
@@ -37,42 +36,38 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "sets default web xml when the deployment descriptor is provided" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      listener = rails_web_app_listener({
-        :web_app_dir => Dir.pwd,
-        :default_web_xml => 'config/web.xml'
-      })
-      context = web_app_context(listener.web_app)
+    listener = rails_web_app_listener({
+      :web_app_dir => Dir.pwd,
+      :default_web_xml => 'config/web.xml'
+    })
+    context = web_app_context(listener.web_app)
 
-      expected_xml = File.join(Dir.pwd, 'config/web.xml')
+    expected_xml = File.join(Dir.pwd, 'config/web.xml')
 
-      listener.send(:configure_deployment_descriptor, context).should == expected_xml
+    listener.send(:configure_deployment_descriptor, context).should == expected_xml
 
-      context.find_lifecycle_listeners.
-        map {|l| l.class.name }.should include('Java::OrgApacheCatalinaStartup::ContextConfig')
+    context.find_lifecycle_listeners.
+      map {|l| l.class.name }.should include('Java::OrgApacheCatalinaStartup::ContextConfig')
 
-      context_config = find_context_config(context)
-      context_config.default_web_xml.should == expected_xml
-    end
+    context_config = find_context_config(context)
+    context_config.default_web_xml.should == expected_xml
   end
 
   it "ignores the deployment descriptor when it doesn't exist" do
-    FakeFS do
-      create_rails_web_xml
+    create_rails_web_xml
 
-      listener = rails_web_app_listener({
-        :root_dir => Dir.pwd,
-        :web_xml => 'config/missing-web.xml'
-      })
-      context = web_app_context(listener.web_app)
+    listener = rails_web_app_listener({
+      :root_dir => Dir.pwd,
+      :web_xml => 'config/missing-web.xml'
+    })
+    context = web_app_context(listener.web_app)
 
-      listener.send(:configure_deployment_descriptor, context).should == nil
+    listener.send(:configure_deployment_descriptor, context).should == nil
 
-      context_config = find_context_config(context)
-      context_config.default_web_xml.should == "org/apache/catalina/startup/NO_DEFAULT_XML"
-    end
+    context_config = find_context_config(context)
+    context_config.default_web_xml.should == "org/apache/catalina/startup/NO_DEFAULT_XML"
   end
 
   it "configures the rack context listener from the web app" do

@@ -27,7 +27,6 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency('rspec', '~> 2.14.1')
   gem.add_development_dependency('mocha', '~> 0.12.1')
-  gem.add_development_dependency('fakefs', '>= 0.4.0')
 
   gem.files = `git ls-files`.split("\n").sort.
     reject { |file| file =~ /^\./ }. # .gitignore, .travis.yml

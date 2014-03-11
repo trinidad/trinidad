@@ -2,7 +2,6 @@ require File.expand_path('../spec_helper', File.dirname(__FILE__))
 require 'fileutils'
 
 describe Trinidad::Server do
-  include FakeApp
 
   JSystem = java.lang.System
   JContext = javax.naming.Context
@@ -411,12 +410,10 @@ describe Trinidad::Server do
   end
 
   it "autoconfigures rack when config.ru is present in the app directory" do
-    FakeFS do
-      create_rackup_file('rack')
-      server = deployed_server :web_app_dir => 'rack'
+    create_rackup_file('rack')
+    server = deployed_server :web_app_dir => 'rack'
 
-      server.tomcat.host.find_children.should have(1).application
-    end
+    server.tomcat.host.find_children.should have(1).application
   end
 
   it "creates several hosts when they are set in configuration" do

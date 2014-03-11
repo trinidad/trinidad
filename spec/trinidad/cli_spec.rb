@@ -1,7 +1,6 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe Trinidad::CLI do
-  include FakeApp
 
   before { Trinidad.configuration = nil }
 
@@ -40,33 +39,27 @@ describe Trinidad::CLI do
   end
 
   it "uses config/trinidad.yml as the default configuration file name" do
-    FakeFS do
-      create_default_config_file
-      ['', '-f'].each do |opt|
-        options = subject.parse([opt])
+    create_default_config_file
+    ['', '-f'].each do |opt|
+      options = subject.parse([opt])
 
-        options[:port].should == 8080
-      end
+      options[:port].should == 8080
     end
   end
 
   it "overrides the config file when it's especified" do
-    FakeFS do
-      create_custom_config_file
-      args = "-f config/tomcat.yml".split
+    create_custom_config_file
+    args = "-f config/tomcat.yml".split
 
-      options = subject.parse(args)
-      options[:environment].should == 'production'
-    end
+    options = subject.parse(args)
+    options[:environment].should == 'production'
   end
 
   it "allows erb substitution in the configuration file" do
-    FakeFS do
-      create_erb_config_file
-      options = subject.parse(['-f'])
+    create_erb_config_file
+    options = subject.parse(['-f'])
 
-      options[:port].should == 8300
-    end
+    options[:port].should == 8300
   end
 
   it "adds default ssl port to options" do
@@ -98,14 +91,12 @@ describe Trinidad::CLI do
   end
 
   it "merges ajp options from the config file" do
-    FakeFS do
-      create_custom_config_file
-      args = "--ajp 9999 -f config/tomcat.yml".split
+    create_custom_config_file
+    args = "--ajp 9999 -f config/tomcat.yml".split
 
-      options = subject.parse(args)
-      options[:ajp][:port].should == 9999
-      options[:ajp][:secure].should == true
-    end
+    options = subject.parse(args)
+    options[:ajp][:port].should == 9999
+    options[:ajp][:secure].should == true
   end
 
   it "uses default rackup file to configure the server" do
