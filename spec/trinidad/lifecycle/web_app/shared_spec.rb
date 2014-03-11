@@ -1,19 +1,19 @@
 require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
-require 'fileutils'
 
 describe Trinidad::Lifecycle::WebApp::Shared do
 
   ListenerImpl = Trinidad::Lifecycle::WebApp::Default
 
-  before do
-    @context = Trinidad::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
-    Trinidad::Tomcat.init_webapp_defaults(@context)
+  let(:options) do
+    { :root_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO' }
+  end
+  let(:web_app) { Trinidad::WebApp.create({}, options) }
+  let(:listener) { ListenerImpl.new(web_app) }
 
-    @options = {
-        :root_dir => MOCK_WEB_APP_DIR, :environment => 'test', :log => 'INFO'
-    }
-    @web_app = Trinidad::WebApp.create({}, @options)
-    @listener = ListenerImpl.new(@web_app)
+  let(:context) do
+    context = Trinidad::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
+    Trinidad::Tomcat.init_webapp_defaults(context)
+    context
   end
 
   after do
@@ -22,50 +22,50 @@ describe Trinidad::Lifecycle::WebApp::Shared do
   end
 
   it "removes the context default configurations" do
-    @listener.send :remove_defaults, @context
+    listener.send :remove_defaults, context
 
-    @context.welcome_files.should have(0).files
-    @context.xml_validation.should be false
+    context.welcome_files.should have(0).files
+    context.xml_validation.should be false
   end
 
   it "configures logging on configure" do
-    @listener.expects(:configure_logging)
-    @listener.configure(@context)
+    expect( listener ).to receive(:configure_logging)
+    listener.configure(context)
   end
 
   it "configures during before start" do
-    @listener.expects(:configure).with(@context)
+    expect( listener ).to receive(:configure).with(context)
     type = org.apache.catalina.Lifecycle::BEFORE_START_EVENT
-    event = org.apache.catalina.LifecycleEvent.new(@context, type, nil)
-    @listener.lifecycleEvent(event)
+    event = org.apache.catalina.LifecycleEvent.new(context, type, nil)
+    listener.lifecycleEvent(event)
   end
 
   it "sets up work dir on configure" do
-    @listener.expects(:adjust_context)
-    @listener.configure(@context)
+    expect( listener ).to receive(:adjust_context)
+    listener.configure(context)
   end
 
   it "sets up work dir" do
-    @listener.send :adjust_context, @context
-    expect( @context.work_dir ).to eql "#{MOCK_WEB_APP_DIR}/tmp"
-    expect( @context.work_path ).to eql "#{MOCK_WEB_APP_DIR}/tmp"
-  end
-
-  it "sets context name" do
-    @web_app.expects(:context_name).at_least_once.returns 'foo'
-    @listener.send :adjust_context, @context
-    expect( @context.name ).to eql 'foo'
+    listener.send :adjust_context, context
+    expect( context.work_dir ).to eql "#{MOCK_WEB_APP_DIR}/tmp"
+    expect( context.work_path ).to eql "#{MOCK_WEB_APP_DIR}/tmp"
   end
 
   it "allows linking by default" do
-    @listener.send :adjust_context, @context
-    expect( @context.allow_linking).to be true
+    listener.send :adjust_context, context
+    expect( context.allow_linking ).to be true
   end
 
   it "allows linking to be configured" do
-    @web_app[:allow_linking] = false
-    @listener.send :adjust_context, @context
-    expect( @context.allow_linking).to be false
+    web_app[:allow_linking] = false
+    listener.send :adjust_context, context
+    expect( context.allow_linking ).to be false
+  end
+
+  it "sets context name" do
+    web_app[:context_name] = 'foo'
+    listener.send :adjust_context, context
+    expect( context.name ).to eql 'foo'
   end
 
   # this avoids naming errors when starting a new context with the same name :
@@ -73,18 +73,10 @@ describe Trinidad::Lifecycle::WebApp::Shared do
   #   javax.naming.OperationNotSupportedException: Context is read only
 
   it "does not set the context name if it's 'similar'" do
-    @web_app.expects(:context_name).at_least_once.returns 'foo'
-    @context.name = "foo-1234567890"
-    @listener.send :adjust_context, @context
-    @context.name.should == 'foo-1234567890'
-  end
-
-  private
-
-  def configure_logging(level)
-    @options[:log] = level
-    @listener = ListenerImpl.new Trinidad::WebApp.new({}, @options)
-    @listener.send :configure_logging, @context
+    web_app[:context_name] = 'foo'
+    context.name = "foo-1234567890"
+    listener.send :adjust_context, context
+    context.name.should == 'foo-1234567890'
   end
 
 end

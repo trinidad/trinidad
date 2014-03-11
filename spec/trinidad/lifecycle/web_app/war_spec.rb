@@ -15,9 +15,10 @@ describe Trinidad::Lifecycle::WebApp::War do
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
-    listener.stubs(:configure_default_servlet)
-    listener.stubs(:configure_jsp_servlet)
-    listener.send(:configure, context)
+    expect(listener).to receive(:configure_default_servlet)
+    expect(listener).to receive(:configure_jsp_servlet)
+
+    listener.send :configure, context
 
     pending "we're likely fine leaving the default loader as is" do
       expect( context.loader ).to_not be nil
@@ -73,9 +74,9 @@ describe Trinidad::Lifecycle::WebApp::War do
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
-    event = mock 'event'
-    event.stubs(:type).returns Trinidad::Tomcat::Lifecycle::BEFORE_INIT_EVENT
-    event.stubs(:lifecycle).returns context
+    event = double 'event', :lifecycle => context,
+      :type => Trinidad::Tomcat::Lifecycle::BEFORE_INIT_EVENT
+    
     listener.lifecycleEvent(event)
 
     expect( context.path ).to eql '/'

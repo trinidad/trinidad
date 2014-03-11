@@ -1,14 +1,14 @@
 require File.expand_path('../spec_helper', File.dirname(__FILE__))
 
 describe 'Rack::Handler::Trinidad' do
-  
+
   it "is not loaded by default" do
     require 'trinidad'
     defined?(Rack::Handler::Trinidad).should be nil
   end
-  
+
   describe 'Rack::Handler::Trinidad' do
-    
+
     before(:all) { require "rack/handler/trinidad" }
 
     it "registers the trinidad handler" do
@@ -45,18 +45,18 @@ describe 'Rack::Handler::Trinidad' do
     end
 
     it "starts a trinidad server" do
-      app = mock("app")
-      Trinidad::Server.expects(:new).returns server = mock("server")
-      server.expects(:start)
-      
-      Rack::Handler::Trinidad.run app
+      expect(Trinidad::Server).to receive(:new).and_return server = double("server")
+      expect(server).to receive(:start)
+
+      Rack::Handler::Trinidad.run app = double("app")
     end
 
     it "yields when a block is given to run" do
-      app = mock("app")
-      Trinidad::Server.expects(:new).returns server = mock("server")
-      server.expects(:start)
-      
+      expect(Trinidad::Server).to receive(:new).and_return server = double("server")
+      expect(server).to receive(:start)
+
+      app = double("app")
+
       yielded = false
       Rack::Handler::Trinidad.run(app) do |server|
         server.should be(server)
@@ -64,7 +64,7 @@ describe 'Rack::Handler::Trinidad' do
       end
       yielded.should == true
     end
-    
+
   end
-    
+
 end

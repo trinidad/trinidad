@@ -8,8 +8,7 @@ end
 require 'fileutils'
 
 RSpec.configure do |config|
-  config.mock_with :mocha
-  config.backtrace_clean_patterns = [
+  config.backtrace_exclusion_patterns = [
     #/org\/jruby.*?\.java$/,
     /spec\/spec_helper\.rb/,
     /lib\/rspec\/(core|expectations|matchers|mocks)/

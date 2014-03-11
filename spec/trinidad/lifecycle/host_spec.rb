@@ -33,8 +33,7 @@ describe Trinidad::Lifecycle::Host do
   end
 
   let(:listener) do
-    web_app = mock('web_app')
-    web_app.stubs(:monitor).returns(monitor)
+    web_app = double('web_app', :monitor => monitor)
     app_holder = Trinidad::WebApp::Holder.new(web_app, context)
     Trinidad::Lifecycle::Host.new(server, app_holder)
   end
@@ -68,7 +67,7 @@ describe Trinidad::Lifecycle::Host do
     sleep(1)
     FileUtils.touch(monitor)
 
-    listener.expects(:reload_application!).returns(true)
+    expect(listener).to receive(:reload_application!).and_return(true)
     listener.lifecycleEvent(periodic_event)
   end
 
@@ -108,7 +107,7 @@ describe Trinidad::Lifecycle::Host do
       sleep(1)
       FileUtils.touch(monitor)
 
-      context.stubs(:reload)
+      expect(context).to receive(:reload)
       listener.lifecycleEvent periodic_event
 
       app_holder.monitor_mtime.should_not == monitor_mtime
@@ -126,7 +125,7 @@ describe Trinidad::Lifecycle::Host do
 
       FileUtils.touch(monitor)
 
-      context.expects(:reload)
+      expect(context).to receive(:reload)
       listener.lifecycleEvent periodic_event
       app_holder.locked?.should be false
     end
@@ -186,9 +185,10 @@ describe Trinidad::Lifecycle::Host do
 
       FileUtils.touch(monitor)
 
-      Thread.expects(:new).yields do
+      expect(Thread).to receive(:new) do
         app_holder.locked?.should be true
-      end
+      end.and_yield
+      
       listener.lifecycleEvent periodic_event
 
       app_holder.locked?.should be false
@@ -196,60 +196,52 @@ describe Trinidad::Lifecycle::Host do
     end
 
     it "logs an error when new context startup fails" do
-      roller = RollingReload.new server = mock('server')
-      server.stubs(:add_web_app).returns context = mock('new context')
-      context.expects(:add_lifecycle_listener).with { |l| l.is_a?(RollingReload::Takeover) }
-      context.expects(:state_name).returns 'NEW'
-      context.stubs(:name=); context.stubs(:path).returns '/'
-      context.stubs(:remove_lifecycle_listener)
+      context = double('new context', :path => '/', :name= => nil, :remove_lifecycle_listener => nil)
+      roller = RollingReload.new double('server', :add_web_app => context)
+
+      expect(context).to receive(:add_lifecycle_listener).with { |l| l.is_a?(RollingReload::Takeover) }
+      expect(context).to receive(:state_name).and_return 'NEW'
+
       logger = stub_logger(:debug, :info)
-      logger.expects(:error).with do |msg, e|
+      expect(logger).to receive(:error) do |msg, e|
         expect( msg ).to eql 'Context with name [default] failed rolling'
         expect( e ).to be_a java.lang.Throwable
         true
       end
 
-      context.expects(:start).raises RuntimeError, "what's wrong ?!"
+      expect(context).to receive(:start).and_raise RuntimeError, "what's wrong ?!"
 
-      old_context = mock('old_context')
-      old_context.stubs(:name).returns 'default'
-      old_context.stubs(:path).returns '/'
-      old_context.stubs(:parent).returns parent = mock('parent')
-      parent.stubs(:add_child).with context
-      parent.stubs(:remove_child)
+      old_context = mock 'old_context', :name => 'default', :path => '/',
+        :parent => parent = double('parent', :remove_child => nil)
+      expect(parent).to receive(:add_child).with context
 
-      Thread.expects(:new).yields
+      expect(Thread).to receive(:new).and_yield
 
       app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
       roller.reload!(app_holder)
     end
 
     it "removed new context and keeps old when new context fails to start" do
-      roller = RollingReload.new server = mock('server')
-      server.stubs(:add_web_app).returns context = mock('new context')
+      context = double('new context', :path => '/', :name= => nil)
+      roller = RollingReload.new double('server', :add_web_app => context)
 
-      listener_sequence = sequence('lifecycle-listener')
-      context.expects(:add_lifecycle_listener).
-        with { |l| l.is_a?(RollingReload::Takeover) }.in_sequence listener_sequence
-      context.expects(:remove_lifecycle_listener).
-        with { |l| l.is_a?(RollingReload::Takeover) }.in_sequence listener_sequence
+      expect(context).to receive(:add_lifecycle_listener).
+        with { |l| l.is_a?(RollingReload::Takeover) }.ordered
+      expect(context).to receive(:remove_lifecycle_listener).
+        with { |l| l.is_a?(RollingReload::Takeover) }.ordered
 
-      context.stubs(:name=); context.stubs(:path).returns '/'
       stub_logger
 
-      context.expects(:state_name).returns('NEW').then.returns('FAILED').at_least_once
-      context.expects(:start) # setState(LifecycleState.FAILED);
+      expect(context).to receive(:state_name).at_least(:once).and_return('NEW', 'FAILED')
+      expect(context).to receive(:start) # setState(LifecycleState.FAILED);
 
-      old_context = mock('old_context')
-      old_context.stubs(:name).returns 'default'
-      old_context.stubs(:path).returns '/'
-      old_context.stubs(:parent).returns parent = mock('parent')
+      old_context = double 'old_context', :name => 'default', :path => '/',
+        :parent => parent = double('parent')
 
-      parent_sequence = sequence('parent-child')
-      parent.expects(:add_child).with(context).in_sequence parent_sequence
-      parent.expects(:remove_child).with(context).in_sequence parent_sequence
+      expect(parent).to receive(:add_child).with(context) #.ordered
+      expect(parent).to receive(:remove_child).with(context) #.ordered
 
-      Thread.expects(:new).yields
+      expect(Thread).to receive(:new).and_yield
 
       app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
       roller.reload!(app_holder)
@@ -258,9 +250,9 @@ describe Trinidad::Lifecycle::Host do
     private
 
     def stub_logger(*levels)
-      Trinidad::Lifecycle::Host::RollingReload.stubs(:logger).returns logger = mock('logger')
       levels = [ :debug, :info, :error ] if levels.empty?
-      levels.each { |level| logger.stubs(level) }
+      levels = levels.inject({}) { |memo, level| memo[level] = nil; memo }
+      allow(Trinidad::Lifecycle::Host::RollingReload).to receive(:logger).and_return logger = double('logger', levels)
       logger
     end
 
@@ -283,14 +275,14 @@ describe Trinidad::Lifecycle::Host do
       end
 
       it "stops and destroys the (old) context" do
-        old_context.expects(:stop).once
-        old_context.expects(:destroy).once
+        expect(old_context).to receive(:stop).once.ordered
+        expect(old_context).to receive(:destroy).once.ordered
         takeover.lifecycleEvent(after_start_event)
       end
 
       it "does not change context's name to the original one" do
-        old_context.stubs(:stop)
-        old_context.stubs(:destroy)
+        expect(old_context).to receive(:stop)
+        expect(old_context).to receive(:destroy)
         old_context.name = 'foo'
         takeover.lifecycleEvent(after_start_event)
         new_context.name.should_not == 'foo'

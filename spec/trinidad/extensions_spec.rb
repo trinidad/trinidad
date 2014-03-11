@@ -91,7 +91,7 @@ describe Trinidad::Extensions do
   it "ignores extension but warns about it when it doesn't exist" do
     extensions = { :missing => {} }
 
-    Trinidad::Helpers.expects(:warn)
+    expect( Trinidad::Helpers ).to receive(:warn)
     Trinidad::Extensions.configure_webapp_extensions(extensions, tomcat, nil)
   end
 

@@ -11,22 +11,21 @@ describe Trinidad::Lifecycle::WebApp::Default do
   let(:context) { Trinidad::Tomcat::StandardContext.new }
 
   it "ignores the event when it's not BEFORE_START_EVENT" do
-    mock = mock('event')
-    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
-    mock.stubs(:lifecycle).returns(Trinidad::Tomcat::StandardContext.new)
+    event = double 'event', :lifecycle => Trinidad::Tomcat::StandardContext.new,
+      :type => Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT
 
     listener = Trinidad::Lifecycle::WebApp::Default.new(nil)
-    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_STOP_EVENT)
-    lambda { listener.lifecycleEvent(mock) }.should_not raise_error
+    event = double 'event', :lifecycle => Trinidad::Tomcat::StandardContext.new,
+      :type => Trinidad::Tomcat::Lifecycle::BEFORE_STOP_EVENT
+    expect { listener.lifecycleEvent(event) }.to_not raise_error
   end
 
   it "tries to initialize the context when the event is BEFORE_START_EVENT" do
-    mock = mock('event')
-    mock.stubs(:type).returns(Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT)
-    mock.stubs(:lifecycle).returns(Trinidad::Tomcat::StandardContext.new)
+    event = double 'event', :lifecycle => Trinidad::Tomcat::StandardContext.new,
+      :type => Trinidad::Tomcat::Lifecycle::BEFORE_START_EVENT
 
     listener = Trinidad::Lifecycle::WebApp::Default.new(nil)
-    lambda { listener.lifecycleEvent(mock) }.should raise_error
+    expect { listener.lifecycleEvent(event) }.to raise_error
   end
 
   it "doesn't load a default web xml when the deployment descriptor is not provided" do
@@ -101,11 +100,11 @@ describe Trinidad::Lifecycle::WebApp::Default do
       :root_dir => MOCK_WEB_APP_DIR,
       :default_web_xml => 'config/web.xml'
     })
-    context = tomcat.add_webapp('/', Dir.pwd)
-    listener.stubs(:configure_logging)
-    listener.stubs(:configure_default_servlet)
-    listener.stubs(:configure_jsp_servlet)
-    listener.configure(context)
+    expect(listener).to receive(:configure_logging)
+    expect(listener).to receive(:configure_default_servlet)
+    expect(listener).to receive(:configure_jsp_servlet)
+
+    listener.configure context = tomcat.add_webapp('/', Dir.pwd)
 
     context.find_parameter('jruby.max.runtimes').should be nil
     context.start
