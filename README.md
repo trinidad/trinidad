@@ -1,19 +1,19 @@
 # Trinidad
 
-Trinidad allows you to run Rails and/or Rack applications within an embedded 
+Trinidad allows you to run Rails and/or Rack applications within an embedded
 Tomcat container. Apache Tomcat (formerly also Jakarta Tomcat) is an open source
-web server and Servlet container with a long history that dates back to the 
+web server and Servlet container with a long history that dates back to the
 previous millenia.
 
 Trinidad's goals with bringing Tomcat into JRuby land are mostly the following :
 
-- **flexibility** especially in terms of configuration it allows you to tune 
+- **flexibility** especially in terms of configuration it allows you to tune
   (almost) everything from a simple *trinidad.yml* (or .rb) configuration file
 - **portability** there's no vendor lock-in as we use `JRuby::Rack`, thus even
-  if you do some Java integration or use it's Rack Servlet extensions you're 
+  if you do some Java integration or use it's Rack Servlet extensions you're
   still able to migrate to a standalone Tomcat or any other Servlet container
 - easy Java integration (just in-case you need it, it's there)
-- **extensions** such as connection pooling (sharing pools between deployed 
+- **extensions** such as connection pooling (sharing pools between deployed
   Rails apps) and (threaded) worker adapters for `Resque` and `Delayed::Job`
 
 ## Installation
@@ -44,8 +44,8 @@ and than run `trinidad` - keep in mind a server is not an application dependency
 
 ### Rails
 
-Trinidad supports the same Rails version as the JRuby-Rack it founds (or is 
-specified/locked in your *Gemfile*), which is **2.3**, **3.x** as well as 
+Trinidad supports the same Rails version as the JRuby-Rack it founds (or is
+specified/locked in your *Gemfile*), which is **2.3**, **3.x** as well as
 **4.0** for JRuby-Rack 1.1.x (and the coming 1.2). Merb is not supported.
 
 ```
@@ -104,20 +104,20 @@ the same way as JRuby-Rack (since it boots all applications), that is :
 - otherwise the rack (gem) version might be specified using a magic comment in
   *config.ru* as `# rack.version: ~>1.4.0` (or the latest installed gem is used)
 
-**NOTE:** We do recommend to use the plain `trinidad` mode for running apps 
+**NOTE:** We do recommend to use the plain `trinidad` mode for running apps
 (in production), since it supports runtime pooling while the "rackup" mode does
 not, it also provides you with better Java integration possibilities.
 
 Also note that Trinidad does not mimic JRuby-Rack's (1.1.x) backwards compatible
-behavior of starting a pool for Rails but booting a thread-safe runtime for 
-plain Rack applications by default. Currently, runtime pooling is the default 
-with Trinidad and stays the same no matter the type of the application. 
-We expect this default to (most likely) change in a future version of Trinidad 
+behavior of starting a pool for Rails but booting a thread-safe runtime for
+plain Rack applications by default. Currently, runtime pooling is the default
+with Trinidad and stays the same no matter the type of the application.
+We expect this default to (most likely) change in a future version of Trinidad
 as thread-safe gets more adopted by (stable) releases of Rails 4.0.
 
 ## Configuration
 
-Trinidad allows you to configure parameters from the command line, the following 
+Trinidad allows you to configure parameters from the command line, the following
 is a list of the currently supported options (try `trinidad -h`):
 
 ```
@@ -141,18 +141,18 @@ is a list of the currently supported options (try `trinidad -h`):
   * -g, --log LEVEL               =>  set logging level
 ```
 
-You can also specify a default *web.xml* to configure your web application. 
+You can also specify a default *web.xml* to configure your web application.
 By default the server tries to load the file *config/web.xml* but you can change
 the path by adding the option `default_web_xml` within your configuration file.
 
 ### YAML Configuration
 
-The server can be configured from a .yml file. By default, if a file is 
+The server can be configured from a .yml file. By default, if a file is
 not specified, the server tries to load **config/trinidad.yml**.
-Within this file you can specify options available on the command line and tune 
+Within this file you can specify options available on the command line and tune
 server settings or configure multiple applications to be hosted on the server.
 
-Advanced configuration options are explained in the wiki: 
+Advanced configuration options are explained in the wiki:
 http://wiki.github.com/trinidad/trinidad/advanced-configuration
 
 
@@ -168,8 +168,8 @@ $ jruby -S trinidad --config my_trinidad.yml
 
 ### Ruby Configuration
 
-As an alternative to the *config/trinidad.yml* file, a .rb configuration file 
-might be used to setup Trinidad. It follows the same convention as the YAML 
+As an alternative to the *config/trinidad.yml* file, a .rb configuration file
+might be used to setup Trinidad. It follows the same convention as the YAML
 configuration - the file **config/trinidad.rb** is loaded by default if exists.
 
 ```ruby
@@ -193,41 +193,41 @@ Context with name [/] has started rolling
 Context with name [/] has completed rolling
 ```
 
-It also prints warnings and error messages on error output, while application 
+It also prints warnings and error messages on error output, while application
 specific log messages (e.g. logs from `Rails.logger`) always go into the expected
-file location at *log/{environment}.log*. 
+file location at *log/{environment}.log*.
 
-Application logging performs daily file rolling out of the box and only prints 
+Application logging performs daily file rolling out of the box and only prints
 messages to the console while it runs in development mode, that means you won't
 see any application specific output on the console say in production !
 
-Please note that these logging details as well as the logging format will be 
+Please note that these logging details as well as the logging format will be
 configurable with *trinidad.yml/.rb* within the next **1.4.x** release.
 
-If you plan to use a slice of Java with your JRuby and require a logger, consider 
-using `ServletContext#log`. By default it is setup in a way that logging with 
-`ServletContext` ends up in the same location as the Rails log. 
+If you plan to use a slice of Java with your JRuby and require a logger, consider
+using `ServletContext#log`. By default it is setup in a way that logging with
+`ServletContext` ends up in the same location as the Rails log.
 If this is not enough you can still configure a Java logging library e.g. SLF4J,
-just make sure you tell Trinidad to use it as well, if needed, using the 
+just make sure you tell Trinidad to use it as well, if needed, using the
 **jruby.rack.logging** context parameter in *web.xml*.
 
 ### Context Configuration
 
-For slightly advanced (and "dirty" XML :)) application configuration Trinidad 
-also supports the exact same *context.xml* format as Tomcat. Each web app is 
-represented as a context instance and might be configured as such. You do not 
-need to repeat configuring the same parameters you have already setup with the 
-Trinidad configuration. This is meant to be mostly for those familiar with 
+For slightly advanced (and "dirty" XML :)) application configuration Trinidad
+also supports the exact same *context.xml* format as Tomcat. Each web app is
+represented as a context instance and might be configured as such. You do not
+need to repeat configuring the same parameters you have already setup with the
+Trinidad configuration. This is meant to be mostly for those familiar with
 Tomcat internals.
-Currently the application's *context.xml* is expected to be located on the 
+Currently the application's *context.xml* is expected to be located on the
 class-path under your *[classes]/META-INF* directory.
 
 Context Doc: http://tomcat.apache.org/tomcat-7.0-doc/config/context.html
 
 ### Serving Assets
 
-Trinidad uses Tomcat's built-in capabilities to server your public files. 
-We do recommend compiling assets up front and disabling the asset server (in 
+Trinidad uses Tomcat's built-in capabilities to server your public files.
+We do recommend compiling assets up front and disabling the asset server (in
 production) if you're using the asset pipeline in a Rails application.
 If you do not put a web-server such as Apache in front of Trinidad you might
 want to configure the resource caching (on by default for env != development)
@@ -235,7 +235,7 @@ for maximum performance e.g. by default it's configured as follows :
 
 ```yml
 ---
-  public: 
+  public:
     root: public # same as the above "public: public" setting
     cached: true # enable (in-memory) asset caching on for env != 'development'
     cache_ttl: 5000 # cache TTL in millis (might want to increase this)
@@ -245,22 +245,22 @@ for maximum performance e.g. by default it's configured as follows :
       #/home: /var/local/www
 ```
 
-Note that this configuration applies to (server-side) resource caching on top 
-of the "public" file-system. You do not need to worry about client side caching, 
+Note that this configuration applies to (server-side) resource caching on top
+of the "public" file-system. You do not need to worry about client side caching,
 it is handled out of the box with *ETag* and *Last-Modified* headers being set.
 
 You might also "mount" file-system directories as aliases to your resources
 root to be served by your application (as if they were in the public folder).
 
-**NOTE:** In development mode if you ever happen to `rake assets:precompile` 
+**NOTE:** In development mode if you ever happen to `rake assets:precompile`
 make sure to remove your *public/assets* directory later, otherwise requests
 such as **/assets/application.js?body=1.0** might not hit the Rails runtime.
 
 ## Hot Deployment
 
-Trinidad supports monitoring a file to reload applications, when the file 
-*tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt`), the server reloads 
-the application the monitor file belongs to. 
+Trinidad supports monitoring a file to reload applications, when the file
+*tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt`), the server reloads
+the application the monitor file belongs to.
 This monitor file can be customized with the `monitor` configuration option.
 
 Since version **1.4.0** Trinidad supports 2 reload strategies :
@@ -270,7 +270,7 @@ Since version **1.4.0** Trinidad supports 2 reload strategies :
   once ready (or timeouts if it takes too long). It has been chosen as the default
   strategy since **1.4.0** due it's more predictable memory requirements.
 
-* **rolling** "zero-downtime" (asynchronous) reloading strategy similar to 
+* **rolling** "zero-downtime" (asynchronous) reloading strategy similar to
   Passenger's rolling reloads. This has been the default since **1.1.0** up till
   the **1.3.x** line. If you use this you should account that your JVM memory
   requirements might increase quite a lot (esp. if you reload under heavy loads)
@@ -288,7 +288,7 @@ Configure the reload strategy per web application or globally e.g. :
 
 ## Virtual Hosts
 
-It's possible to use Trinidad with multiple hosts and load the applications under 
+It's possible to use Trinidad with multiple hosts and load the applications under
 them automatically. A (virtual) host represents an association of a network name
 (such as "www.example.com" with the particular server on which Tomcat is running.
 Please remember that each host must have its applications in a different directory.
@@ -318,10 +318,10 @@ Detailed host configuration is also possible using supported [host options][5] :
       unpackWARs: true
 ```
 
-If applications are configured via the `web_apps` section, the host for each 
-application can be added with the `host` (or `hosts`) key, if a specified host 
+If applications are configured via the `web_apps` section, the host for each
+application can be added with the `host` (or `hosts`) key, if a specified host
 does not exists (e.g. not configured or not "localhost") it will be created.
-If several applications belong to the same host, they are expected to reside 
+If several applications belong to the same host, they are expected to reside
 under the same parent directory e.g. :
 
 ```ruby
@@ -345,7 +345,7 @@ end
 
 ## Extensions
 
-Trinidad allows to extend itself with more (not just Tomcat) features using 
+Trinidad allows to extend itself with more (not just Tomcat) features using
 extensions, they're essentially components hooked into Tomcat's life-cycle.
 Here is a list of the available extensions that are "officially supported" :
 
@@ -357,7 +357,7 @@ Here is a list of the available extensions that are "officially supported" :
   http://github.com/trinidad/trinidad_init_services
 * Scheduler, based on Quartz :
   http://github.com/trinidad/trinidad_scheduler_extension
-* Worker, threaded workers (supports Resque, Delayed::Job) : 
+* Worker, threaded workers (supports Resque, Delayed::Job) :
   http://github.com/trinidad/trinidad_worker_extension
 * Logging, enhance Trinidad's logging system :
   http://github.com/trinidad/trinidad_logging_extension
@@ -376,19 +376,17 @@ You can find further information on how to write extensions in the [wiki][4].
 
 * Contact [kares][0] if your team needs JRuby or Trinidad help and support
 * [Logic Haus][1] provides JRuby related training and development services
-* [Engine Yard][2] has PaaS cloud support with JRuby and Trinidad
 * Mailing List: http://groups.google.com/group/rails-trinidad
-* Bug Tracker: http://github.com/trinidad/trinidad/issues
+* Bug Tracker: https://github.com/trinidad/trinidad/issues
 * IRC [Channel on FreeNode][3]: #trinidad (or ask in #jruby)
 
 ## Copyright
 
-Copyright (c) 2013 [Team Trinidad](https://github.com/trinidad). 
+Copyright (c) 2014 [Team Trinidad](https://github.com/trinidad).
 See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
 
-[0]: http://github.com/kares
+[0]: http://kares.org
 [1]: http://logichaus.com/jruby.html
-[2]: https://www.engineyard.com/blog/2011/leveraging-trinidad-and-jruby-on-appcloud/
 [3]: http://webchat.freenode.net/?channels=trinidad
 [4]: http://github.com/trinidad/trinidad/wiki/extensions
 [5]: http://tomcat.apache.org/tomcat-7.0-doc/config/host.html
