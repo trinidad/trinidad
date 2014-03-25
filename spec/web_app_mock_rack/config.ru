@@ -1,8 +1,4 @@
 require 'rubygems'
-require 'sinatra'
+require 'rack'
 
-get '/' do
-  "You have been SERVED!"
-end
-
-run Sinatra::Application
+run lambda { |env| [ 200, { "Content-Type" => "text/plain" }, "Greetings!" ] }

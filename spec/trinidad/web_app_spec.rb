@@ -26,9 +26,9 @@ describe Trinidad::WebApp do
   end
 
   it "creates a RackupWebApp if no Rails code in environment.rb" do
-    environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     begin
-      create_config_file environment_rb, "" +
+      create_config_file application_rb, "" +
         "require 'rubygems'\n" +
         "require 'sinatra'\n\n" +
         "get ('/') { 'Hello world!' }"
@@ -36,22 +36,22 @@ describe Trinidad::WebApp do
       app = Trinidad::WebApp.create({ :web_app_dir => MOCK_WEB_APP_DIR })
       app.should be_a(Trinidad::RackupWebApp)
     ensure
-      FileUtils.rm environment_rb
+      FileUtils.rm application_rb
     end
   end
 
   after do
-    environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
-    FileUtils.rm environment_rb if File.exist?(environment_rb)
+    FileUtils.rm application_rb if File.exist?(application_rb)
     FileUtils.rm application_rb if File.exist?(application_rb)
   end
 
   it "creates a RackupWebApp if no Rails code in environment.rb/application.rb" do
-    environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
     begin
-      create_config_file environment_rb, "" +
+      create_config_file application_rb, "" +
         "require 'sinatra'\n\n" +
         "get '/' do\n" +
         "  'Hello world!'\n" +
@@ -66,9 +66,9 @@ describe Trinidad::WebApp do
   end
 
   it "creates a RailsWebApp if Rails 2.3 code in environment.rb" do
-    environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     begin
-      create_config_file environment_rb, "" +
+      create_config_file application_rb, "" +
       "# Be sure to restart your server when you modify this file\n" +
       "\n" +
       "# Specifies gem version of Rails to use when vendor/rails is not present\n" +
@@ -89,10 +89,10 @@ describe Trinidad::WebApp do
   end
 
   it "creates a RailsWebApp if Rails 3.x code in environment.rb/application.rb" do
-    environment_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/environment.rb"
     application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
     begin
-      create_config_file environment_rb, "\n" +
+      create_config_file application_rb, "\n" +
         "# Load the rails application \n" +
         "require File.expand_path('../application', __FILE__) \n" +
         " \n " +
@@ -130,7 +130,7 @@ describe Trinidad::WebApp do
       "require 'rubygems' \n" +
       "%w(action_controller/railtie).map &method(:require) \n" +
       "\n" +
-      "class TrinidadTest < Rails::Application \n" +
+      "class MinimalApplication < Rails::Application \n" +
       "  config.secret_token = routes.append { root :to => 'send_file#deliver' }.inspect \n" +
       "  initialize! \n" +
       "end \n" +
@@ -142,6 +142,30 @@ describe Trinidad::WebApp do
       app.should be_a(Trinidad::RailsWebApp)
     ensure
       #FileUtils.rm environment_rb
+    end
+  end
+
+  it "detects a RailsWebApp if (minimal) Rails code in application.rb" do
+    application_rb = "#{MOCK_WEB_APP_DIR}/config/application.rb"
+    begin
+      create_config_file application_rb, "" <<
+      "require 'bundler/setup' if File.exists?(ENV['BUNDLE_GEMFILE']) \n" <<
+      "\n" <<
+      "require 'rails/all' \n" <<
+      "\n" <<
+      "# Require the gems listed in Gemfile, including any gems \n" <<
+      "# # you've limited to :test, :development, or :production. \n" <<
+      "Bundler.require(:default, Rails.env) \n" <<
+      "\n" <<
+      "module Sample\n" <<
+      "  class Application < Rails::Application; end\n" <<
+      "end\n" <<
+      "\n"
+
+      app = Trinidad::WebApp.create({ :web_app_dir => MOCK_WEB_APP_DIR })
+      app.should be_a(Trinidad::RailsWebApp)
+    ensure
+      #FileUtils.rm application_rb
     end
   end
 
@@ -698,7 +722,7 @@ EOF
 
   it "detects threadsafe Rails 4.x" do
     create_config_file "config/environments/production.rb", <<-EOF
-AdAPI::Application.configure do
+MyAPI::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -772,6 +796,91 @@ EOF
 
     app.jruby_min_runtimes.should == 1
     app.jruby_max_runtimes.should == 5
+  end
+
+  it "detects app as threadsafe in development when production set for thread-safe (Rails 4.x)" do
+    create_config_file "config/environment.rb", <<-EOF
+# Load the Rails application.
+#require File.expand_path('../application', __FILE__)
+
+# Initialize the Rails application.
+Rails40::Application.initialize!
+EOF
+    create_config_file "config/environments/production.rb", <<-EOF
+Rails40::Application.configure do
+  # Settings specified here will take precedence over those in config/application.rb.
+
+  # Code is not reloaded between requests.
+  config.cache_classes = true
+
+  # Eager load code on boot. This eager loads most of Rails and
+  # your application in memory, allowing both thread web servers
+  # and those relying on copy on write to perform better.
+  # Rake tasks automatically ignore this option for performance.
+  config.eager_load = true
+
+  # Full error reports are disabled and caching is turned on.
+  config.consider_all_requests_local       = false
+  config.action_controller.perform_caching = true
+
+  # Enable Rack::Cache to put a simple HTTP cache in front of your application
+  # Add `rack-cache` to your Gemfile before enabling this.
+  # For large-scale production use, consider using a caching reverse proxy like nginx, varnish or squid.
+  # config.action_dispatch.rack_cache = true
+
+  # Disable Rails's static asset server (Apache or nginx will already do this).
+  config.serve_static_assets = false
+
+  # Compress JavaScripts and CSS.
+  config.assets.js_compressor = :uglifier
+  # config.assets.css_compressor = :sass
+
+  # Do not fallback to assets pipeline if a precompiled asset is missed.
+  config.assets.compile = false
+
+  # Generate digests for assets URLs.
+  config.assets.digest = true
+
+  # Version of your assets, change this if you want to expire all your assets.
+  config.assets.version = '1.0'
+
+  # Set to :debug to see everything in the log.
+  config.log_level = :info
+
+  # Use default logging formatter so that PID and timestamp are not suppressed.
+  config.log_formatter = ::Logger::Formatter.new
+end
+EOF
+    create_config_file "config/environments/development.rb", <<-EOF
+Rails40::Application.configure do
+  # Settings specified here will take precedence over those in config/application.rb.
+
+  # In the development environment your application's code is reloaded on
+  # every request. This slows down response time but is perfect for development
+  # since you don't have to restart the web server when you make code changes.
+  config.cache_classes = false
+
+  # Do not eager load code on boot.
+  config.eager_load = false
+
+  # Show full error reports and disable caching.
+  config.consider_all_requests_local       = true
+  config.action_controller.perform_caching = false
+
+  # Debug mode disables concatenation and preprocessing of assets.
+  # This option may cause significant delays in view rendering with a large
+  # number of complex assets.
+  config.assets.debug = true
+end
+EOF
+    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+
+    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'development')
+
+    expect( app.threadsafe? ).to be true
+
+    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'test')
+    expect( app.threadsafe? ).to be true
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do

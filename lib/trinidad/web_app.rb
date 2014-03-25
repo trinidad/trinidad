@@ -434,7 +434,7 @@ module Trinidad
       end
     end
 
-    def detect_threadsafe?; true end
+    def detect_threadsafe?(environment = self.environment); true end
 
     def guess_max_runtimes; 5 end
 
@@ -537,74 +537,76 @@ module Trinidad
       @logger ||= Logging::LogFactory.getLog('')
     end
 
-    protected
+    class << self
 
-    def self.rackup?(config, default_config = nil)
-      return true if config.has_key?(:rackup)
-      root_dir = root_dir(config, default_config)
-      config_ru = (default_config && default_config[:rackup]) || 'config.ru'
-      # check for rackup (but still use config/environment.rb for rails 3)
-      if File.exists?(File.join(root_dir, config_ru)) &&
-          ! rails?(config, default_config) # do not :rackup a rails app
-        config[:rackup] = config_ru
-      end
-      config[:rackup] || ! Dir[File.join(root_dir, 'WEB-INF/**/config.ru')].empty?
-    end
-
-    def self.rails?(config, default_config = nil)
-      root_dir = root_dir(config, default_config)
-      # standart Rails 3.x `class Application < Rails::Application`
-      if File.exists?(application = File.join(root_dir, 'config/application.rb'))
-        return true if file_line_match?(application, /^[^#]*Rails::Application/)
-      end
-      if File.exists?(environment = File.join(root_dir, 'config/environment.rb'))
-        return true if file_line_match?(environment) do |line|
-          # customized Rails 3.x, expects a `Rails::Application` subclass
-          # or a plain-old Rails 2.3 with `RAILS_GEM_VERSION = '2.3.14'`
-          line =~ /^[^#]*Rails::Application/ || line =~ /^[^#]*RAILS_GEM_VERSION/
+      def rackup?(config, default_config = nil)
+        return true if config.has_key?(:rackup)
+        root_dir = root_dir(config, default_config)
+        config_ru = (default_config && default_config[:rackup]) || 'config.ru'
+        # check for rackup (but still use config/environment.rb for rails 3)
+        if File.exists?(File.join(root_dir, config_ru)) &&
+            ! rails?(config, default_config) # do not :rackup a rails app
+          config[:rackup] = config_ru
         end
+        config[:rackup] || ! Dir[File.join(root_dir, 'WEB-INF/**/config.ru')].empty?
       end
-      false
-    end
 
-    def self.war?(config, default_config = nil)
-      root_dir = root_dir(config, default_config)
-      return true if root_dir && root_dir.to_s[-4..-1] == '.war'
-      context_path = config[:context_path] # backwards-compatibility :
-      context_path && context_path.to_s[-4..-1] == '.war'
-    end
-
-    private
-
-    def self.root_dir(config, default_config, default_dir = Dir.pwd)
-      # for backwards compatibility accepts the :web_app_dir "alias"
-      config[:root_dir] || config[:web_app_dir] ||
-        ( default_config &&
-          ( default_config[:root_dir] || default_config[:web_app_dir] ) ) ||
-            default_dir
-    end
-
-    def self.context_path(config, default_config = nil)
-      path = config[:context_path] ||
-        ( default_config && default_config[:context_path] )
-      unless path
-        name = config[:context_name] ||
-          ( default_config && default_config[:context_name] )
-        path = name.to_s == 'default' ? '/' : "/#{name}"
-      end
-      path = "/#{path}" if path.to_s[0, 1] != '/'
-      path.to_s
-    end
-
-    def self.file_line_match?(path, pattern = nil)
-      File.open(path) do |file|
-        if block_given?
-          file.each_line { |line| return true if yield(line) }
-        else
-          file.each_line { |line| return true if line =~ pattern }
+      def rails?(config, default_config = nil)
+        root_dir = root_dir(config, default_config)
+        # standard Rails 3.x/4.x `class Application < Rails::Application`
+        if File.exists?(application = File.join(root_dir, 'config/application.rb'))
+          return true if file_line_match?(application, /^[^#]*Rails::Application/)
         end
+        if File.exists?(environment = File.join(root_dir, 'config/environment.rb'))
+          return true if file_line_match?(environment) do |line|
+            # customized Rails >= 3.x, expects a `Rails::Application` subclass
+            # or a plain-old Rails 2.3 with `RAILS_GEM_VERSION = '2.3.14'`
+            line =~ /^[^#]*Rails::Application/ || line =~ /^[^#]*RAILS_GEM_VERSION/
+          end
+        end
+        false
       end
-      false
+
+      def war?(config, default_config = nil)
+        root_dir = root_dir(config, default_config)
+        return true if root_dir && root_dir.to_s[-4..-1] == '.war'
+        context_path = config[:context_path] # backwards-compatibility :
+        context_path && context_path.to_s[-4..-1] == '.war'
+      end
+
+      def root_dir(config, default_config, default_dir = Dir.pwd)
+        # for backwards compatibility accepts the :web_app_dir "alias"
+        config[:root_dir] || config[:web_app_dir] ||
+          ( default_config &&
+            ( default_config[:root_dir] || default_config[:web_app_dir] ) ) ||
+              default_dir
+      end
+
+      def context_path(config, default_config = nil)
+        path = config[:context_path] ||
+          ( default_config && default_config[:context_path] )
+        unless path
+          name = config[:context_name] ||
+            ( default_config && default_config[:context_name] )
+          path = name.to_s == 'default' ? '/' : "/#{name}"
+        end
+        path = "/#{path}" if path.to_s[0, 1] != '/'
+        path.to_s
+      end
+
+      private
+
+      def file_line_match?(path, pattern = nil)
+        File.open(path) do |file|
+          if block_given?
+            file.each_line { |line| return true if yield(line) }
+          else
+            file.each_line { |line| return true if line =~ pattern }
+          end
+        end
+        false
+      end
+
     end
 
     class Holder
@@ -667,13 +669,41 @@ module Trinidad
 
     protected
 
-    def detect_threadsafe?
+    # NOTE: maybe we can guess these based on connector maxThreads?
+    # def guess_max_runtimes; 5 end
+
+    def detect_threadsafe?(environment = self.environment)
+      if environment == 'development' || environment == 'test'
+        # NOTE: it's best for development/test to use the same setup as in
+        # production by default, thread-safe likely won't be detected as :
+        #
+        #  __environments/development.rb__
+        #
+        #  # In the development environment your application's code is reloaded on
+        #  # every request. This slows down response time but is perfect for development
+        #  # since you don't have to restart the web server when you make code changes.
+        #  config.cache_classes = false
+        #
+        #  # Do not eager load code on boot.
+        #  config.eager_load = false
+        #
+        #  __environments/test.rb__
+        #
+        #  # The test environment is used exclusively to run your application's
+        #  # test suite. You never need to work with it otherwise. Remember that
+        #  # your test database is "scratch space" for the test suite and is wiped
+        #  # and recreated between test runs. Don't rely on the data there!
+        #  config.cache_classes = true
+        #
+        #  # Do not eager load code on boot. This avoids loading your whole application
+        #  # just for the purpose of running a single test. If you are using a tool that
+        #  # preloads Rails for running tests, you may have to set it to true.
+        #  config.eager_load = false
+        #
+        return self.class.threadsafe?(root_dir, 'production')
+      end
       self.class.threadsafe?(root_dir, environment)
     end
-
-    private
-
-    def default_max_runtimes; 5 end
 
     def self.threadsafe?(app_base, environment)
       threadsafe_match?("#{app_base}/config/environments/#{environment}.rb") ||
