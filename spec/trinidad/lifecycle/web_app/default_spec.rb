@@ -97,7 +97,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "ignores parameters already present in the deployment descriptor" do
     listener = rails_web_app_listener({
       :jruby_max_runtimes => 1,
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RAILS_WEB_APP_DIR,
       :default_web_xml => 'config/web.xml'
     })
     expect(listener).to receive(:configure_logging)
@@ -108,7 +108,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     context.find_parameter('jruby.max.runtimes').should be nil
     context.start
-    context.find_parameter('jruby.max.runtimes').should == '4'
+    context.find_parameter('jruby.max.runtimes').should == '2'
   end
 
   it "doesn't load classes from a jar when the libs directory is not present" do
@@ -122,7 +122,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "loads classes from a jar when the libs directory is provided" do
-    listener = rails_web_app_listener :root_dir => MOCK_WEB_APP_DIR, :libs_dir => 'lib'
+    listener = rails_web_app_listener :root_dir => MOCK_RAILS_WEB_APP_DIR, :libs_dir => 'lib'
     loader = new_context_loader(listener); loader.container.start
     listener.send :add_application_jars, loader
 
@@ -130,7 +130,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "doesn't load java classes when the classes directory is not present" do
-    listener = rails_web_app_listener
+    listener = rackup_web_app_listener
     loader = new_context_loader(listener); loader.container.start
     listener.send :add_application_java_classes, loader
 
@@ -140,7 +140,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "loads java classes when the classes directory is provided" do
-    listener = rackup_web_app_listener :root_dir => MOCK_WEB_APP_DIR, :classes_dir => 'classes'
+    listener = rackup_web_app_listener :root_dir => MOCK_RACK_WEB_APP_DIR, :classes_dir => 'classes'
     loader = new_context_loader(listener)
     listener.send :add_application_java_classes, loader; loader.container.start
 
@@ -156,7 +156,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "loads the default application from the current directory using the rackup file if :web_apps is not present" do
     listener = rackup_web_app_listener({
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :web_app_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -167,14 +167,14 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "keeps resources base pointing to app root", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR
+      :root_dir => MOCK_RACK_WEB_APP_DIR
     })
     context = web_app_context(listener.web_app)
     context.addLifecycleListener listener
     context.start
 
     context.resources.should_not be nil
-    context.resources.doc_base.should == MOCK_WEB_APP_DIR
+    context.resources.doc_base.should == MOCK_RACK_WEB_APP_DIR
   end
 
   it "sets public root with the (custom) default servlet", :integration => true do
@@ -192,8 +192,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "normalizes public root with the (custom) default servlet", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
-      :public => 'assets'
+      :root_dir => MOCK_RACK_WEB_APP_DIR, :public => 'assets'
     })
     context = web_app_context(listener.web_app)
     context.addLifecycleListener listener
@@ -218,7 +217,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "accepts public configuration", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :public => {
         :root => 'assets/',
         :cache => false
@@ -234,13 +233,13 @@ describe Trinidad::Lifecycle::WebApp::Default do
     wrapper = find_wrapper(context, 'default')
     servlet = wrapper.servlet
     servlet.public_root.should == '/assets'
-    servlet.resources.doc_base.should == MOCK_WEB_APP_DIR
+    servlet.resources.doc_base.should == MOCK_RACK_WEB_APP_DIR
     servlet.resources.cache.should be nil
   end
 
   it "accepts public configuration cache parameters", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :public => {
         :cached => true,
         :cache_ttl => 60 * 1000,
@@ -299,7 +298,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "has 2 child servlets mapped by default when context starts", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR, :rackup => 'config.ru'
+      :root_dir => MOCK_RACK_WEB_APP_DIR, :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
     context.addLifecycleListener listener
@@ -338,7 +337,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "allows overriding the rack servlet", :integration => true do
     listener = rackup_web_app_listener({
       :rack_servlet => servlet = org.jruby.rack.RackServlet.new,
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -354,7 +353,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "keeps DefaultServlet with a custom class (optionally adds init params)", :integration => true do
     listener = rackup_web_app_listener({
       :default_servlet => { :init_params => { :debug => 1, '_flag' => true } },
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :web_app_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -370,7 +369,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   it "re-configures DefaultServlet when default in web.xml", :integration => true do
-    create_config_file "#{MOCK_WEB_APP_DIR}/default-web.xml", '' +
+    create_config_file "#{MOCK_RACK_WEB_APP_DIR}/default-web.xml", '' +
       '<?xml version="1.0" encoding="UTF-8"?>' +
       '<web-app>' +
       '  <servlet>' +
@@ -385,7 +384,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
     listener = rackup_web_app_listener({
       :web_xml => 'default-web.xml',
-      :web_app_dir => MOCK_WEB_APP_DIR,
+      :web_app_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -414,7 +413,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
   it "allows overriding DefaultServlet with (configured) servlet instance", :integration => true do
     listener = rackup_web_app_listener({
       :default_servlet => servlet = DefaultServlet.new,
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -439,7 +438,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
         :instance => servlet = DefaultServlet.new,
         :mapping => [ '/static1', '/static2' ]
       },
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)
@@ -456,7 +455,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "keeps the jsp servlet when :jsp_servlet set to true", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru',
       :jsp_servlet => true
     })
@@ -476,7 +475,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "updates the jsp servlet with given config", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru',
       :jsp_servlet => {
         :mapping => [ '*.php', '/jspx' ],
@@ -499,7 +498,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
 
   it "uses a custom manager for a rack web-app", :integration => true do
     listener = rackup_web_app_listener({
-      :root_dir => MOCK_WEB_APP_DIR,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
       :rackup => 'config.ru'
     })
     context = web_app_context(listener.web_app)

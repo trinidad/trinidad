@@ -24,7 +24,9 @@ $:.unshift(File.dirname(__FILE__) + '/fixtures')
 require 'rack'
 require 'trinidad'
 
-MOCK_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_mock')
+MOCK_RACK_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_mock_rack')
+MOCK_RAILS_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_mock_rails')
+MOCK_WEB_APP_DIR = MOCK_RACK_WEB_APP_DIR
 RAILS_WEB_APP_DIR = File.join(File.dirname(__FILE__), 'web_app_rails')
 
 # NOTE: disable listener backwards-compatibility in specs :

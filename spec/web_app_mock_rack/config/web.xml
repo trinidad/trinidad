@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+    <context-param>
+      <param-name>jruby.initial.runtimes</param-name>
+      <param-value>1</param-value>
+    </context-param>
+
+    <context-param>
+      <param-name>jruby.max.runtimes</param-name>
+      <param-value>3</param-value>
+    </context-param>
+
+    <filter>
+        <filter-name>RackFilter</filter-name>
+        <filter-class>org.jruby.rack.RackFilter</filter-class>
+    </filter>
+
+    <listener>
+      <listener-class>org.jruby.rack.RackServletContextListener</listener-class>
+    </listener>
+</web-app>

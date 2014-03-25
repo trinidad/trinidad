@@ -7,7 +7,7 @@
 
     <context-param>
       <param-name>jruby.max.runtimes</param-name>
-      <param-value>4</param-value>
+      <param-value>2</param-value>
     </context-param>
 
     <filter>

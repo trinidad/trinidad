@@ -9,11 +9,11 @@ describe Trinidad::Lifecycle::Host do
   end
 
   before do
-    work = File.expand_path('tmp', MOCK_WEB_APP_DIR)
+    work = File.expand_path('tmp', MOCK_RACK_WEB_APP_DIR)
     FileUtils.rm_rf(work) if File.exist?(work)
   end
 
-  let(:monitor) { File.expand_path('restart.txt', MOCK_WEB_APP_DIR) }
+  let(:monitor) { File.expand_path('restart.txt', MOCK_RACK_WEB_APP_DIR) }
   let(:server) { SimpleServer.new(tomcat) }
   let(:tomcat) { org.apache.catalina.startup.Tomcat.new }
   let :context do
@@ -78,7 +78,7 @@ describe Trinidad::Lifecycle::Host do
     context_path = context_path_or_config.is_a?(String) && context_path_or_config
     config = {
       :context_path => context_path || '/',
-      :root_dir => MOCK_WEB_APP_DIR, :public => 'assets',
+      :root_dir => MOCK_RACK_WEB_APP_DIR, :public => 'assets',
       :monitor => monitor
     }.merge(config)
     Trinidad::WebApp.create({}, config)
@@ -310,7 +310,7 @@ describe Trinidad::Lifecycle::Host do
         new_context.name.should_not == 'foo'
       end
 
-      work_dir = File.expand_path('work', MOCK_WEB_APP_DIR)
+      work_dir = File.expand_path('work', MOCK_RACK_WEB_APP_DIR)
 
       before do
         FileUtils.mkdir work_dir unless File.exist?(work_dir)
@@ -322,7 +322,7 @@ describe Trinidad::Lifecycle::Host do
 
       it "does not delete working directory", :integration => true do
         #context = tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
-        web_app = create_web_app :work_dir => work_dir, :root_dir => MOCK_WEB_APP_DIR
+        web_app = create_web_app :work_dir => work_dir, :root_dir => MOCK_RACK_WEB_APP_DIR
         old_context.name = 'default'
         old_context.path = '/'
         old_context.parent = tomcat.host
