@@ -26,8 +26,16 @@ group :development do
 end
 
 group :integration do
-  gem 'sinatra', :require => nil, :group => :test
-  gem 'rails', '~> 3.2.16', :require => nil, :group => :test
+  if sinatra_version = ENV['SINATRA_VERSION']
+    gem 'sinatra', sinatra_version, :require => nil, :group => :test
+  else
+    gem 'sinatra', :require => nil, :group => :test
+  end
+  if rails_version = ENV['RAILS_VERSION']
+    gem 'rails', rails_version, :require => nil, :group => :test
+  else
+    gem 'rails', :require => nil, :group => :test
+  end
   gem 'jruby-openssl' if JRUBY_VERSION < '1.7.0'
   # eval(File.read("spec/integration/rails32/Gemfile"), binding)
 end

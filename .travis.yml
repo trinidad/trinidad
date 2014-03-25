@@ -10,7 +10,7 @@ before_script:
 before_install:
   - ((jruby -v | grep 1.8.7) && jruby --1.9 -S gem update --system 2.1.11) || true
 env:
-  - JRUBY_OPTS="--1.8 $JRUBY_OPTS"
+  - JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
   - JRUBY_OPTS="$JRUBY_OPTS"
 matrix:
   allow_failures:
@@ -20,8 +20,8 @@ matrix:
       env: JRUBY_OPTS="$JRUBY_OPTS"
       jdk: openjdk6
     - rvm: jruby-head
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS"
+      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: openjdk6
     - rvm: jruby-head
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS"
+      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: oraclejdk7
