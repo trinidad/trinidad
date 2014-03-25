@@ -63,23 +63,25 @@ module Trinidad
     def jruby_min_runtimes
       if min = config[:jruby_min_runtimes]
         return min.to_i # min specified overrides :threadsafe
-      else # but :threadsafe takes precendence over default :
-        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_min_runtimes)
+      else # but :threadsafe takes precedence over default
+        # (if no default value specified we'll end up thread-safe) :
+        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_min_runtimes, 1)
       end
     end
 
     def jruby_max_runtimes
       if max = config[:jruby_max_runtimes]
         return max.to_i # max specified overrides :threadsafe
-      else # but :threadsafe takes precendence over default :
-        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_max_runtimes)
+      else # but :threadsafe takes precedence over default
+        # (if no default value specified we'll end up thread-safe) :
+        self[:threadsafe] ? 1 : fetch_default_config_value(:jruby_max_runtimes, 1)
       end
     end
 
     def jruby_initial_runtimes
       if ini = config[:jruby_initial_runtimes]
         return ini.to_i # min specified overrides :threadsafe
-      else # but :threadsafe takes precendence over default :
+      else # but :threadsafe takes precedence over default :
         self[:threadsafe] ? 1 :
           fetch_default_config_value(:jruby_initial_runtimes, jruby_min_runtimes)
       end
@@ -131,24 +133,30 @@ module Trinidad
     def default_web_xml; self[:default_web_xml]; end
 
     def java_lib
-      # accepts #deprecated :libs_dir syntax
-      self[:java_lib] || self[:libs_dir] || @@defaults[:java_lib]
+      self[:java_lib] || begin
+        if libs_dir = self[:libs_dir] # @deprecated
+          Helpers.deprecate "please use :java_lib instead of :libs_dir"
+        end
+        libs_dir || @@defaults[:java_lib]
+      end
     end
 
     def java_classes
-      # accepts #deprecated :classes_dir syntax
-      self[:java_classes] || self[:classes_dir] || File.join(java_lib, 'classes')
+      self[:java_classes] || begin
+        if classes_dir = self[:classes_dir] # @deprecated
+          Helpers.deprecate "please use :java_classes instead of :classes_dir"
+        end
+        classes_dir || File.join(java_lib, 'classes')
+      end
     end
 
     def java_lib_dir
       @java_lib_dir ||= self[:java_lib_dir] || expand_path(java_lib)
     end
-    alias_method :libs_dir, :java_lib_dir # #deprecated
 
     def java_classes_dir
       @java_classes_dir ||= self[:java_classes_dir] || expand_path(java_classes)
     end
-    alias_method :classes_dir, :java_classes_dir # #deprecated
 
     def extensions
       @extensions ||= begin
@@ -161,11 +169,14 @@ module Trinidad
       @context_params ||= {}
       add_context_param 'jruby.min.runtimes', jruby_min_runtimes
       add_context_param 'jruby.max.runtimes', jruby_max_runtimes
-      add_context_param 'jruby.initial.runtimes', jruby_initial_runtimes
-      add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
+      unless threadsafe?
+        add_context_param 'jruby.initial.runtimes', jruby_initial_runtimes
+        add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
+      end
       add_context_param 'jruby.compat.version', jruby_compat_version
       add_context_param 'public.root', public_root
       add_context_param 'jruby.rack.layout_class', layout_class
+      # JRuby::Rack::ErrorApp got a bit smarter so use it, TODO maybe override ?
       add_context_param 'jruby.rack.error', false # do not start error app on errors
       @context_params
     end
@@ -408,7 +419,24 @@ module Trinidad
       config[:root_dir] ||= self.class.root_dir(config, default_config)
       config[:root_dir] = File.expand_path(config[:root_dir])
       config[:context_path] = self.class.context_path(config, default_config)
+
+      return if key?(:jruby_max_runtimes) || key?(:jruby_min_runtimes)
+
+      if ( ! key?(:threadsafe) && ! detect_threadsafe? ) || self[:threadsafe] == false
+        max_runtimes = config[:jruby_max_runtimes] = guess_max_runtimes
+        if environment == 'development' || environment == 'test'
+          config[:jruby_min_runtimes] = 1
+        else
+          config[:jruby_min_runtimes] = max_runtimes
+        end
+      else
+        config[:jruby_min_runtimes] = config[:jruby_max_runtimes] = 1
+      end
     end
+
+    def detect_threadsafe?; true end
+
+    def guess_max_runtimes; 5 end
 
     public
 
@@ -499,7 +527,7 @@ module Trinidad
       value = default_config[name]
       if value.nil?
         # JRuby-Rack names: jruby_min_runtimes -> jruby.min.runtimes :
-        value = java.lang.System.getProperty(name.to_s.gsub('_', '.'))
+        value = ENV_JAVA[ name.to_s.gsub('_', '.') ]
         value ||= default
       end
       value
@@ -600,36 +628,6 @@ module Trinidad
       def lock; @lock = true; end
       def unlock; @lock = false; end
 
-      # #deprecated behaves Hash like for (<= 1.3.5) compatibility
-      def [](key)
-        case key.to_sym
-          when :app then
-            web_app
-          when :context then
-            context
-          when :lock then
-            @lock
-          when :monitor then
-            monitor
-          when :mtime then
-            monitor_mtime
-          else raise NoMethodError, key.to_s
-        end
-      end
-
-      # #deprecated behaves Hash like for (<= 1.3.5) compatibility
-      def []=(key, val)
-        case key.to_sym
-          when :context then
-            self.context=(val)
-          when :lock then
-            @lock = val
-          when :mtime then
-            self.monitor_mtime=(val)
-          else raise NoMethodError, "#{key}="
-        end
-      end
-
     end
 
   end
@@ -669,20 +667,13 @@ module Trinidad
 
     protected
 
-    def complete_config!
-      super
-      # detect threadsafe! in config/environments/environment.rb :
-      if ! key?(:threadsafe) && self.class.threadsafe?(root_dir, environment)
-        config[:jruby_min_runtimes] = 1 unless key?(:jruby_min_runtimes, false)
-        config[:jruby_max_runtimes] = 1 unless key?(:jruby_max_runtimes, false)
-      end
+    def detect_threadsafe?
+      self.class.threadsafe?(root_dir, environment)
     end
 
-    #def layout_class
-      #'JRuby::Rack::RailsFileSystemLayout'
-    #end
-
     private
+
+    def default_max_runtimes; 5 end
 
     def self.threadsafe?(app_base, environment)
       threadsafe_match?("#{app_base}/config/environments/#{environment}.rb") ||
@@ -691,7 +682,7 @@ module Trinidad
 
     def self.threadsafe_match?(file)
       File.exist?(file) && (
-        file_line_match?(file, /^[^#]*threadsafe!/) || ( # Rails 4.0
+        file_line_match?(file, /^[^#]*threadsafe!/) || ( # Rails 4.x
           file_line_match?(file, /^[^#]*config\.eager_load\s?*=\s?*true/) &&
           file_line_match?(file, /^[^#]*config\.cache_classes\s?*=\s?*true/)
         )

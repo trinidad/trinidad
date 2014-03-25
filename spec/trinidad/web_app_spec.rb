@@ -548,18 +548,25 @@ describe Trinidad::WebApp do
   it "is threadsafe when min and max runtimes are 1" do
     app = Trinidad::WebApp.create({}, {
       :root_dir => MOCK_WEB_APP_DIR,
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 1
+      :jruby_min_runtimes => 1, :jruby_max_runtimes => 1
     })
 
     app.threadsafe?.should be true
   end
 
   it "is not threadsafe when min and max runtimes are not 1" do
+    app = Trinidad::WebApp.create(
+      :root_dir => MOCK_WEB_APP_DIR,
+      :jruby_min_runtimes => 1, :jruby_max_runtimes => 2
+    )
+
+    app.threadsafe?.should be false
+  end
+
+  it "is not threadsafe when min and max runtimes are not 1 (in default config)" do
     app = Trinidad::WebApp.create({}, {
       :root_dir => MOCK_WEB_APP_DIR,
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 2
+      :jruby_min_runtimes => 1, :jruby_max_runtimes => 2
     })
 
     app.threadsafe?.should be false
@@ -595,6 +602,12 @@ describe Trinidad::WebApp do
     })
 
     app.threadsafe?.should be true
+
+    app = Trinidad::RackWebApp.new({ :threadsafe => true }, {
+      :root_dir => MOCK_WEB_APP_DIR
+    })
+
+    app.threadsafe?.should be true
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the specified environment" do
@@ -605,8 +618,7 @@ describe Trinidad::WebApp do
       :root_dir => Dir.pwd,
       :environment => 'staging',
       }, {
-      :jruby_min_runtimes => 1,
-      :jruby_max_runtimes => 2
+      #:jruby_min_runtimes => 1, :jruby_max_runtimes => 2
     })
 
     app.jruby_min_runtimes.should == 1
@@ -675,7 +687,7 @@ EOF
     app = Trinidad::WebApp.create({
         :root_dir => Dir.pwd, :environment => 'production',
       }, {
-        :jruby_min_runtimes => 2, :jruby_max_runtimes => 4
+        #:jruby_min_runtimes => 2, :jruby_max_runtimes => 4
       }
     )
 
@@ -709,10 +721,7 @@ EOF
 
     app = Trinidad::WebApp.create({
         :root_dir => Dir.pwd, :environment => 'production',
-      }, {
-        :jruby_min_runtimes => 1, :jruby_max_runtimes => 5
-      }
-    )
+      }, {})
 
     expect( app.threadsafe? ).to be true
     app.jruby_min_runtimes.should == 1
@@ -722,9 +731,8 @@ EOF
     expect( app.threadsafe? ).to be true
   end
 
-  it "detects non-threadsafe Rails 4.x" do
-    create_config_file "config/environments/production.rb", <<-EOF
-AdAPI::Application.configure do
+  @@__eager_load_false_rails4x = <<-EOF
+MyAPI::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -744,23 +752,37 @@ AdAPI::Application.configure do
   # ...
 end
 EOF
-    FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
 
-    app = Trinidad::WebApp.create({ :root_dir => Dir.pwd, :environment => 'production' })
+  it "detects non-threadsafe Rails 4.x" do
+    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
+    # FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+
+    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'production')
     expect( app.threadsafe? ).to be false
+
+    app.jruby_min_runtimes.should == 5
+    app.jruby_max_runtimes.should == 5
+  end
+
+  it "defaults min_runtimes to 1 in non-threadsafe mode (Rails 4.x)" do
+    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
+
+    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'development')
+    expect( app.threadsafe? ).to be false
+
+    app.jruby_min_runtimes.should == 1
+    app.jruby_max_runtimes.should == 5
   end
 
   it "sets jruby runtime pool to 1 when it detects the threadsafe flag in the rails environment.rb" do
     create_rails_environment
 
-    app = Trinidad::WebApp.create({
-      :web_app_dir => Dir.pwd
-    })
+    app = Trinidad::WebApp.create(:web_app_dir => Dir.pwd)
 
     app.threadsafe?.should be true
   end
 
-  it "does not change jruby runtime pool settings even when a threadsafe flag is detected" do
+  it "does not change jruby runtime pool settings (even for a threadsafe) app" do
     create_rails_environment
 
     app = Trinidad::WebApp.create({
@@ -771,6 +793,20 @@ EOF
 
     app.jruby_min_runtimes.should == 1
     app.jruby_max_runtimes.should == 2
+    app.threadsafe?.should be false
+  end
+
+  it "does not change jruby runtime pool settings for a threadsafe app (default config)" do
+    create_rails_environment
+
+    app = Trinidad::WebApp.create({
+      :web_app_dir => Dir.pwd
+    },
+    { :jruby_min_runtimes => 3, :jruby_max_runtimes => 6 }
+    )
+
+    app.jruby_min_runtimes.should == 3
+    app.jruby_max_runtimes.should == 6
     app.threadsafe?.should be false
   end
 

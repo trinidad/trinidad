@@ -38,7 +38,7 @@ describe 'Rack::Handler::Trinidad' do
     end
 
     it "creates a servlet for the app" do
-      app = mock("app")
+      app = double("app")
       servlet = Rack::Handler::Trinidad.create_servlet(app)
       servlet.context.server_info.should == 'Trinidad'
       servlet.dispatcher.should_not be nil
