@@ -74,7 +74,7 @@ module Trinidad
     end
 
     %w{ port address environment context_path
-        java_lib libs_dir java_classes classes_dir default_web_xml
+        java_lib java_classes default_web_xml
         jruby_min_runtimes jruby_max_runtimes jruby_compat_version
         rackup servlet rack_servlet default_servlet public hosts
         http ajp ssl https extensions
@@ -83,46 +83,20 @@ module Trinidad
       class_eval "def #{method}; self[:'#{method}']; end"
       class_eval "def #{method}=(value); self[:'#{method}'] = value; end"
     end
-    # TODO #deprecate libs_dir classes_dir servlet
+    # TODO deprecate servlet
 
-    # a Hash like #symbolize helper
-    def self.symbolize_options(options, deep = true)
-      new_options = options.class.new
-      options.each do |key, value|
-        if deep && value.is_a?(Array) # YAML::Omap is an Array
-          array = new_options[key.to_sym] = value.class.new
-          value.each do |v|
-            array << ( options_like?(v) ? symbolize_options(v, deep)  : v )
-          end
-        elsif deep && options_like?(value)
-          new_options[key.to_sym] = symbolize_options(value, deep)
-        else
-          new_options[key.to_sym] = value
-        end
-      end
-      new_options
+    # @private
+    def self.symbolize_options(options)
+      Helpers.symbolize(options, true)
     end
 
-    # a Hash like deep_merge helper
-    def self.merge_options(target, current, deep = true)
-      return target unless current
-      target_dup = target.dup
-      current.keys.each do |key|
-        target_dup[key] =
-          if deep && options_like?(target[key]) && options_like?(current[key])
-            merge_options(target[key], current[key], deep)
-          else
-            current[key]
-          end
-      end
-      target_dup
+    # @private
+    def self.merge_options(target, current)
+      Helpers.merge(target, current, true)
     end
 
-    private
-    def self.options_like?(object)
-      object.is_a?(Hash) ||
-        ( object.respond_to?(:keys) && object.respond_to?(:'[]') )
-    end
+    # @private
+    def self.options_like?(object); Helpers.hash_like?(object) end
 
   end
 end
