@@ -160,13 +160,13 @@ module Trinidad
 
         opts.on_tail('-a', '--ajp [AJP_PORT]', 'enable the AJP web protocol',
           "default port: 8009") do |port|
-          warn "DEPRECATED option ( -a / --ajp )"
+          Helpers.deprecated "option ( -a / --ajp )"
           default_options[:ajp] = { :port => (port || 8009).to_i }
         end
 
 
         opts.on_tail('-g', '--log LEVEL', 'set logging level') do |log|
-          warn "DEPRECATED option ( -g / --log )"
+          Helpers.deprecated "option ( -g / --log )"
           default_options[:log] = log
         end
 

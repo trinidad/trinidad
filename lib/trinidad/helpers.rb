@@ -19,11 +19,13 @@ module Trinidad
     @@deprecated = {}
 
     # Print a deprecated message (once - no matter how many times it's called).
-    def deprecate(msg, prefix = '[DEPRECATED] ')
+    def deprecated(msg, prefix = '[DEPRECATED] ')
       return nil if @@deprecated[msg]
       @@deprecated[msg] = true
       Helpers.warn "#{prefix}#{msg}" # Kernel.warn
     end
+    # @private
+    def deprecate(msg); deprecated(msg) end
 
     # Camelizes the passed (string) parameter.
     # @return a new string
