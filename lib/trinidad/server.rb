@@ -78,6 +78,9 @@ module Trinidad
       tomcat.hostname = address || 'localhost'
       tomcat.server.address = address || nil unless address.nil?
       tomcat.port = config[:port].to_i if config.key?(:port)
+
+      set_tomcat_class_loader(tomcat)
+
       default_host(tomcat)
       create_hosts(tomcat)
       tomcat.enable_naming
@@ -425,8 +428,14 @@ module Trinidad
     def set_system_properties(system = Java::JavaLang::System)
       system.set_property("org.apache.catalina.startup.EXIT_ON_INIT_FAILURE", 'true')
     end
-    # @deprecated renamed to {#set_system_properties}
-    def load_default_system_properties; set_system_properties; end
+
+    def set_tomcat_class_loader(tomcat)
+      # NOTE: allows for Java class-resolution to work from within Tomcat :
+      tomcat_loader = tomcat.server.getParentClassLoader
+      if tomcat_loader.nil? || tomcat_loader == Java::JavaLang::ClassLoader.getSystemClassLoader
+        tomcat.server.setParentClassLoader JRuby.runtime.jruby_class_loader
+      end
+    end
 
     def configure_logging(logging)
       Trinidad::Logging.configure(logging)
