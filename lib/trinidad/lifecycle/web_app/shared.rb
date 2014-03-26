@@ -1,6 +1,14 @@
 module Trinidad
   module Lifecycle
     module WebApp
+
+      # @private
+      JRUBY_RACK_JAR_PATH = if defined?(JRuby::Rack::JAR_PATH)
+        JRuby::Rack::JAR_PATH
+      else
+        JRubyJars.jruby_rack_jar_path
+      end
+
       # Shared web application lifecycle hook,
       # does #configure before the context starts.
       module Shared

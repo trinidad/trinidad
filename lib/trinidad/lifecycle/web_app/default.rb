@@ -14,8 +14,8 @@ module Trinidad
             configure_rack_servlet(context)
             configure_rack_listener(context)
           end
-          configure_context_params(context)
           configure_context_loader(context)
+          configure_context_params(context)
         end
 
         def before_init(event)
@@ -45,7 +45,7 @@ module Trinidad
             if context_config.nil?
               if @@_add_context_config
                 context_config = Trinidad::Tomcat::ContextConfig.new
-                context.addLifecycleListener(context_config)
+                context.add_lifecycle_listener(context_config)
               else
                 raise "initialized context is missing a ContextConfig listener"
               end
@@ -61,6 +61,7 @@ module Trinidad
           rack_servlet = web_app.rack_servlet
           if rack_servlet[:instance]
             wrapper.servlet = rack_servlet[:instance]
+            web_app[:add_jruby_rack_jar] = false
           else
             wrapper.servlet_class = rack_servlet[:class]
             wrapper.async_supported = rack_servlet[:async_supported]
@@ -75,7 +76,9 @@ module Trinidad
 
         def configure_rack_listener(context)
           unless web_app.rack_servlet[:instance]
-            context.add_application_listener(web_app.rack_listener)
+            if rack_listener = web_app.rack_listener
+              context.add_application_listener(rack_listener)
+            end
           end
         end
 
@@ -89,10 +92,19 @@ module Trinidad
 
         def configure_context_loader(context)
           loader = new_context_loader
+          add_jruby_rack_jar(loader)
           add_application_java_classes(loader)
           add_application_jars(loader) # classes takes precedence !
 
           context.loader = loader # does loader.container = context
+        end
+
+        def add_jruby_rack_jar(loader)
+          return if web_app[:add_jruby_rack_jar] == false
+          if jruby_rack_jar = JRUBY_RACK_JAR_PATH
+            logger.debug "[#{web_app.context_path}] adding jar: #{jruby_rack_jar}"
+            loader.addRepository to_url_path(jruby_rack_jar)
+          end
         end
 
         def add_application_jars(loader)
@@ -106,6 +118,7 @@ module Trinidad
 
         def add_application_java_classes(loader)
           return unless classes_dir = web_app.java_classes_dir
+          logger.debug "[#{web_app.context_path}] adding dir: #{classes_dir}"
           loader.addRepository to_url_path(classes_dir)
         end
 
@@ -137,9 +150,7 @@ module Trinidad
           Java::RbTrinidadContext::DefaultLoader.new(class_loader)
         end
 
-        def to_url_path(path)
-          java.io.File.new(path).canonical_file.to_url.to_s
-        end
+        def to_url_path(path); Helpers.to_url(path).to_s end
 
       end
     end

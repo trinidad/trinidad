@@ -519,6 +519,42 @@ describe Trinidad::Lifecycle::WebApp::Default do
     expect( context.manager.java_class.name ).to eql 'rb.trinidad.context.DefaultManager'
   end
 
+  it "configured a (custom) context loader" do
+    listener = rails_web_app_listener(:root_dir => RAILS_WEB_APP_DIR)
+    context = web_app_context(listener.web_app)
+    #context.addLifecycleListener listener
+    listener.send(:configure_context_loader, context)
+
+    expect( context.loader ).to_not be nil
+    expect( context.loader.java_class.name ).to eql 'rb.trinidad.context.DefaultLoader'
+  end
+
+  it "adds jruby-rack jar to context's loader", :integration => true do
+    listener = rackup_web_app_listener(:root_dir => MOCK_RACK_WEB_APP_DIR)
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    expect( context.loader.repositories.first ).to match /jruby\-rack.*?\.jar/
+    class_loader = context.loader.class_loader
+    urls = class_loader.getURLs.select { |url| url.to_s =~ /jruby\-rack.*?\.jar/ }
+    expect( urls.size ).to eql 1
+    expect( java.io.File.new(urls.first.path).exists ).to be true
+  end
+
+  it "does not add jruby-rack to class-path if custom rack servlet used", :integration => true do
+    listener = rackup_web_app_listener({
+      :rack_servlet => DefaultServlet.new,
+      :root_dir => MOCK_RACK_WEB_APP_DIR,
+    })
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+
+    loader_repos = context.loader.repositories
+    expect( loader_repos.find { |path| path.index('jruby-rack') } ).to be nil
+  end
+
   private
 
   def find_context_config(context)
