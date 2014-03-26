@@ -23,6 +23,7 @@
 
 package rb.trinidad.context;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.util.Collection;
@@ -118,8 +119,8 @@ public class DefaultLoader extends WebappLoader {
         }
 
         if ( getClassLoader() != null ) {
-            performJDBCDriverCleanup(jrubyLoaders);
-            removeLoadedSecurityProviderForOpenSSL(jrubyLoaders);
+            performJDBCDriversCleanup(jrubyLoaders);
+            removeSecurityProviderForOpenSSL(jrubyLoaders);
             mendContextLoaderForTimeoutWorkerThreads();
         }
 
@@ -150,11 +151,8 @@ public class DefaultLoader extends WebappLoader {
                 log.info("No managed runtimes found for context: " + getContainer());
             }
             else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Found " + runtimes.size() + " managed runtimes for context: " + getContainer());
-                }
+                log.debug("Found " + runtimes.size() + " managed runtimes for context: " + getContainer());
             }
-
             return runtimes;
         }
         catch (NoSuchMethodException e) {
@@ -164,7 +162,13 @@ public class DefaultLoader extends WebappLoader {
             log.info("Failed getting managed runtimes from rack.factory", e);
         }
         catch (InvocationTargetException e) {
-            log.info("Failed getting managed runtimes from rack.factory", e.getTargetException());
+            final Throwable target = e.getTargetException();
+            if ( target instanceof UnsupportedOperationException ) {
+                log.debug("Getting managed runtimes is not supported", target);
+            }
+            else {
+                log.info("Failed getting managed runtimes from rack.factory", target);
+            }
         }
         return null;
     }
@@ -189,7 +193,7 @@ public class DefaultLoader extends WebappLoader {
         return getContextBang().getServletContext();
     }
 
-    private void removeLoadedSecurityProviderForOpenSSL(final Collection<JRubyClassLoader> appLoaders) {
+    private void removeSecurityProviderForOpenSSL(final Collection<JRubyClassLoader> appLoaders) {
         final Provider bcProvider = java.security.Security.getProvider("BC");
         // the registered : org.bouncycastle.jce.provider.BouncyCastleProvider
         // JRuby's latest OpenSSL impl does : Security.addProvider(BC_PROVIDER)
@@ -230,7 +234,8 @@ public class DefaultLoader extends WebappLoader {
         //}
         for ( int i=0; i<workerThreads.size(); i++ ) {
             final Thread worker = workerThreads.get(i);
-            if ( worker.getName().indexOf("Ruby") == -1 ) continue;
+            final String name = worker.getName();  // make sure it's from JRuby
+            if ( name == null || name.indexOf("Ruby") == -1 ) continue;
             if ( worker.getContextClassLoader() == getClassLoader() ) {
                 worker.setContextClassLoader( getClassLoader().getParent() );
             }
@@ -245,10 +250,11 @@ public class DefaultLoader extends WebappLoader {
         return Class.forName(className, true, Ruby.getClassLoader());
     }
 
-    private void performJDBCDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+    private void performJDBCDriversCleanup(final Collection<JRubyClassLoader> appLoaders) {
         // TODO unregister with DriverManager
 
         performMySQLDriverCleanup(appLoaders);
+        performPostgreSQLDriverCleanup(appLoaders);
     }
 
     private void performMySQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
@@ -268,11 +274,16 @@ public class DefaultLoader extends WebappLoader {
         }
     }
 
+    private void performPostgreSQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+        // TODO cleanup started java.util.Timer-s
+    }
+
     private static List<Thread> findAbandonedConnectionCleanupThreads() {
         // thread's name: "Abandoned connection cleanup thread"
         return findThreads("Abandoned connection cleanup thread", null);
     }
 
+    @SuppressWarnings("unchecked")
     private void shutdownMySQLAbandonedConnectionCleanupThreads(final Collection<JRubyClassLoader> appLoaders) {
         final String className = "com.mysql.jdbc.AbandonedConnectionCleanupThread";
 
@@ -391,6 +402,22 @@ public class DefaultLoader extends WebappLoader {
         }
 
         return allThreads;
+    }
+
+    private static Collection<Class<?>> loadedClasses(final ClassLoader classLoader) {
+        try {
+            final Field classesField = ClassLoader.class.getDeclaredField("classes");
+            classesField.setAccessible(true);
+            // private final Vector<Class<?>> classes = new Vector<>();
+            return (Collection<Class<?>>) classesField.get(classLoader);
+        }
+        catch (NoSuchFieldException e) {
+            log.info("MySQL connection cleanup thread shutdown failed", e);
+        }
+        catch (IllegalAccessException e) {
+            log.info("MySQL connection cleanup thread shutdown failed", e);
+        }
+        return null;
     }
 
     private class ContextListener implements LifecycleListener {
