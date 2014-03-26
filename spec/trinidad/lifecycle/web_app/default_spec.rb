@@ -555,6 +555,38 @@ describe Trinidad::Lifecycle::WebApp::Default do
     expect( loader_repos.find { |path| path.index('jruby-rack') } ).to be nil
   end
 
+  it "uses a custom jar scanner (which excludes scanning jruby-rack)", :integration => true do
+    listener = rails_web_app_listener(:root_dir => MOCK_RAILS_WEB_APP_DIR, :java_lib => 'lib')
+    context = web_app_context(listener.web_app)
+    context.addLifecycleListener listener
+    context.start
+    jar_scanner = context.jar_scanner
+
+    expect( jar_scanner ).to_not be nil
+    expect( jar_scanner.java_class.name ).to eql 'rb.trinidad.context.DefaultJarScanner'
+
+    logger = Trinidad::Logging::JUL::Logger.getLogger('rb.trinidad.context.DefaultJarScanner')
+    logger.level = Trinidad::Logging::JUL::Level::FINEST
+    Trinidad::Logging::LogFactory.getLog logger.name
+
+    callback = Trinidad::Tomcat::JarScannerCallback.impl do |*args|
+      if (method = args.shift).to_s == 'scan'
+        unless args.first.is_a?(java.net.URLConnection)
+          raise "unexpected scan (no a connection passed in but: #{args.first})"
+        end
+        # we shall only scan the jyaml jar from lib but not others :
+        url_string = args.first.getJarFileURL.to_s
+        unless url_string =~ /jyaml.*?\.jar/
+          raise "unexpected scanning of jar: #{url_string}"
+        end
+      else
+        raise "unexpected invocation: #{method} #{args.inspect}"
+      end
+    end
+    # scan(ServletContext context, ClassLoader classloader, JarScannerCallback callback, Set<String> jarsToSkip)
+    jar_scanner.scan(context.servlet_context, context.loader.class_loader, callback, nil)
+  end
+
   private
 
   def find_context_config(context)

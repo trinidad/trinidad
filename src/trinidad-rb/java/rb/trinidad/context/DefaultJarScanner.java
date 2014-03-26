@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -90,6 +91,14 @@ public class DefaultJarScanner extends StandardJarScanner {
             }
         }
         defaultJarsToSkip = jarsToSkip;
+        defaultJarsToSkip.add("jruby-rack*.jar");
+        // for potential warbled .wars :
+        defaultJarsToSkip.add("jruby-core*.jar");
+        defaultJarsToSkip.add("jruby-stdlib*.jar");
+    }
+
+    static Set<String> getDefaultJarsToSkip() {
+        return defaultJarsToSkip;
     }
 
     private boolean scanClassPathLoaderOnly;
@@ -139,7 +148,6 @@ public class DefaultJarScanner extends StandardJarScanner {
         for ( String pattern: jarsToSkip ) {
             ignoredJarsTokens.add(Matcher.tokenizePathAsArray(pattern));
         }
-
         // a better version of scan-ing "WEB-INF/lib" :
         final String[] dirList = contextLoader.findRepositories();
         if ( dirList != null ) {
@@ -149,16 +157,19 @@ public class DefaultJarScanner extends StandardJarScanner {
                     !Matcher.matchPath( ignoredJarsTokens, path.substring(path.lastIndexOf('/') + 1) ) ) {
                     // Need to scan this JAR
                     if (log.isDebugEnabled()) log.debug("Scanning application JAR ["+ path +"]");
-
                     URL url = null;
                     try {
-                        // File URLs are always faster to work with so use them
-                        // if available.
-                        String realPath = context.getRealPath(path);
-                        if (realPath == null) {
-                            url = context.getResource(path);
-                        } else {
-                            url = (new File(realPath)).toURI().toURL();
+                        try {
+                            if ( path.indexOf(':') > 1 ) url = new URL(path);
+                        }
+                        catch (MalformedURLException ignore) { /* no protocol */ }
+                        if ( url == null ) {
+                            String realPath = context.getRealPath(path);
+                            if (realPath == null) {
+                                url = context.getResource(path);
+                            } else {
+                                url = (new File(realPath)).toURI().toURL();
+                            }
                         }
                         process(callback, url);
                     }
