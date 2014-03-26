@@ -73,5 +73,17 @@ module Trinidad
       object.is_a?(Hash) || ( object.respond_to?(:keys) && object.respond_to?(:'[]') )
     end
 
+    def to_url(path)
+      path = java.net.URLDecoder.decode(path)
+      if path =~ /^\w*\:/ # might be a valid url: (or C:/windows/yay ... )
+        return java.net.URL.new("file:/#{path}") if path[1, 1] == ':'
+        begin
+          return java.net.URL.new(path)
+        rescue java.net.MalformedURLException
+        end
+      end
+      java.io.File.new(path).toURL
+    end
+
   end
 end
