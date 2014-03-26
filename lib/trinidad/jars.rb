@@ -3,8 +3,8 @@ load File.expand_path('../../trinidad-libs/tomcat-core.jar', File.dirname(__FILE
 load File.expand_path('../../trinidad-libs/trinidad-rb.jar', File.dirname(__FILE__))
 
 module Trinidad
-  TRINIDAD_JARS_VERSION = '1.3.0'
-  TOMCAT_VERSION = '7.0.47' unless const_defined?(:TOMCAT_VERSION)
+  TRINIDAD_JARS_VERSION = '1.4.0'
+  TOMCAT_VERSION = '7.0.50' unless const_defined?(:TOMCAT_VERSION)
 
   ( Tomcat = Java::RbTrinidad::Jerry ).module_eval do
     include_package 'org.apache.catalina'
@@ -14,6 +14,7 @@ module Trinidad
     include_package 'org.apache.catalina.loader'
 
     include_package 'org.apache.naming.resources'
+    include_package 'org.apache.tomcat'
 
     java_import 'org.apache.catalina.connector.Connector'
     java_import 'org.apache.catalina.util.ContextName'
