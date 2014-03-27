@@ -162,6 +162,7 @@ describe Trinidad::Lifecycle::Host do
     it "creates a new context that takes over the original one" do
       web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
+      context.name = 'default'
       set_file_mtime(monitor, -1.5)
       listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent before_start_event
@@ -172,6 +173,24 @@ describe Trinidad::Lifecycle::Host do
 
       app_holder.context.should be_a(Trinidad::Tomcat::StandardContext)
       app_holder.context.should_not == context
+
+      app_holder.context.name.should start_with context.name
+    end
+
+    it "sets new context name as context-millis (even when already set - restarted)" do
+      web_app = create_web_app
+      app_holder = Trinidad::WebApp::Holder.new(web_app, context)
+      context.name = "default-42-#{java.lang.System.currentTimeMillis}"
+      set_file_mtime(monitor, -1.5)
+      listener = Trinidad::Lifecycle::Host.new(server, app_holder)
+      listener.lifecycleEvent before_start_event
+
+      File.new(monitor, File::CREAT|File::TRUNC)
+
+      listener.lifecycleEvent periodic_event
+
+      app_holder.context.name.should start_with 'default-42'
+      app_holder.context.name.length.should == context.name.length
     end
 
     it "starts up the newly created context in another thread" do
@@ -201,12 +220,9 @@ describe Trinidad::Lifecycle::Host do
       context = org.apache.catalina.core.StandardContext.new
       roller = RollingReload.new double('server', :add_web_app => context)
 
-      main_thread = Thread.current
+      main_thread = Thread.current; reload_thread = nil
       expect(context).to receive(:start) do
-        expect( Thread.current ).to_not be main_thread
-        expect( thread = JRuby.reference(Thread.current) ).to_not be nil
-        expect( thread.native_thread.name ).to start_with 'Trinidad'
-        # expect( thread.native_thread.name ).to end_with '/'
+        reload_thread = Thread.current
       end
 
       old_context = double 'old_context', :name => 'default', :path => '/',
@@ -215,6 +231,10 @@ describe Trinidad::Lifecycle::Host do
 
       app_holder = Trinidad::WebApp::Holder.new(create_web_app, old_context)
       roller.reload!(app_holder, :wait)
+
+      expect( reload_thread ).to_not be main_thread
+      expect( thread = JRuby.reference(reload_thread) ).to_not be nil
+      expect( thread.native_thread.name ).to start_with 'Trinidad'
     end
 
     it "logs an error when new context startup fails" do
