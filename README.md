@@ -285,7 +285,7 @@ failed releasing memory with reloads. This has been fixed in **1.5.0** please
 consider updating, it is meant to be backwards compatible.
 
 If you're on Java 6 you will likely need to tune your JAVA_OPTS / JRUBY_OPTS
-for the JVM to do class unloading (consult the [wiki][] for more information) :
+for the JVM to do class unloading (consult the [wiki][6] for more information) :
 ```
 JRUBY_OPTS="$JRUBY_OPTS -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled"
 ```

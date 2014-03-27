@@ -1,3 +1,25 @@
+## trinidad 1.5.0.B1 (2014-03-27)
+
+* make sure the context.name does include the original name (after reload)
+* set server's parent class-loader for Class.forName to work better from Tomcat
+* add the jruby-rack.jar to web-app's loader instead of using the one loaded
+* start defaulting to "sensible" thread-safe
+  in development/test mode we shall start the same (thread-safe) way as in production
+* set "reloader" (java) thread name for easier identification
+* handle `address: *` since it broke on adding a JMX bean with * in it's name (which is not a valid one)
+* allow to disable (inherited) web-app extension by specifying `name: false`
+* remove some of the 'old' deprecated methods/configuration
+* class-loader kung-fu to get thigns right towards leak free applications ...
+* we're still binding by default to localhost/127.0.0.1 - change to '*' (#119)
+
+## trinidad_jars 1.4.0 (2014-03-27)
+
+* Tomcat 7.0.50 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+* a "faster" (default) JarScanner for Rack/Rails applications
+  based on TC's StandardJarScanner implementation
+* an extended (default) web-app loader (to handle JRuby specific "leaks")
+  as well as some MySQL and PostgreSQL JDBC driver specific cleanup
+
 ## trinidad 1.4.6 (2013-12-28)
 
 * default :port for SSL is now (a more Ruby-sh) 3443
