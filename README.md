@@ -18,6 +18,8 @@ Trinidad's goals with bringing Tomcat into JRuby land are mostly the following :
 
 ## Installation
 
+[![gem version](https://badge.fury.io/rb/trinidad.png)](http://rubygems.org/gems/trinidad)
+
 ```
 $ jruby -S gem install trinidad
 ```
@@ -259,23 +261,34 @@ such as **/assets/application.js?body=1.0** might not hit the Rails runtime.
 ## Hot Deployment
 
 Trinidad supports monitoring a file to reload applications, when the file
-*tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt`), the server reloads
-the application the monitor file belongs to.
+*tmp/restart.txt* is updated (e.g. `touch tmp/restart.txt` on Unix or
+`type nul >>tmp\restart.txt & copy /b tmp\restart.txt +,,` on Windows),
+the server reloads the application the monitor file belongs to.
 This monitor file can be customized with the `monitor` configuration option.
 
 Since version **1.4.0** Trinidad supports 2 reload strategies :
 
-* **restart** (default) synchronous reloading (exposed by Tomcat). This strategy
-  pauses incoming requests while it reloads the application and then serves them
-  once ready (or timeouts if it takes too long). It has been chosen as the default
-  strategy since **1.4.0** due it's more predictable memory requirements.
+* **restart** (default) synchronous reloading. This strategy pauses incoming
+  requests while it reloads the application and then serves them once ready
+  (or timeouts if it takes too long). It is the default strategy since **1.4.0**
+  due it's more predictable memory requirements.
 
-* **rolling** "zero-downtime" (asynchronous) reloading strategy similar to
+* **rolling** a.k.a. "zero-downtime" (asynchronous) reloading strategy similar to
   Passenger's rolling reloads. This has been the default since **1.1.0** up till
   the **1.3.x** line. If you use this you should account that your JVM memory
   requirements might increase quite a lot (esp. if you reload under heavy loads)
   since requests are being served while there's another version of the
-  application being loaded. Since version **1.4.5** rolling reloads support ....
+  application being loaded.
+
+**NOTE:** due the way class-loaders where setup internally, Trinidad might have
+failed releasing memory with reloads. This has been fixed in **1.5.0** please
+consider updating, it is meant to be backwards compatible.
+
+If you're on Java 6 you will likely need to tune your JAVA_OPTS / JRUBY_OPTS
+for the JVM to do class unloading (consult the [wiki][] for more information) :
+```
+JRUBY_OPTS="$JRUBY_OPTS -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled"
+```
 
 Configure the reload strategy per web application or globally e.g. :
 
@@ -292,7 +305,7 @@ It's possible to use Trinidad with multiple hosts and load the applications unde
 them automatically. A (virtual) host represents an association of a network name
 (such as "www.example.com" with the particular server on which Tomcat is running.
 Please remember that each host must have its applications in a different directory.
-You can find out more at Tomcat's [documentation][5].
+You can find out more at Tomcat's [documentation][4].
 
 ```ruby
 Trinidad.configure do |config|
@@ -306,7 +319,7 @@ Trinidad.configure do |config|
 end
 ```
 
-Detailed host configuration is also possible using supported [host options][5] :
+Detailed host configuration is also possible using supported [host options][4] :
 
 ```yaml
 ---
@@ -365,12 +378,12 @@ Here is a list of the available extensions that are "officially supported" :
   http://github.com/trinidad/trinidad_lifecycle_extension
 * Valves - components inserted into the request pipeline (e.g. Access Log) :
   http://github.com/trinidad/trinidad_valve_extension
-* Trinidad's Management Console and REST API :
-  http://github.com/trinidad/trinidad_sandbox_extension
+* Application/Deployment Monitoring based on PSI-Probe :
+  http://github.com/trinidad/trinidad_probe_extension
 * Enable remote JMX monitoring capabilities for Trinidad :
   http://github.com/trinidad/trinidad_jmx_remote_extension
 
-You can find further information on how to write extensions in the [wiki][4].
+You can find further information on how to write extensions in the [wiki][5].
 
 ## Support
 
@@ -387,6 +400,7 @@ See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
 
 [0]: http://kares.org
 [1]: http://logichaus.com/jruby.html
-[3]: http://webchat.freenode.net/?channels=trinidad
-[4]: http://github.com/trinidad/trinidad/wiki/extensions
-[5]: http://tomcat.apache.org/tomcat-7.0-doc/config/host.html
+[3]: http://webchat.freenode.net/?channels=jruby
+[4]: http://tomcat.apache.org/tomcat-7.0-doc/config/host.html
+[5]: https://github.com/trinidad/trinidad/wiki/extensions
+[6]: https://github.com/trinidad/trinidad/wiki/JOPTS
