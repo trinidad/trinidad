@@ -31,6 +31,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+
 import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
@@ -275,7 +277,36 @@ public class DefaultLoader extends WebappLoader {
     }
 
     private void performPostgreSQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
-        // TODO cleanup started java.util.Timer-s
+        // cleanup started java.util.Timer-s which is fixed on some of 9.3 :
+        // https://github.com/pgjdbc/pgjdbc/commit/ac0949542e898da884f7cc213103983a856cab83
+        final String className = "org.postgresql.Driver";
+        for ( ClassLoader appLoader : appLoaders ) {
+            try { // will be loaded by JRuby if `require 'jdbc/postgres'
+                Class driverClass = getClassLoadedBy(className, appLoader, true);
+                if ( driverClass != null ) {
+                    try {
+                        driverClass.getMethod("purgeTimerTasks").invoke(null);
+                    }
+                    catch (NoSuchMethodException e) { // try the old way
+                        Field cancelTimerField = driverClass.getDeclaredField("cancelTimer");
+                        cancelTimerField.setAccessible(true);
+                        final Timer cancelTimer = (Timer) cancelTimerField.get(null);
+                        cancelTimer.purge();
+                    }
+                    log.info("PostgreSQL driver cancel timer has been purged");
+                }
+            }
+            catch (NoSuchFieldException e) {
+                log.info("PostgreSQL driver cancel timer purging failed: " + e);
+            }
+            catch (IllegalAccessException e) {
+                log.info("PostgreSQL driver cancel timer purging failed: " + e);
+            }
+            catch (InvocationTargetException e) {
+                log.info("PostgreSQL driver cancel timer purging failed", e.getTargetException());
+            }
+        }
+
     }
 
     private static List<Thread> findAbandonedConnectionCleanupThreads() {
@@ -290,7 +321,8 @@ public class DefaultLoader extends WebappLoader {
         for ( ClassLoader appLoader : appLoaders ) {
             try {
                 // will be loaded by JRuby if `require 'jdbc/mysql'; Jdbc::MySQL.load_driver`
-                Class threadClass = Class.forName(className, false, appLoader);
+                Class threadClass = getClassLoadedBy(className, appLoader, false);
+                    // Class.forName(className, false, appLoader);
                 if ( threadClass != null ) {
                     if ( threadClass.getClassLoader() == appLoader
                         || threadClass.getClassLoader() == getClassLoader() ) {
@@ -299,14 +331,14 @@ public class DefaultLoader extends WebappLoader {
                     }
                 }
             }
-            catch (ClassNotFoundException e) {
-                log.debug("MySQL connection cleanup thread not present", e);
-            }
+            //catch (ClassNotFoundException e) {
+            //    log.debug("MySQL connection cleanup thread not present", e);
+            //}
             catch (NoSuchMethodException e) {
-                log.info("MySQL connection cleanup thread shutdown failed", e);
+                log.info("MySQL connection cleanup thread shutdown failed: " + e);
             }
             catch (IllegalAccessException e) {
-                log.info("MySQL connection cleanup thread shutdown failed", e);
+                log.info("MySQL connection cleanup thread shutdown failed: " + e);
             }
             catch (InvocationTargetException e) {
                 log.info("MySQL connection cleanup thread shutdown failed", e.getTargetException());
@@ -412,12 +444,28 @@ public class DefaultLoader extends WebappLoader {
             return (Collection<Class<?>>) classesField.get(classLoader);
         }
         catch (NoSuchFieldException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
+            log.info("can not access classes field for " + classLoader + " ", e);
         }
         catch (IllegalAccessException e) {
-            log.info("MySQL connection cleanup thread shutdown failed", e);
+            log.info("can not access classes field for " + classLoader + " ", e);
         }
         return null;
+    }
+
+    private static Class<?> getClassLoadedBy(final String name,
+        final ClassLoader classLoader, final boolean loadedOnly) {
+        try {
+            Collection<Class<?>> loaded = loadedClasses(classLoader);
+            if ( loaded != null ) {
+                Class[] loadedClasses = loaded.toArray(new Class[loaded.size()]);
+                for ( Class loadedClass : loadedClasses ) {
+                    if ( name.equals(loadedClass.getName()) ) return loadedClass;
+                }
+                return null;
+            }
+            return loadedOnly ? null : Class.forName(name, false, classLoader);
+        }
+        catch (ClassNotFoundException e) { return null; }
     }
 
     private class ContextListener implements LifecycleListener {
