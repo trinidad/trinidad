@@ -6,14 +6,14 @@ require 'trinidad/jars'
 module Trinidad
 
   require 'trinidad/version'
+  require 'trinidad/helpers'
   require 'trinidad/configuration'
   require 'trinidad/server'
   require 'trinidad/web_app'
+  require 'trinidad/extensions'
+  require 'trinidad/logging'
 
   autoload :CLI, 'trinidad/cli'
-  autoload :Extensions, 'trinidad/extensions'
-  autoload :Helpers, 'trinidad/helpers'
-  autoload :Logging, 'trinidad/logging'
 
   module Lifecycle
 
