@@ -567,7 +567,7 @@ module Trinidad
 
       key_tool_args = [ "-genkey",
         "-alias", "localhost",
-        "-dname", dname = "CN=localhost, OU=Trinidad, O=Trinidad, C=ES",
+        "-dname", dname = "CN=localhost,OU=Trinidad,O=Trinidad,C=ES",
         "-keyalg", "RSA",
         "-validity", "365",
         "-storepass", "key",
@@ -578,7 +578,14 @@ module Trinidad
       logger.info "Generating a (default) keystore for localhost #{dname.inspect} at " <<
                   "#{file.canonical_path} (password: '#{pass}')"
 
-      Java::SunSecurityTools::KeyTool.main key_tool_args.to_java(:string)
+      key_tool = nil
+      begin
+        key_tool = Java::SunSecurityTools::KeyTool
+      rescue NameError # Java 8 seems to have removed it completely
+        `keytool #{key_tool_args.join(' ')}` # NOTE: use for all JDK versions
+      else
+        key_tool.main key_tool_args.to_java(:string)
+      end
     end
 
     def trap_signals
