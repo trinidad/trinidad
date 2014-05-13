@@ -14,6 +14,7 @@ module Trinidad
   require 'trinidad/logging'
 
   autoload :CLI, 'trinidad/cli'
+  autoload :CommandLineParser, 'trinidad/cli'
 
   module Lifecycle
 
