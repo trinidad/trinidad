@@ -13,7 +13,8 @@ if (jars = ENV['trinidad_jars']) && jars != 'false'
   end
 end
 
-gem 'rake', :require => nil, :groups => [ :development, :test ]
+gem 'rake', '~> 10.3.1', :require => nil, :groups => [ :development, :test ]
+
 group :development do
   jruby_version = ENV['JRUBY_VERSION']
   jruby_version = JRUBY_VERSION if jruby_version == 'current'
