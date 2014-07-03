@@ -176,6 +176,7 @@ module Trinidad
         options[:keystoreFile] ||= keystore_file
       end
       options[:keystorePass] ||= options.delete(:keystore_pass) if options.key?(:keystore_pass)
+      options[:keystoreType] ||= options.delete(:keystore_type) if options.key?(:keystore_type)
       # handle "custom" alternative SSL (casing) options :
       options[:SSLEnabled] = options.delete(:ssl_enabled) || true # always true
       options[:SSLCertificateFile] ||= options.delete(:ssl_certificate_file) if options.key?(:ssl_certificate_file)
