@@ -424,7 +424,7 @@ describe Trinidad::Server do
     })
 
     hosts = server.tomcat.engine.find_children
-    expect( hosts.map { |host| host.aliases }.flatten ).to eql ['lol', 'local']
+    expect( hosts.map { |host| host.aliases }.flatten.sort ).to eql ['local', 'lol']
   end
 
   it "doesn't add any alias when we only provide the host name" do
