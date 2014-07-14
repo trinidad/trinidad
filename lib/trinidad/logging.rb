@@ -1,15 +1,23 @@
 require 'jruby'
-require 'fileutils'
 
 module Trinidad
   module Logging
 
+    # @private
     JUL = Java::JavaUtilLogging
+    # @private
     LogFactory = Java::OrgApacheJuliLogging::LogFactory
+
+    # A message formatter only prints the log message (and the thrown value).
+    # @private
+    MessageFormatter = Java::RbTrinidadLogging::MessageFormatter
+    # @private
+    DefaultFormatter = Java::RbTrinidadLogging::DefaultFormatter
 
     @@configured = nil
 
-    # Configure the "global" Trinidad logging.
+    # Configure the ("global") logging sub-system.
+    # If invoked twice, does only actually configure once.
     def self.configure(log_level = nil)
       return false if @@configured
       @@configured = true
@@ -17,7 +25,9 @@ module Trinidad
       root_logger = JUL::Logger.getLogger('')
       level = parse_log_level(log_level, :INFO)
 
-      out_handler = new_console_handler JRuby.runtime.out
+      runtime_out = JRuby.runtime.out
+      runtime_err = JRuby.runtime.err
+      out_handler = new_console_handler runtime_out
       out_handler.formatter = console_formatter
 
       root_logger.synchronized do
@@ -26,10 +36,10 @@ module Trinidad
         end
 
         root_logger.add_handler(out_handler)
-        if JRuby.runtime.out != Java::JavaLang::System.out ||
-           JRuby.runtime.err != Java::JavaLang::System.err
+        if runtime_out != Java::JavaLang::System.out ||
+           runtime_err != Java::JavaLang::System.err
          # NOTE: only add err handler if customized STDOUT or STDERR :
-        err_handler = new_console_handler JRuby.runtime.err
+        err_handler = new_console_handler runtime_err
         err_handler.formatter = console_formatter
         err_handler.level = level.intValue > JUL::Level::WARNING.intValue ?
           level : JUL::Level::WARNING # only >= WARNING on STDERR
@@ -43,7 +53,7 @@ module Trinidad
       root_logger
     end
 
-    # Force logging (re-)configuration.
+    # Force logging re-configuration.
     # @see #configure
     def self.configure!(log_level = nil)
       ( @@configured = false ) || configure(log_level)
@@ -114,12 +124,17 @@ module Trinidad
     def self.parse_log_level(log_level, default = nil)
       log_level = log_level && log_level.to_s.upcase
       unless JUL::Level.constants.find { |level| level.to_s == log_level }
-        log_level = { # try mapping common level names to JUL names
-          'ERROR' => 'SEVERE', 'WARN' => 'WARNING', 'DEBUG' => 'FINE'
-        }[log_level]
-        log_level = default ? default.to_s.upcase : nil unless log_level
+        case log_level
+        when 'ERROR' then log_level = 'SEVERE'
+        when 'WARN' then log_level = 'WARNING'
+        when 'DEBUG' then log_level = 'FINE'
+        end # try mapping common level names to JUL names
+        log_level ||= default ? default.to_s.upcase : nil
       end
       JUL::Level.parse(log_level) if log_level
+    rescue => e
+      JUL::Logger.getLogger('').warning "Failed to parse log level #{log_level.inspect} (#{e})"
+      JUL::Level.const_get(default)
     end
 
     def self.set_log_level(logger, level)
@@ -166,32 +181,8 @@ module Trinidad
       handler
     end
 
+    # @private
     FileHandler = Java::RbTrinidadLogging::FileHandler
 
-    # We're truly missing a #formatThrown exception helper method.
-    JUL::Formatter.class_eval do # :nodoc:
-
-      LINE_SEP = java.lang.System.getProperty("line.separator")
-
-      protected
-      def formatThrown(record)
-        if record.thrown
-          writer = java.io.StringWriter.new(1024)
-          print_writer = java.io.PrintWriter.new(writer)
-          print_writer.println
-          record.thrown.printStackTrace(print_writer)
-          print_writer.close
-          return writer.toString
-        end
-      end
-
-    end
-
-    # A message formatter only prints the log message (and the thrown value).
-    MessageFormatter = Java::RbTrinidadLogging::MessageFormatter
-
-    DefaultFormatter = Java::RbTrinidadLogging::DefaultFormatter
-
   end
-  LogFormatter = Logging::DefaultFormatter # backwards compatibility
 end

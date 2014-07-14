@@ -575,9 +575,3 @@ describe Trinidad::Logging::MessageFormatter do
   end
 
 end
-
-describe "Trinidad::LogFormatter" do
-  it "still works" do
-    Trinidad::LogFormatter.should == Trinidad::Logging::DefaultFormatter
-  end
-end
