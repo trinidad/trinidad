@@ -19,10 +19,13 @@ Trinidad's goals with bringing Tomcat into JRuby land are mostly the following :
 ## Installation
 
 [![gem version](https://badge.fury.io/rb/trinidad.png)](http://rubygems.org/gems/trinidad)
+[![dependency status](https://gemnasium.com/trinidad/trinidad.png)][1]
 
 ```
 $ jruby -S gem install trinidad
 ```
+
+**NOTE:** consider testing out Trinidad **1.5.0.B1** `gem install trinidad --pre`
 
 Trinidad requires (and supports) JRuby 1.6.8 or later (latest 1.7.x recommended).
 
@@ -387,11 +390,11 @@ You can find further information on how to write extensions in the [wiki][5].
 
 ## Support
 
-* Contact [kares][0] if your team needs JRuby or Trinidad help and support
-* [Logic Haus][1] provides JRuby related training and development services
-* Mailing List: http://groups.google.com/group/rails-trinidad
-* Bug Tracker: https://github.com/trinidad/trinidad/issues
-* IRC [Channel on FreeNode][3]: #trinidad (or ask in #jruby)
+* contact [kares][0] if your team needs JRuby or Trinidad help and support
+* ask us for help on [gitter][2] or use [SO][3] ... we shall get notified
+* we're also on the JRuby mailing List: http://wiki.jruby.org/MailingLists
+* and the #jruby IRC [channel](http://webchat.freenode.net/?channels=jruby)
+* please report issues at: https://github.com/trinidad/trinidad/issues
 
 ## Copyright
 
@@ -399,8 +402,9 @@ Copyright (c) 2014 [Team Trinidad](https://github.com/trinidad).
 See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
 
 [0]: http://kares.org
-[1]: http://logichaus.com/jruby.html
-[3]: http://webchat.freenode.net/?channels=jruby
+[1]: https://gemnasium.com/trinidad/trinidad
+[2]: https://gitter.im/trinidad
+[3]: http://stackoverflow.com/questions/tagged/jruby
 [4]: http://tomcat.apache.org/tomcat-7.0-doc/config/host.html
 [5]: https://github.com/trinidad/trinidad/wiki/extensions
 [6]: https://github.com/trinidad/trinidad/wiki/JOPTS
