@@ -76,25 +76,28 @@ public class DefaultJarScanner extends StandardJarScanner {
         try {
             Field defaultJarsToSkipField = StandardJarScanner.class.getDeclaredField("defaultJarsToSkip");
             defaultJarsToSkipField.setAccessible(true);
-            jarsToSkip = (Set<String>) defaultJarsToSkipField.get(null);
+            @SuppressWarnings("unchecked")
+            Set<String> _jarsToSkip = (Set<String>) defaultJarsToSkipField.get(null);
+            jarsToSkip = _jarsToSkip;
         }
         catch (Exception e) {
             log.info("Failed accessing defaultJarsToSkip field " + e);
 
-            jarsToSkip = new HashSet<String>();
+            jarsToSkip = new HashSet<String>(4);
             String jarList = System.getProperty(Constants.SKIP_JARS_PROPERTY);
             if ( jarList != null ) {
                 StringTokenizer tokenizer = new StringTokenizer(jarList, ",");
                 while ( tokenizer.hasMoreElements() ) {
-                    jarsToSkip.add(tokenizer.nextToken());
+                    final String token = tokenizer.nextToken().trim();
+                    if ( token.length() > 0 ) jarsToSkip.add(token);
                 }
             }
         }
         defaultJarsToSkip = jarsToSkip;
-        defaultJarsToSkip.add("jruby-rack*.jar");
+        defaultJarsToSkip.add("jruby-rack*.jar"); // jruby-rack-1.1.15-SNAPSHOT.jar
         // for potential warbled .wars :
-        defaultJarsToSkip.add("jruby-core*.jar");
-        defaultJarsToSkip.add("jruby-stdlib*.jar");
+        defaultJarsToSkip.add("jruby-core*.jar"); // jruby-core-complete-1.7.12.jar
+        defaultJarsToSkip.add("jruby-stdlib*.jar"); // jruby-stdlib-complete-1.7.12.jar
     }
 
     static Set<String> getDefaultJarsToSkip() {
@@ -143,18 +146,15 @@ public class DefaultJarScanner extends StandardJarScanner {
 
         if (log.isTraceEnabled()) log.trace("Scanning application for JARs");
 
-        if ( jarsToSkip == null ) jarsToSkip = defaultJarsToSkip;
-        final Set<String[]> ignoredJarsTokens = new HashSet<String[]>(jarsToSkip.size());
-        for ( String pattern: jarsToSkip ) {
-            ignoredJarsTokens.add(Matcher.tokenizePathAsArray(pattern));
-        }
+        final Set<String> ignoredJars = jarsToSkip == null ? defaultJarsToSkip : jarsToSkip;
+
         // a better version of scan-ing "WEB-INF/lib" :
         final String[] dirList = contextLoader.findRepositories();
         if ( dirList != null ) {
             for ( int i=0; i<dirList.length; i++ ) {
                 final String path = dirList[i];
                 if ( path.endsWith(Constants.JAR_EXT) &&
-                    !Matcher.matchPath( ignoredJarsTokens, path.substring(path.lastIndexOf('/') + 1) ) ) {
+                    !Matcher.matchName( ignoredJars, path.substring(path.lastIndexOf('/') + 1) ) ) {
                     // Need to scan this JAR
                     if (log.isDebugEnabled()) log.debug("Scanning application JAR ["+ path +"]");
                     URL url = null;
@@ -206,7 +206,7 @@ public class DefaultJarScanner extends StandardJarScanner {
                         // Skip JARs known not to be interesting and JARs
                         // in WEB-INF/lib we have already scanned
                         if ( jarName != null &&
-                            ! ( Matcher.matchPath(ignoredJarsTokens, jarName) ||
+                            ! ( Matcher.matchName(ignoredJars, jarName) ||
                                 contains( urls[i].toString(), dirList ) ) ) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Scanning JAR ["+ urls[i] + " from classpath");
