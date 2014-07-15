@@ -101,7 +101,7 @@ public class DefaultLoader extends WebappLoader {
             contextListener = null;
         }
 
-        Collection<Ruby> managedRuntimes = null; // only 1 for threadsafe!
+        Collection<Ruby> managedRuntimes; // only 1 for threadsafe!
         Set<JRubyClassLoader> jrubyLoaders = null;
         if ( rackFactory != null ) {
             if (log.isDebugEnabled()) {
@@ -149,7 +149,7 @@ public class DefaultLoader extends WebappLoader {
                 runtimes.add( (Ruby) runtime );
             }
 
-            if ( runtimes == null || runtimes.isEmpty() ) {
+            if ( /* runtimes == null || */ runtimes.isEmpty() ) {
                 log.info("No managed runtimes found for context: " + getContainer());
             }
             else {
@@ -195,6 +195,7 @@ public class DefaultLoader extends WebappLoader {
         return getContextBang().getServletContext();
     }
 
+    @SuppressWarnings("element-type-mismatch")
     private void removeSecurityProviderForOpenSSL(final Collection<JRubyClassLoader> appLoaders) {
         final Provider bcProvider = java.security.Security.getProvider("BC");
         // the registered : org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -256,6 +257,7 @@ public class DefaultLoader extends WebappLoader {
         // TODO unregister with DriverManager
 
         performMySQLDriverCleanup(appLoaders);
+        performMariaDBDriverCleanup(appLoaders);
         performPostgreSQLDriverCleanup(appLoaders);
     }
 
@@ -276,6 +278,33 @@ public class DefaultLoader extends WebappLoader {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void performMariaDBDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+        final String className = "org.mariadb.jdbc.MySQLStatement";
+        for ( ClassLoader appLoader : appLoaders ) {
+            try { // will be loaded by JRuby's loader if `require 'jdbc/mariadb'
+                Class statementClass = getClassLoadedBy(className, appLoader, true);
+                if ( statementClass != null ) {
+                    // private static volatile Timer timer;
+                    Field timerField = statementClass.getDeclaredField("timer");
+                    timerField.setAccessible(true);
+                    final Timer timer = (Timer) timerField.get(null);
+                    if ( timer != null ) {
+                        timer.purge();
+                        log.info("MariaDB timeout timer has been purged");
+                    }
+                }
+            }
+            catch (NoSuchFieldException e) {
+                log.info("MariaDB driver timeout timer purging failed: " + e);
+            }
+            catch (IllegalAccessException e) {
+                log.info("MariaDB driver timeout timer purging failed: " + e);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void performPostgreSQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
         // cleanup started java.util.Timer-s which is fixed on some of 9.3 :
         // https://github.com/pgjdbc/pgjdbc/commit/ac0949542e898da884f7cc213103983a856cab83
@@ -306,7 +335,6 @@ public class DefaultLoader extends WebappLoader {
                 log.info("PostgreSQL driver cancel timer purging failed", e.getTargetException());
             }
         }
-
     }
 
     private static List<Thread> findAbandonedConnectionCleanupThreads() {
@@ -436,6 +464,7 @@ public class DefaultLoader extends WebappLoader {
         return allThreads;
     }
 
+    @SuppressWarnings("unchecked")
     private static Collection<Class<?>> loadedClasses(final ClassLoader classLoader) {
         try {
             final Field classesField = ClassLoader.class.getDeclaredField("classes");
