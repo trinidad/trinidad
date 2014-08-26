@@ -121,8 +121,8 @@ public class DefaultLoader extends WebappLoader {
         }
 
         if ( getClassLoader() != null ) {
-            performJDBCDriversCleanup(jrubyLoaders);
-            removeSecurityProviderForOpenSSL(jrubyLoaders);
+            if ( jrubyLoaders != null ) performJDBCDriversCleanup(jrubyLoaders);
+            if ( jrubyLoaders != null ) removeSecurityProviderForOpenSSL(jrubyLoaders);
             mendContextLoaderForTimeoutWorkerThreads();
         }
 
@@ -143,13 +143,14 @@ public class DefaultLoader extends WebappLoader {
         try { // public Collection<RackApplication> getManagedApplications()
             final Collection apps = (Collection)
                 rackFactory.getClass().getMethod("getManagedApplications").invoke(rackFactory);
+            if ( apps == null ) return null; // e.g. in case of initialization error
             final Collection<Ruby> runtimes = new LinkedHashSet<Ruby>(apps.size());
             for ( Object app : apps ) { // most likely only one (threadsafe!)
                 Object runtime = app.getClass().getMethod("getRuntime").invoke(app);
                 runtimes.add( (Ruby) runtime );
             }
 
-            if ( /* runtimes == null || */ runtimes.isEmpty() ) {
+            if ( runtimes.isEmpty() ) {
                 log.info("No managed runtimes found for context: " + getContainer());
             }
             else {
