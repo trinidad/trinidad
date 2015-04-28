@@ -79,13 +79,13 @@ describe Trinidad::Lifecycle::WebApp::War do
     
     listener.lifecycleEvent(event)
 
-    expect( context.path ).to eql '/'
-    expect( context.name ).to eql '/'
+    expect( context.path ).to eql ''
+    expect( context.name ).to eql ''
 
     listener.send(:adjust_context, context)
 
-    expect( context.path ).to eql '/'
-    expect( context.name ).to eql '/'
+    expect( context.path ).to eql ''
+    expect( context.name ).to eql ''
   end
 
   it "keeps the standard manager", :integration => false do
