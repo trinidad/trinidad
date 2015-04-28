@@ -27,7 +27,7 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.session.StandardManager;
-import org.apache.catalina.util.SessionIdGenerator;
+import org.apache.catalina.util.StandardSessionIdGenerator;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
@@ -103,7 +103,7 @@ public class DefaultManager extends StandardManager {
 
     private synchronized void initSessionIdGenerator() {
         // super.startInternal();
-        // sets sessionIdGenerator = new SessionIdGenerator();
+        // sets sessionIdGenerator = new StandardSessionIdGenerator();
 
         // ManagerBase#startInternal :
 
@@ -114,12 +114,14 @@ public class DefaultManager extends StandardManager {
             sessionExpirationTiming.add(null);
         }
 
-        sessionIdGenerator = new SessionIdGenerator();
-        sessionIdGenerator.setJvmRoute(getJvmRoute());
-        sessionIdGenerator.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
-        sessionIdGenerator.setSecureRandomClass(getSecureRandomClass());
-        sessionIdGenerator.setSecureRandomProvider(getSecureRandomProvider());
-        sessionIdGenerator.setSessionIdLength(getSessionIdLength());
+        StandardSessionIdGenerator standardSessionIdGenerator = new StandardSessionIdGenerator();
+        standardSessionIdGenerator.setJvmRoute(getJvmRoute());
+        standardSessionIdGenerator.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
+        standardSessionIdGenerator.setSecureRandomClass(getSecureRandomClass());
+        standardSessionIdGenerator.setSecureRandomProvider(getSecureRandomProvider());
+        standardSessionIdGenerator.setSessionIdLength(getSessionIdLength());
+
+        sessionIdGenerator = standardSessionIdGenerator;
 
         // Force initialization of the random number generator
         //if (log.isDebugEnabled()) log.debug("Force random number initialization starting");
