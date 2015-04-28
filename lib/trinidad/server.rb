@@ -226,7 +226,7 @@ module Trinidad
       context = begin
         host.start_children = start unless start.nil?
         # public Context addWebapp(Host host, String url, String name, String docBase)
-        tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
+        tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
       rescue Java::JavaLang::IllegalArgumentException => e
         if e.message =~ /addChild\:/
           context_name = web_app.context_name
@@ -391,7 +391,7 @@ module Trinidad
 
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Tomcat::StandardHost.new
-      host.app_base = nil # reset default app_base
+      host.app_base = '' # reset default app_base
       host.deployXML = false # disabled by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
@@ -466,7 +466,7 @@ module Trinidad
     DEFAULT_HOST_APP_BASE = 'webapps'
 
     def default_host_base?(host)
-      host.app_base.nil? || ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
+      host.app_base == '' || ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
     end
 
     def set_host_app_base(app_root, host, default_host, web_app_hosts)
