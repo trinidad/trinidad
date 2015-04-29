@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 describe Trinidad::Lifecycle::WebApp::War do
 
   it "configures classloader" do
-    context = new_web_app_context('/')
+    context = new_web_app_context('')
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
     listener.send :configure_class_loader, context
@@ -11,7 +11,7 @@ describe Trinidad::Lifecycle::WebApp::War do
   end
 
   it "configures class-loader (on configure)" do
-    context = new_web_app_context('/')
+    context = new_web_app_context('')
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
@@ -70,7 +70,7 @@ describe Trinidad::Lifecycle::WebApp::War do
     #   Failed to scan JAR [jndi:/localhost/petclinic/WEB-INF/lib/jstl-1.1.2.jar] from WEB-INF/lib
     #   java.io.FileNotFoundException: jndi:/localhost/petclinic/WEB-INF/lib/jstl-1.1.2.jar
     #
-    context = new_web_app_context('/')
+    context = new_web_app_context('')
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
@@ -89,7 +89,7 @@ describe Trinidad::Lifecycle::WebApp::War do
   end
 
   it "keeps the standard manager", :integration => false do
-    context = new_web_app_context('/')
+    context = new_web_app_context('')
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
     listener.send(:adjust_context, context)

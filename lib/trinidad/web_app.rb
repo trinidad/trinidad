@@ -588,10 +588,12 @@ module Trinidad
         unless path
           name = config[:context_name] ||
             ( default_config && default_config[:context_name] )
-          path = name.to_s == 'default' ? '/' : "/#{name}"
+          path = name.to_s == 'default' ? '' : "#{name}"
         end
-        path = "/#{path}" if path.to_s[0, 1] != '/'
-        path.to_s
+
+        path = path.to_s.gsub(/^\//, '')
+        path = "/#{path}" unless path == '' || path[0, 1] == '/'
+        path
       end
 
       private

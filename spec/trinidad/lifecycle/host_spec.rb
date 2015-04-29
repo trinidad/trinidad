@@ -77,7 +77,7 @@ describe Trinidad::Lifecycle::Host do
     config = context_path_or_config.is_a?(Hash) ? context_path_or_config : {}
     context_path = context_path_or_config.is_a?(String) && context_path_or_config
     config = {
-      :context_path => context_path || '/',
+      :context_path => context_path || '',
       :root_dir => MOCK_RACK_WEB_APP_DIR, :public => 'assets',
       :monitor => monitor
     }.merge(config)
@@ -225,7 +225,7 @@ describe Trinidad::Lifecycle::Host do
         reload_thread = Thread.current
       end
 
-      old_context = double 'old_context', :name => 'default', :path => '/',
+      old_context = double 'old_context', :name => 'default', :path => '',
         :parent => parent = double('parent', :remove_child => nil)
       allow(parent).to receive(:add_child).with context
 
@@ -238,7 +238,7 @@ describe Trinidad::Lifecycle::Host do
     end
 
     it "logs an error when new context startup fails" do
-      context = double('new context', :path => '/', :name= => nil, :remove_lifecycle_listener => nil)
+      context = double('new context', :path => '', :name= => nil, :remove_lifecycle_listener => nil)
       roller = RollingReload.new double('server', :add_web_app => context)
 
       expect(context).to receive(:add_lifecycle_listener).with { |l| l.is_a?(RollingReload::Takeover) }
@@ -253,7 +253,7 @@ describe Trinidad::Lifecycle::Host do
 
       expect(context).to receive(:start).and_raise RuntimeError, "what's wrong ?!"
 
-      old_context = double 'old_context', :name => 'default', :path => '/',
+      old_context = double 'old_context', :name => 'default', :path => '',
         :parent => parent = double('parent', :remove_child => nil)
       expect(parent).to receive(:add_child).with context
 
@@ -264,7 +264,7 @@ describe Trinidad::Lifecycle::Host do
     end
 
     it "removed new context and keeps old when new context fails to start" do
-      context = double('new context', :path => '/', :name= => nil)
+      context = double('new context', :path => '', :name= => nil)
       roller = RollingReload.new double('server', :add_web_app => context)
 
       expect(context).to receive(:add_lifecycle_listener).
@@ -277,7 +277,7 @@ describe Trinidad::Lifecycle::Host do
       expect(context).to receive(:state_name).at_least(:once).and_return('NEW', 'FAILED')
       expect(context).to receive(:start) # setState(LifecycleState.FAILED);
 
-      old_context = double 'old_context', :name => 'default', :path => '/',
+      old_context = double 'old_context', :name => 'default', :path => '',
         :parent => parent = double('parent')
 
       expect(parent).to receive(:add_child).with(context) #.ordered
@@ -344,7 +344,7 @@ describe Trinidad::Lifecycle::Host do
         #context = tomcat.addWebapp(web_app.context_path, web_app.web_app_dir)
         web_app = create_web_app :work_dir => work_dir, :root_dir => MOCK_RACK_WEB_APP_DIR
         old_context.name = 'default'
-        old_context.path = '/'
+        old_context.path = ''
         old_context.parent = tomcat.host
         old_context.addLifecycleListener config = Trinidad::Tomcat::ContextConfig.new
         old_context.addLifecycleListener web_app.define_lifecycle

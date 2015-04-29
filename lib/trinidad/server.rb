@@ -295,8 +295,8 @@ module Trinidad
       # configured :web_apps
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name
-        apps << ( app_holder = create_web_app(app_config) ); app = app_holder.web_app
-        logger.info "Deploying from #{app.root_dir} as #{app.context_path}"
+        apps << ( app_holder = create_web_app(app_config) )
+        logger.info "Deploying from #{app_holder.web_app.root_dir} as #{app_holder.web_app.context_path}"
       end if web_apps
 
       # configured :app_base or :hosts - scan for applications in host's app_base directory :

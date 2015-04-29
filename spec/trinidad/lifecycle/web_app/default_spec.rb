@@ -104,7 +104,7 @@ describe Trinidad::Lifecycle::WebApp::Default do
     expect(listener).to receive(:configure_default_servlet)
     expect(listener).to receive(:configure_jsp_servlet)
 
-    listener.configure context = tomcat.add_webapp('/', Dir.pwd)
+    listener.configure context = tomcat.add_webapp('', Dir.pwd)
 
     context.find_parameter('jruby.max.runtimes').should be nil
     context.start

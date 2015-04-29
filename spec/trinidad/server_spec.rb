@@ -697,7 +697,7 @@ describe Trinidad::Server do
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
     expect( app_holder.web_app.context_name ).to eql 'default'
-    expect( app_holder.web_app.context_path ).to eql '/'
+    expect( app_holder.web_app.context_path ).to eql ''
     expect( app_holder.context.name ).to eql ''
     expect( app_holder.context.path ).to eql ''
 
@@ -742,7 +742,7 @@ describe Trinidad::Server do
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
     expect( app_holder.web_app.context_name ).to eql 'default'
-    expect( app_holder.web_app.context_path ).to eql '/'
+    expect( app_holder.web_app.context_path ).to eql ''
   end
 
   it "resolves apps relative to host base (for relative/missing root)" do
