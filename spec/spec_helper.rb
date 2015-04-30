@@ -1,3 +1,7 @@
+
+$:.unshift File.join(File.dirname(__FILE__), 'fixtures')
+require 'bundler'; Bundler.setup
+
 begin
   require 'rspec'
 rescue LoadError => e
@@ -16,10 +20,6 @@ RSpec.configure do |config|
   require File.expand_path('fake_files_helper', File.dirname(__FILE__))
   config.include FakeFilesHelper
 end
-
-$:.unshift(File.dirname(__FILE__) + '/../lib')
-$:.unshift(File.dirname(__FILE__) + '/../trinidad-libs')
-$:.unshift(File.dirname(__FILE__) + '/fixtures')
 
 require 'rack'
 require 'trinidad'
