@@ -39,6 +39,12 @@ group :integration do
   end
   if RUBY_VERSION.index('1.8') == 0
     gem 'i18n', '< 0.7', :require => nil, :group => :test
+    gem 'sprockets', '< 3.0', :require => nil, :group => :test
+    gem 'mime-types', '< 2.3', :require => nil, :group => :test
+  elsif RUBY_VERSION.index('1.9.2') == 0
+    gem 'i18n', '< 0.7', :require => nil, :group => :test
+    gem 'sprockets', '< 3.0', :require => nil, :group => :test
+    gem 'mime-types', '< 3.0', :require => nil, :group => :test
   end
   gem 'jruby-openssl' if JRUBY_VERSION < '1.7.0'
   # eval(File.read("spec/integration/rails32/Gemfile"), binding)

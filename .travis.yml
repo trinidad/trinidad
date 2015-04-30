@@ -17,10 +17,10 @@ before_install:
   - ((jruby -v | grep 1.8.7) && jruby --1.9 -S gem update --system 2.1.11) || true
 env:
   - JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
-  - JRUBY_OPTS="$JRUBY_OPTS"  #  RAILS_VERSION="~> 4.2.1"
+  - JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
 matrix:
   allow_failures:
-    - rvm: jruby-head
+    - rvm: jruby-1.6.8
   exclude:
     - rvm: jruby-head
       env: JRUBY_OPTS="$JRUBY_OPTS"
@@ -39,11 +39,11 @@ matrix:
       env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: oraclejdk7
     - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="$JRUBY_OPTS" RAILS_VERSION="~> 4.2.1"
+      env: JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
       jdk: oraclejdk7
     - rvm: jruby-1.6.8
       env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: oraclejdk8
     - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="$JRUBY_OPTS" RAILS_VERSION="~> 4.2.1"
+      env: JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
       jdk: oraclejdk8
