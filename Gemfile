@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gemspec :name => "trinidad"
+gemspec :name => 'trinidad'
 
 # NOTE: allows testing with various jar versions
 if (jars = ENV['trinidad_jars']) && jars != 'false'
@@ -13,7 +13,8 @@ if (jars = ENV['trinidad_jars']) && jars != 'false'
   end
 end
 
-gem 'rake', '~> 10.3.1', :require => nil, :groups => [ :development, :test ]
+gem 'rake', '~> 10.4.2', :require => nil, :groups => [ :development, :test ]
+
 group :development do
   jruby_version = ENV['JRUBY_VERSION']
   jruby_version = JRUBY_VERSION if jruby_version == 'current'
@@ -35,6 +36,9 @@ group :integration do
     gem 'rails', rails_version, :require => nil, :group => :test
   else
     gem 'rails', :require => nil, :group => :test
+  end
+  if RUBY_VERSION.index('1.8') == 0
+    gem 'i18n', '< 0.7', :require => nil, :group => :test
   end
   gem 'jruby-openssl' if JRUBY_VERSION < '1.7.0'
   # eval(File.read("spec/integration/rails32/Gemfile"), binding)
