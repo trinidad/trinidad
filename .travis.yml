@@ -1,4 +1,7 @@
 language: ruby
+sudo: false
+bundler_args: --without development
+script: rake spec
 jdk:
   - openjdk6
   - oraclejdk7
