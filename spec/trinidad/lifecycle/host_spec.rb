@@ -90,7 +90,10 @@ describe Trinidad::Lifecycle::Host do
     elsif mtime < 0 # -1 seconds
       mtime = java.lang.System.currentTimeMillis + (mtime * 1000)
     end
-    file = java.io.File.new(path); file.setLastModified(mtime)
+    file = java.io.File.new(path)
+    unless file.setLastModified(mtime)
+      warn "failed to set last-modified for: #{path}"
+    end
   end
 
   describe 'RestartReload' do
@@ -163,16 +166,16 @@ describe Trinidad::Lifecycle::Host do
       web_app = create_web_app
       app_holder = Trinidad::WebApp::Holder.new(web_app, context)
       context.name = 'default'
-      set_file_mtime(monitor, -1.5)
+      set_file_mtime(monitor, -2.5)
       listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent before_start_event
 
-      File.new(monitor, File::CREAT|File::TRUNC)
+      FileUtils.rm(monitor); File.new(monitor, File::CREAT|File::TRUNC).close
 
       listener.lifecycleEvent periodic_event
 
       app_holder.context.should be_a(Trinidad::Tomcat::StandardContext)
-      app_holder.context.should_not == context
+      app_holder.context.should_not == context ###
 
       app_holder.context.name.should start_with context.name
     end
@@ -185,7 +188,7 @@ describe Trinidad::Lifecycle::Host do
       listener = Trinidad::Lifecycle::Host.new(server, app_holder)
       listener.lifecycleEvent before_start_event
 
-      File.new(monitor, File::CREAT|File::TRUNC)
+      FileUtils.rm(monitor); File.new(monitor, File::CREAT|File::TRUNC).close
 
       listener.lifecycleEvent periodic_event
 
