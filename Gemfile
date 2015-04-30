@@ -20,10 +20,10 @@ group :development do
   jruby_version = JRUBY_VERSION if jruby_version == 'current'
   jruby_version ||= '1.6.8' # by default compiling against JRuby 1.6.8
   gem 'jruby-jars', jruby_version, :require => nil # only for _javac_
+end
 
-  if jruby_rack_version = ENV['JRUBY_RACK_VERSION']
-    gem 'jruby-rack', jruby_rack_version, :require => false
-  end
+if jruby_rack_version = ENV['JRUBY_RACK_VERSION']
+  gem 'jruby-rack', jruby_rack_version, :require => false
 end
 
 group :integration do
