@@ -83,7 +83,7 @@ public class DefaultJarScanner extends StandardJarScanner {
         catch (Exception e) {
             log.info("Failed accessing defaultJarsToSkip field " + e);
 
-            jarsToSkip = new HashSet<String>(4);
+            jarsToSkip = new HashSet<String>(4, 1);
             String jarList = System.getProperty(Constants.SKIP_JARS_PROPERTY);
             if ( jarList != null ) {
                 StringTokenizer tokenizer = new StringTokenizer(jarList, ",");
