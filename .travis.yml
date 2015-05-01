@@ -1,4 +1,6 @@
 language: ruby
+sudo: false
+script: rake spec
 jdk:
   - openjdk6
   - oraclejdk7
