@@ -1,3 +1,10 @@
+## trinidad_jars 1.4.1 (2014-05-01)
+
+* Tomcat 7.0.55 https://tomcat.apache.org/security-7.html#Fixed_in_Apache_Tomcat_7.0.55
+  fixes multiple security vulnerabilities since Tomcat 7.0.50
+* do potential MariaDB driver cleanup (an alternative for the MySQL official driver)
+* updated JarScanner internals so we're compilant
+
 ## trinidad 1.5.0.B1 (2014-03-27)
 
 * make sure the context.name does include the original name (after reload)
