@@ -487,7 +487,7 @@ describe Trinidad::WebApp do
 
   it "resolves context name 'default' as root path" do
     app = Trinidad::WebApp.create({ :context_name => 'default' })
-    app.context_path.should == '/'
+    app.context_path.should == ''
   end
 
   it "converts context name to_s" do
@@ -503,7 +503,7 @@ describe Trinidad::WebApp do
 
   it "missing context path assumes root" do
     app = Trinidad::WebApp.create({})
-    app.context_path.should == '/'
+    app.context_path.should == ''
   end
 
   it "uses development as default environment when the option is missing" do

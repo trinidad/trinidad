@@ -147,7 +147,6 @@ public class DefaultJarScanner extends StandardJarScanner {
         if (log.isTraceEnabled()) log.trace("Scanning application for JARs");
 
         final Set<String> ignoredJars = jarsToSkip == null ? defaultJarsToSkip : jarsToSkip;
-
         // a better version of scan-ing "WEB-INF/lib" :
         final String[] dirList = contextLoader.findRepositories();
         if ( dirList != null ) {

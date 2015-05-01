@@ -226,7 +226,7 @@ module Trinidad
       context = begin
         host.start_children = start unless start.nil?
         # public Context addWebapp(Host host, String url, String name, String docBase)
-        tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
+        tomcat.addWebapp(host, web_app.context_path, web_app.root_dir)
       rescue Java::JavaLang::IllegalArgumentException => e
         if e.message =~ /addChild\:/
           context_name = web_app.context_name
@@ -295,8 +295,8 @@ module Trinidad
       # configured :web_apps
       web_apps.each do |name, app_config|
         app_config[:context_name] ||= name
-        apps << ( app_holder = create_web_app(app_config) ); app = app_holder.web_app
-        logger.info "Deploying from #{app.root_dir} as #{app.context_path}"
+        apps << ( app_holder = create_web_app(app_config) )
+        logger.info "Deploying from #{app_holder.web_app.root_dir} as #{app_holder.web_app.context_path}"
       end if web_apps
 
       # configured :app_base or :hosts - scan for applications in host's app_base directory :
@@ -391,7 +391,6 @@ module Trinidad
 
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Tomcat::StandardHost.new
-      host.app_base = nil # reset default app_base
       host.deployXML = false # disabled by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
@@ -412,7 +411,7 @@ module Trinidad
       host_config.each do |name, value|
         case (name = name.to_sym)
         when :app_base
-          host.app_base = value if default_host_base?(host)
+          host.app_base = value if host.app_base == DEFAULT_HOST_APP_BASE
         when :aliases
           aliases = host.find_aliases || []
           value.each do |aliaz|
@@ -450,6 +449,9 @@ module Trinidad
 
     private
 
+    # @private
+    DEFAULT_HOST_APP_BASE = 'webapps'
+
     def default_host(tomcat = @tomcat)
       host = tomcat.host # make sure we initialize default host
       host.deployXML = false
@@ -460,13 +462,6 @@ module Trinidad
         host_config.each { |name, value| host.send("#{name}=", value) }
       end
       host
-    end
-
-    # @private
-    DEFAULT_HOST_APP_BASE = 'webapps'
-
-    def default_host_base?(host)
-      host.app_base.nil? || ( host.app_base == DEFAULT_HOST_APP_BASE && host.name == 'localhost' )
     end
 
     def set_host_app_base(app_root, host, default_host, web_app_hosts)

@@ -195,7 +195,7 @@ describe Trinidad::Server do
   it "loads one application for each option present into :web_apps" do
     server = configured_server({
       :web_apps => {
-        :_ock1 => {
+        :mock1 => {
           :context_path => '/mock1',
           :web_app_dir => MOCK_WEB_APP_DIR
         },
@@ -212,7 +212,7 @@ describe Trinidad::Server do
     context_loaded = server.tomcat.host.find_children
     context_loaded.should have(3).web_apps
 
-    expected = [ '/mock1', '/mock2', '/' ]
+    expected = [ '/mock1', '/mock2', '' ]
     context_loaded.each do |context|
       expected.delete(context.path).should == context.path
     end
@@ -697,36 +697,36 @@ describe Trinidad::Server do
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
     expect( app_holder.web_app.context_name ).to eql 'default'
-    expect( app_holder.web_app.context_path ).to eql '/'
-    expect( app_holder.context.name ).to eql 'default'
-    expect( app_holder.context.path ).to eql '/'
+    expect( app_holder.web_app.context_path ).to eql ''
+    expect( app_holder.context.name ).to eql ''
+    expect( app_holder.context.path ).to eql ''
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql foo_dir
     expect( app_holder.web_app.context_name ).to eql 'foo'
     expect( app_holder.web_app.context_path ).to eql '/foo'
-    expect( app_holder.context.name ).to eql 'foo'
+    expect( app_holder.context.name ).to eql '/foo'
     expect( app_holder.context.path ).to eql '/foo'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql bar1_dir
     expect( app_holder.web_app.context_name ).to eql 'bar1'
     expect( app_holder.web_app.context_path ).to eql '/bar-app'
-    expect( app_holder.context.name ).to eql 'bar1'
+    expect( app_holder.context.name ).to eql '/bar-app'
     expect( app_holder.context.path ).to eql '/bar-app'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql bar2_dir
     expect( app_holder.web_app.context_name ).to eql 'bar2'
     expect( app_holder.web_app.context_path ).to eql '/bar2'
-    expect( app_holder.context.name ).to eql 'bar2'
+    expect( app_holder.context.name ).to eql '/bar2'
     expect( app_holder.context.path ).to eql '/bar2'
 
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql war_dir
     expect( app_holder.web_app.context_name ).to eql 'war'
     expect( app_holder.web_app.context_path ).to eql '/myapp'
-    expect( app_holder.context.name ).to eql 'war'
+    expect( app_holder.context.name ).to eql '/myapp'
     expect( app_holder.context.path ).to eql '/myapp'
   end
 
@@ -742,7 +742,7 @@ describe Trinidad::Server do
     app_holder = web_apps.shift
     expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
     expect( app_holder.web_app.context_name ).to eql 'default'
-    expect( app_holder.web_app.context_path ).to eql '/'
+    expect( app_holder.web_app.context_path ).to eql ''
   end
 
   it "resolves apps relative to host base (for relative/missing root)" do
@@ -888,7 +888,7 @@ describe Trinidad::Server do
   def default_context_should_be_loaded(children)
     children.should have(1).web_apps
     children[0].doc_base.should == MOCK_WEB_APP_DIR
-    children[0].path.should == '/'
+    children[0].path.should eq ''
     children[0]
   end
 

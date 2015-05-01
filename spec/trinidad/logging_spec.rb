@@ -281,7 +281,6 @@ describe Trinidad::Logging do
           '  </context-param>' +
           '</web-app>'
         web_app = Trinidad::WebApp.create({}, {
-          :context_path => '/',
           :web_app_dir => MOCK_WEB_APP_DIR,
           :default_web_xml => 'config/logging-test.web.xml',
           :log => 'ALL'
@@ -308,7 +307,6 @@ describe Trinidad::Logging do
           '  </context-param>' +
           '</web-app>'
         web_app = Trinidad::WebApp.create({}, {
-          :context_path => '/',
           :web_app_dir => MOCK_WEB_APP_DIR,
           :default_web_xml => 'config/logging-test.web.xml',
           :log => 'ALL'
@@ -363,7 +361,6 @@ describe Trinidad::Logging do
 
     def create_mock_web_app(config = {})
       Trinidad::WebApp.create({}, {
-          :context_path => '/',
           :web_app_dir => MOCK_WEB_APP_DIR,
           :environment => 'production' }.merge(config)
       )
