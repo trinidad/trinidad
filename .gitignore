@@ -10,4 +10,5 @@ restart.txt
 nbproject
 catalog.xml
 .idea
-Gemfile.lock
+.bundle
+Gemfile.lock*
