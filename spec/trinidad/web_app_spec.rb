@@ -467,27 +467,42 @@ describe Trinidad::WebApp do
 
   it "uses the application directory as working directory" do
     app = Trinidad::WebApp.create({ :root_dir => 'foo' })
-    app.work_dir.should == File.expand_path('foo/tmp')
+    expect( app.work_dir ).to eql File.expand_path('foo/tmp')
   end
 
   it "adds / in front of the context path" do
     app = Trinidad::WebApp.create({ :context_path => 'bar' })
-    app.context_path.should == '/bar'
+    expect( app.context_path ).to eql '/bar'
   end
 
   it "accepts the context path as is" do
     app = Trinidad::WebApp.create({ :context_path => '/bar', :context_name => 'huu' })
-    app.context_path.should == '/bar'
+    expect( app.context_path ).to eql '/bar'
   end
 
   it "resolves the context path from name" do
     app = Trinidad::WebApp.create({ :context_name => 'huu' })
-    app.context_path.should == '/huu'
+    expect( app.context_path ).to eql '/huu'
   end
 
   it "resolves context name 'default' as root path" do
-    app = Trinidad::WebApp.create({ :context_name => 'default' })
-    app.context_path.should == '/'
+    app = Trinidad::WebApp.create :context_name => 'default'
+    expect( app.context_path ).to eql '/'
+  end
+
+  it "configures default context / with correct root directory" do
+    app = Trinidad::WebApp.create :context_name => 'default'
+    expect( app.root_dir ).to eql Dir.pwd
+
+    app = Trinidad::WebApp.create :web_apps => { :default => { 'extensions' => {} } }
+    expect( app.context_path ).to eql '/'
+    expect( app.root_dir ).to eql Dir.pwd
+
+    app = Trinidad::WebApp.create :address => 'localhost', 'web_apps' => {
+      'default' => { 'extensions' => { 'foo' => { :sample => 42 } } }
+    }
+    expect( app.context_path ).to eql '/'
+    expect( app.root_dir ).to eql Dir.pwd
   end
 
   it "converts context name to_s" do
