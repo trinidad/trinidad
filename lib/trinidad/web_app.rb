@@ -34,9 +34,11 @@ module Trinidad
       use_default ? default_config.key?(key) : false
     end
 
-    %w{ root_dir rackup async_supported reload_strategy host_name }.each do
-      |method| class_eval "def #{method}; self[:'#{method}']; end"
-    end
+    def root_dir; self[:root_dir] end
+    def rackup; self[:rackup] end
+    def host_name; self[:host_name] end
+    def async_supported; self[:async_supported] end
+    def reload_strategy; self[:reload_strategy] end
 
     alias_method :web_app_dir, :root_dir # is getting deprecated soon
     def app_root; root_dir; end
