@@ -46,6 +46,6 @@ group :integration do
     gem 'sprockets', '< 3.0', :require => nil, :group => :test
     gem 'mime-types', '< 3.0', :require => nil, :group => :test
   end
-  gem 'jruby-openssl' if JRUBY_VERSION < '1.7.0'
+  gem 'jruby-openssl', :platforms => :jruby
   # eval(File.read("spec/integration/rails32/Gemfile"), binding)
 end

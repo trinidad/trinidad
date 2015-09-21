@@ -321,7 +321,12 @@ public class DefaultLoader extends WebappLoader {
                         Field cancelTimerField = driverClass.getDeclaredField("cancelTimer");
                         cancelTimerField.setAccessible(true);
                         final Timer cancelTimer = (Timer) cancelTimerField.get(null);
-                        cancelTimer.purge();
+                        // cancel timer occasionally comes back null...
+                        if (cancelTimer != null) {
+                            cancelTimer.purge();
+                        } else {
+                            log.warn("CancelTimer was null! Not bothering to purge!");
+                        }
                     }
                     log.info("PostgreSQL driver cancel timer has been purged");
                 }
