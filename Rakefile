@@ -5,6 +5,8 @@ rescue LoadError => e
   raise e
 end
 
+TOMCAT_VERSION = '7.0.57'
+
 task :default => :spec
 
 require 'rspec/core/rake_task'
@@ -106,3 +108,12 @@ end
 task :build   => 'trinidad:build'
 task :install => 'trinidad:install'
 task :release => 'trinidad:release'
+
+desc 'Fetch Tomcat, build jars and build Trinidad'
+task :'build:all' do
+  Rake::Task['tomcat:update'].invoke(TOMCAT_VERSION)
+  system 'chmod a+r trinidad-libs/*.jar'
+  Rake::Task['trinidad-rb:jar'].invoke
+  Rake::Task['trinidad_jars:build'].invoke
+  Rake::Task['trinidad:build'].invoke
+end
