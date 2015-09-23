@@ -4,7 +4,7 @@ load File.expand_path('../../trinidad-libs/trinidad-rb.jar', File.dirname(__FILE
 
 module Trinidad
   TRINIDAD_JARS_VERSION = '1.4.1j'
-  TOMCAT_VERSION = '7.0.55' unless const_defined?(:TOMCAT_VERSION)
+  TOMCAT_VERSION = '7.0.57' unless const_defined?(:TOMCAT_VERSION)
 
   ( Tomcat = Java::RbTrinidad::Jerry ).module_eval do
     include_package 'org.apache.catalina'

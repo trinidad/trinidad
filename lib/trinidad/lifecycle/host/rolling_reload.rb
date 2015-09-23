@@ -75,11 +75,17 @@ module Trinidad
           new_context = event.lifecycle
           new_context.remove_lifecycle_listener(self) # GC old context
 
-          logger.debug "Stoping the old Context for [#{@old_context.path}]"
-
-          @old_context.stop
-          @old_context.work_dir = nil # make sure it's not deleted
-          @old_context.destroy
+          logger.debug "Stopping the old context for [#{@old_context.path}]"
+          if @old_context.state_name =~ /DESTROYED/i
+            logger.debug("[#{@old_context.path}] was already destroyed...")
+            @old_context.work_dir = nil
+          else
+            logger.debug("[#{@old_context.path}] wasn't destroyed yet... stopping!")
+            @old_context.stop
+            @old_context.work_dir = nil # make sure it's not deleted
+            logger.debug("OK, now destroying [#{@old_context.path}]")
+            @old_context.destroy
+          end
           # NOTE: name might not be changed once added to a parent
           #new_context.name = @old_context.name
           super
