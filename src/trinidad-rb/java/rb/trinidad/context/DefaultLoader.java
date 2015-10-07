@@ -318,17 +318,15 @@ public class DefaultLoader extends WebappLoader {
                         driverClass.getMethod("purgeTimerTasks").invoke(null);
                     }
                     catch (NoSuchMethodException e) { // try the old way
+                        // private static Timer cancelTimer = null;
                         Field cancelTimerField = driverClass.getDeclaredField("cancelTimer");
                         cancelTimerField.setAccessible(true);
                         final Timer cancelTimer = (Timer) cancelTimerField.get(null);
-                        // cancel timer occasionally comes back null...
-                        if (cancelTimer != null) {
+                        if ( cancelTimer != null ) {
                             cancelTimer.purge();
-                        } else {
-                            log.warn("CancelTimer was null! Not bothering to purge!");
+                            log.info("PostgreSQL driver cancel timer has been purged");
                         }
                     }
-                    log.info("PostgreSQL driver cancel timer has been purged");
                 }
             }
             catch (NoSuchFieldException e) {
