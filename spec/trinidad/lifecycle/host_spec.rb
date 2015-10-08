@@ -237,7 +237,7 @@ describe Trinidad::Lifecycle::Host do
       roller.reload!(app_holder, :wait)
 
       expect( reload_thread ).to_not be main_thread
-      sleep(0.1) if ENV['CI'] == true.to_s # travis-ci occasional failure on thread.native_thread.name
+      sleep(0.3) if ENV['CI'] == true.to_s # travis-ci occasional failure on thread.native_thread.name
       expect( thread = JRuby.reference(reload_thread) ).to_not be nil
       expect( thread.native_thread.name ).to start_with 'Trinidad'
     end
