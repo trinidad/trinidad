@@ -158,8 +158,9 @@ describe Trinidad::Lifecycle::Host do
 
       listener.lifecycleEvent periodic_event
 
-      app_holder.monitor_mtime.should_not == monitor_mtime
-      app_holder.monitor_mtime.should == File.mtime(monitor)
+      sleep(0.1) if ENV['CI'] == true.to_s # travis-ci occasional failure on not == monitor_mtime
+      expect( app_holder.monitor_mtime ).to_not eql monitor_mtime
+      expect( app_holder.monitor_mtime ).to eql File.mtime(monitor)
     end
 
     it "creates a new context that takes over the original one" do
@@ -236,6 +237,7 @@ describe Trinidad::Lifecycle::Host do
       roller.reload!(app_holder, :wait)
 
       expect( reload_thread ).to_not be main_thread
+      sleep(0.1) if ENV['CI'] == true.to_s # travis-ci occasional failure on thread.native_thread.name
       expect( thread = JRuby.reference(reload_thread) ).to_not be nil
       expect( thread.native_thread.name ).to start_with 'Trinidad'
     end
