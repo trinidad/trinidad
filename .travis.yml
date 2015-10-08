@@ -29,7 +29,7 @@ matrix:
       env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: oraclejdk7
     - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="$JRUBY_OPTS"
+      env: JRUBY_OPTS="$JRUBY_OPTS"  RAILS_VERSION="~> 3.2"
       jdk: openjdk6
     - rvm: jruby-1.6.8
       env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
