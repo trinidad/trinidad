@@ -23,11 +23,13 @@
 
 package rb.trinidad.context;
 
+import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleState;
-import org.apache.catalina.session.ManagerBase;
+import org.apache.catalina.SessionIdGenerator;
 import org.apache.catalina.session.StandardManager;
-import org.apache.catalina.util.SessionIdGenerator;
+import org.apache.catalina.util.SessionIdGeneratorBase;
+import org.apache.catalina.util.StandardSessionIdGenerator;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
@@ -89,24 +91,22 @@ public class DefaultManager extends StandardManager {
         }
         catch (Throwable t) {
             ExceptionUtils.handleThrowable(t);
-            final Log log = LogFactory.getLog(StandardManager.class);
-            log.error(sm.getString("standardManager.managerLoad"), t);
+            log().error(sm.getString("standardManager.managerLoad"), t);
         }
 
         setState(LifecycleState.STARTING);
     }
 
-    @Override
-    protected synchronized void stopInternal() throws LifecycleException {
-        super.stopInternal(); // will set this.sessionIdGenerator = null;
-    }
+    //@Override
+    //protected synchronized void stopInternal() throws LifecycleException {
+    //    super.stopInternal();
+    //}
 
-    private synchronized void initSessionIdGenerator() {
-        // super.startInternal();
-        // sets sessionIdGenerator = new SessionIdGenerator();
-
+    private void initSessionIdGenerator() {
         // ManagerBase#startInternal :
 
+        // Ensure caches for timing stats are the right size by filling with
+        // nulls.
         while (sessionCreationTiming.size() < TIMING_STATS_CACHE_SIZE) {
             sessionCreationTiming.add(null);
         }
@@ -114,17 +114,49 @@ public class DefaultManager extends StandardManager {
             sessionExpirationTiming.add(null);
         }
 
-        sessionIdGenerator = new SessionIdGenerator();
-        sessionIdGenerator.setJvmRoute(getJvmRoute());
-        sessionIdGenerator.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
-        sessionIdGenerator.setSecureRandomClass(getSecureRandomClass());
-        sessionIdGenerator.setSecureRandomProvider(getSecureRandomProvider());
-        sessionIdGenerator.setSessionIdLength(getSessionIdLength());
+        /* Create sessionIdGenerator if not explicitly configured */
+        SessionIdGenerator sessionIdGenerator = getSessionIdGenerator();
+        if (sessionIdGenerator == null) {
+            sessionIdGenerator = new StandardSessionIdGenerator();
+            setSessionIdGenerator(sessionIdGenerator);
+        }
 
-        // Force initialization of the random number generator
-        //if (log.isDebugEnabled()) log.debug("Force random number initialization starting");
-        sessionIdGenerator.generateSessionId();
-        //if (log.isDebugEnabled()) log.debug("Force random number initialization completed");
+        if (sessionIdLength != SESSION_ID_LENGTH_UNSET) {
+            sessionIdGenerator.setSessionIdLength(sessionIdLength);
+        }
+        sessionIdGenerator.setJvmRoute(getJvmRoute());
+        if (sessionIdGenerator instanceof SessionIdGeneratorBase) {
+            SessionIdGeneratorBase sig = (SessionIdGeneratorBase)sessionIdGenerator;
+            sig.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
+            sig.setSecureRandomClass(getSecureRandomClass());
+            sig.setSecureRandomProvider(getSecureRandomProvider());
+        }
+
+        if (sessionIdGenerator instanceof Lifecycle) {
+            try {
+                ((Lifecycle) sessionIdGenerator).start();
+            }
+            catch (LifecycleException e) { // TODO
+                //Throwable cause = e.getCause();
+                //if ( cause != null ) DefaultManager.<RuntimeException>(cause);
+                DefaultManager.<RuntimeException>raise(e);
+            }
+        }
+        else {
+            // Force initialization of the random number generator
+            log().debug("Force random number initialization starting");
+            sessionIdGenerator.generateSessionId();
+            log().debug("Force random number initialization completed");
+        }
+    }
+
+    private static Log log() {
+        return LogFactory.getLog(StandardManager.class); // must not be static
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void raise(final Throwable e) throws T {
+        throw (T) e;
     }
 
 }
