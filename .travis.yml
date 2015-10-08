@@ -6,44 +6,34 @@ jdk:
   - oraclejdk7
   - oraclejdk8
 rvm:
-  - jruby-1.6.8
-  - jruby-1.7.19
-  - jruby-head
+  - jruby-1.7.22
+  - jruby-9.0.0.0
 before_script:
-  - export JRUBY_OPTS="--server -Xcompile.invokedynamic=false"
-  - export JAVA_OPTS="$JAVA_OPTS -Xmx600M"
-  - echo $JAVA_OPTS
+  - export JRUBY_OPTS="-Xcompile.invokedynamic=false" # --server
+  - export JAVA_OPTS="$JAVA_OPTS -Xmx600m -XX:MaxPermSize=300m"
+  - echo "JAVA_OPTS=$JAVA_OPTS"
+  - echo "JRUBY_OPTS=$JRUBY_OPTS"
 before_install:
   - ((jruby -v | grep 1.8.7) && jruby --1.9 -S gem update --system 2.1.11) || true
 env:
-  - JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
   - JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
 matrix:
   allow_failures:
     - rvm: jruby-1.6.8
-  exclude:
-    - rvm: jruby-head
+  include:
+    - rvm: jruby-1.7.22
+      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
+      jdk: openjdk6
+    - rvm: jruby-1.7.22
+      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
+      jdk: oraclejdk7
+    - rvm: jruby-1.6.8
       env: JRUBY_OPTS="$JRUBY_OPTS"
       jdk: openjdk6
-    - rvm: jruby-head
+    - rvm: jruby-1.6.8
       env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
       jdk: openjdk6
-    - rvm: jruby-head
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
-      jdk: oraclejdk7
-    - rvm: jruby-head
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
-      jdk: oraclejdk8
-    # only run 1.6.8 on JDK 6
-    - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
-      jdk: oraclejdk7
-    - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
-      jdk: oraclejdk7
-    - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="--1.8 $JRUBY_OPTS" RAILS_VERSION="~> 3.2"
-      jdk: oraclejdk8
-    - rvm: jruby-1.6.8
-      env: JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
-      jdk: oraclejdk8
+  exclude:
+    - rvm: jruby-9.0.0.0
+      env: JRUBY_OPTS="$JRUBY_OPTS"
+      jdk: openjdk6
