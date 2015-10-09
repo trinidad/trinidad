@@ -1,4 +1,17 @@
-## trinidad_jars 1.4.1 (2014-05-01)
+## trinidad 1.5.0.B2 (pend-in-gg)
+
+* fixes for rolling reload when context has been destroyed (see #133)
+* support setting `:keystore_type` (for SSL)
+* handle auto-loading of `Trinidad::CommandLineParser` constant for init service's
+  Trinidad::Daemon backwards-compatibility (see https://github.com/trinidad/trinidad_init_services/issues/41)
+* support for running fully on Java 8 (class sun.security.tools.KeyTool seems gone)
+
+## trinidad_jars 1.4.2 (2015-10-09)
+
+* Tomcat 7.0.57 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+* workaround for postgres reloading issues (#133) ... affects 1.5.0 only
+
+## trinidad_jars 1.4.1 (2015-05-01)
 
 * Tomcat 7.0.55 https://tomcat.apache.org/security-7.html#Fixed_in_Apache_Tomcat_7.0.55
   fixes multiple security vulnerabilities since Tomcat 7.0.50
