@@ -37,7 +37,6 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Server;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
-import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardEngine;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.core.StandardService;
@@ -100,12 +99,11 @@ public class Jerry extends Tomcat {
      * @return A connector object that can be customized
      */
     public Connector getConnector() {
-        getServer();
+        getServer(); // initializes this.service
         if ( connector == null ) {
             connector = new Connector("HTTP/1.1");
             // connector = new Connector("org.apache.coyote.http11.Http11Protocol");
             connector.setPort(port);
-            getServer().addService(service);
             service.addConnector( connector );
         }
         return connector;
