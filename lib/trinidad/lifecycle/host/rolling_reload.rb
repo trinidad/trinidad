@@ -76,7 +76,7 @@ module Trinidad
           new_context.remove_lifecycle_listener(self) # GC old context
 
           if @old_context.state_name =~ /DESTROYED/i
-            logger.debug("Old context for [#{@old_context.path}] is already destroyed")
+            logger.debug "Old context for [#{@old_context.path}] is already destroyed"
             @old_context.work_dir = nil
           else
             logger.debug "Stopping the old context for [#{@old_context.path}]"
