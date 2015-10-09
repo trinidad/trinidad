@@ -146,7 +146,7 @@ public class Jerry extends Tomcat {
 
         // NOTE: do not silence(host, contextPath); ?
 
-        Context ctx = new StandardContext();
+        Context ctx = createContext(host, contextPath);
         ctx.setName(contextName);
         ctx.setPath(contextPath);
         ctx.setDocBase(dir);
