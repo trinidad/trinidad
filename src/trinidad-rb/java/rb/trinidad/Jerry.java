@@ -37,7 +37,9 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Server;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
+import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardEngine;
+import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.core.StandardService;
 import org.apache.catalina.startup.Constants;
@@ -214,6 +216,36 @@ public class Jerry extends Tomcat {
             return getContextXmlFromWar(docBase, url);
         }
         return null;
+    }
+
+    // more-less copy-pasted as its unfortunately private in super
+    private Context createContext(Host host, String url) {
+        String contextClass = StandardContext.class.getName();
+        if (host == null) host = getHost();
+        if (host instanceof StandardHost) {
+            contextClass = ((StandardHost) host).getContextClass();
+        }
+
+        if (StandardContext.class.getName().equals(contextClass)) {
+            return new StandardContext();
+        }
+
+        try {
+            return (Context) Class.forName(contextClass).getConstructor().newInstance();
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+            "Can't instantiate context-class " + contextClass + " for host " + host + " and url " + url, e);
+        }
+        catch (SecurityException e) {
+            throw new IllegalArgumentException(
+            "Can't instantiate context-class " + contextClass + " for host " + host + " and url " + url, e);
+        }
+        catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            throw new IllegalArgumentException(
+            "Can't instantiate context-class " + contextClass + " for host " + host + " and url " + url, e);
+        }
     }
 
     private URL getContextXmlFromDir(File docBase, String url) {
