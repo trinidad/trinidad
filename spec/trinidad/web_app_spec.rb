@@ -557,10 +557,10 @@ describe Trinidad::WebApp do
 
   it "includes the ruby version as a parameter to load the jruby compatibility version" do
     app = Trinidad::WebApp.create({})
-    app.init_params.should include('jruby.compat.version')
-    if JRUBY_VERSION.start_with?('9')
-      expect( app.init_params.key?('jruby.compat.version') ).to be false
+    if JRUBY_VERSION.start_with?('9') # not on 9K
+      expect( app.init_params ).to_not include('jruby.compat.version')
     else
+      expect( app.init_params ).to include('jruby.compat.version')
       require 'jruby';
       if JRuby.runtime.respond_to?(:is2_0) && JRuby.runtime.is2_0
         expect( app.init_params['jruby.compat.version'] ).to eql '2.0'
