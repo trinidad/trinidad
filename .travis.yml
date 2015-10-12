@@ -15,6 +15,7 @@ before_script:
   - echo "JRUBY_OPTS=$JRUBY_OPTS"
 before_install:
   - ((jruby -v | grep 1.8.7) && jruby --1.9 -S gem update --system 2.1.11) || true
+  - export TRINIDAD_JARS_VERSION=local # use local trinidad_jars gem version
   #- if [[ "${TRAVIS_RUBY_VERSION:0:9}" =~ "jruby-9.0" ]]; then rvm get head && rvm reload && rvm use --install $TRAVIS_RUBY_VERSION; fi
 env:
   - JRUBY_OPTS="$JRUBY_OPTS" # RAILS_VERSION="~> 4.2.1"
