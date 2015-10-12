@@ -73,11 +73,11 @@ describe Trinidad::Lifecycle::Host do
 
   private
 
-  def create_web_app(context_path_or_config = '/')
+  def create_web_app(context_path_or_config = '')
     config = context_path_or_config.is_a?(Hash) ? context_path_or_config : {}
     context_path = context_path_or_config.is_a?(String) && context_path_or_config
     config = {
-      :context_path => context_path || '/',
+      :context_path => context_path || '',
       :root_dir => MOCK_RACK_WEB_APP_DIR, :public => 'assets',
       :monitor => monitor
     }.merge(config)
@@ -237,8 +237,9 @@ describe Trinidad::Lifecycle::Host do
       roller.reload!(app_holder, :wait)
 
       expect( reload_thread ).to_not be main_thread
-      sleep(0.3) if ENV['CI'] == true.to_s # travis-ci occasional failure on thread.native_thread.name
       expect( thread = JRuby.reference(reload_thread) ).to_not be nil
+      sleep(0.2) if ENV['CI'] == true.to_s # travis-ci occasional failure on thread.native_thread.name
+      puts "#{thread} native_thread: #{thread.native_thread}"
       expect( thread.native_thread.name ).to start_with 'Trinidad'
     end
 
