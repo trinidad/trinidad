@@ -558,7 +558,18 @@ describe Trinidad::WebApp do
   it "includes the ruby version as a parameter to load the jruby compatibility version" do
     app = Trinidad::WebApp.create({})
     app.init_params.should include('jruby.compat.version')
-    app.init_params['jruby.compat.version'].should == RUBY_VERSION
+    if JRUBY_VERSION.start_with?('9')
+      expect( app.init_params.key?('jruby.compat.version') ).to be false
+    else
+      require 'jruby';
+      if JRuby.runtime.respond_to?(:is2_0) && JRuby.runtime.is2_0
+        expect( app.init_params['jruby.compat.version'] ).to eql '2.0'
+      elsif JRuby.runtime.is1_9
+        expect( app.init_params['jruby.compat.version'] ).to eql '1.9'
+      elsif JRuby.runtime.is1_8
+        expect( app.init_params['jruby.compat.version'] ).to eql '1.8'
+      end
+    end
   end
 
   it "uses tmp/restart.txt as a monitor file for context reloading" do
@@ -1019,8 +1030,6 @@ EOF
 
   it "does look for jruby context param values from system properties" do
     app = Trinidad::WebApp.create({})
-    app.context_params['jruby.compat.version'].should == RUBY_VERSION
-    app.context_params['jruby.runtime.acquire.timeout'].should_not be nil
     begin
       java.lang.System.setProperty('jruby.compat.version', '1_9')
       java.lang.System.setProperty('jruby.runtime.acquire.timeout', '4.2')

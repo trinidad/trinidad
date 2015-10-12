@@ -94,7 +94,9 @@ module Trinidad
     end
 
     def jruby_compat_version
-      fetch_config_value(:jruby_compat_version, RUBY_VERSION)
+      compat_version = fetch_config_value(:jruby_compat_version, false)
+      return compat_version unless compat_version.eql? false
+      JRUBY_VERSION < '9.0' ? RUBY_VERSION[0, 3] : nil
     end
 
     def environment
@@ -175,7 +177,9 @@ module Trinidad
         add_context_param 'jruby.initial.runtimes', jruby_initial_runtimes
         add_context_param 'jruby.runtime.acquire.timeout', jruby_runtime_acquire_timeout
       end
-      add_context_param 'jruby.compat.version', jruby_compat_version
+      if compat_version = jruby_compat_version
+        add_context_param 'jruby.compat.version', compat_version
+      end
       add_context_param 'public.root', public_root
       add_context_param 'jruby.rack.layout_class', layout_class
       # JRuby::Rack::ErrorApp got a bit smarter so use it, TODO maybe override ?
