@@ -390,9 +390,11 @@ module Trinidad
       end if web_apps
     end
 
+    Tomcat::StandardHost.send :field_writer, :appBase
+
     def create_host(app_base, host_config, tomcat = @tomcat)
       host = Tomcat::StandardHost.new
-      host.app_base = nil # reset default app_base
+      host.appBase = nil # reset default app_base
       host.deployXML = false # disabled by default
       setup_host(app_base, host_config, host)
       tomcat.engine.add_child host if tomcat
