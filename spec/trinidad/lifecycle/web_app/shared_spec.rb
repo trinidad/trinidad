@@ -11,7 +11,7 @@ describe Trinidad::Lifecycle::WebApp::Shared do
   let(:listener) { ListenerImpl.new(web_app) }
 
   let(:context) do
-    context = Trinidad::Tomcat.new.add_webapp('/', MOCK_WEB_APP_DIR)
+    context = Trinidad::Tomcat.new.add_webapp('', MOCK_WEB_APP_DIR)
     Trinidad::Tomcat.init_webapp_defaults(context)
     context
   end

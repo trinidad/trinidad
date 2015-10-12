@@ -226,7 +226,8 @@ module Trinidad
       context = begin
         host.start_children = start unless start.nil?
         # public Context addWebapp(Host host, String url, String name, String docBase)
-        tomcat.addWebapp(host, web_app.context_path, web_app.context_name, web_app.root_dir)
+        context_path = web_app.context_path; context_path = '' if context_path == '/'
+        tomcat.addWebapp(host, context_path, web_app.context_name, web_app.root_dir)
       rescue Java::JavaLang::IllegalArgumentException => e
         if e.message =~ /addChild\:/
           context_name = web_app.context_name

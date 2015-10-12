@@ -34,7 +34,7 @@ module Trinidad
 
     DEFAULTS = {
       :environment => 'development',
-      :context_path => '/',
+      :context_path => '', # / root path
       :public => 'public',
       :java_lib => 'lib/java',
       :default_web_xml => 'config/web.xml',

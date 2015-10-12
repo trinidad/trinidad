@@ -48,7 +48,7 @@ module Trinidad
 
     def context_path
       path = self[:context_path] || self[:path]
-      path ? path.to_s : path
+      path ? path.to_s : path #
     end
 
     def context_name
@@ -592,8 +592,7 @@ module Trinidad
             ( default_config && default_config[:context_name] )
           path = name.to_s == 'default' ? '/' : "/#{name}"
         end
-        path = "/#{path}" if path.to_s[0, 1] != '/'
-        path.to_s
+        path.to_s[0, 1] != '/' ? "/#{path}" : path.to_s
       end
 
       private

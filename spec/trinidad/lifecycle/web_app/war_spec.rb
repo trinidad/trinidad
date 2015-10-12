@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', File.dirname(__FILE__))
 describe Trinidad::Lifecycle::WebApp::War do
 
   it "configures classloader" do
-    context = new_web_app_context('/')
+    context = new_web_app_context
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
     listener.send :configure_class_loader, context
@@ -11,7 +11,7 @@ describe Trinidad::Lifecycle::WebApp::War do
   end
 
   it "configures class-loader (on configure)" do
-    context = new_web_app_context('/')
+    context = new_web_app_context
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
@@ -70,26 +70,26 @@ describe Trinidad::Lifecycle::WebApp::War do
     #   Failed to scan JAR [jndi:/localhost/petclinic/WEB-INF/lib/jstl-1.1.2.jar] from WEB-INF/lib
     #   java.io.FileNotFoundException: jndi:/localhost/petclinic/WEB-INF/lib/jstl-1.1.2.jar
     #
-    context = new_web_app_context('/')
+    context = new_web_app_context
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
 
     event = double 'event', :lifecycle => context,
       :type => Trinidad::Tomcat::Lifecycle::BEFORE_INIT_EVENT
-    
+
     listener.lifecycleEvent(event)
 
-    expect( context.path ).to eql '/'
-    expect( context.name ).to eql '/'
+    expect( context.path ).to eql '' # root
+    expect( context.name ).to eql '' # '/'
 
     listener.send(:adjust_context, context)
 
-    expect( context.path ).to eql '/'
-    expect( context.name ).to eql '/'
+    expect( context.path ).to eql '' # root
+    expect( context.name ).to eql '' # '/'
   end
 
   it "keeps the standard manager", :integration => false do
-    context = new_web_app_context('/')
+    context = new_web_app_context
     context.name = 'default'
     listener = Trinidad::Lifecycle::WebApp::War.new(new_web_app)
     listener.send(:adjust_context, context)
@@ -105,7 +105,7 @@ describe Trinidad::Lifecycle::WebApp::War do
     Trinidad::WarWebApp.new(config)
   end
 
-  def new_web_app_context(context_path)
+  def new_web_app_context(context_path = '')
     tomcat.add_webapp(context_path, MOCK_WEB_APP_DIR)
   end
 
