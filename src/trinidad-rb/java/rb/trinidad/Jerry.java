@@ -43,6 +43,7 @@ import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.core.StandardService;
 import org.apache.catalina.startup.Constants;
+import org.apache.catalina.startup.ContextConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.juli.logging.LogFactory;
 
@@ -139,6 +140,35 @@ public class Jerry extends Tomcat {
         server.addService( service );
 
         return server;
+    }
+
+    @SuppressWarnings("deprecation") // NOTE: deprecated since TC 7.0.61
+    public Context addWebapp(Host host, String contextPath, String name, String docBase) {
+        // silence(host, contextPath);
+
+        Context ctx = createContext(host, contextPath);
+        if ( name != null ) ctx.setName(name); // TC 7.0.61 no longer does this
+        // due https://bz.apache.org/bugzilla/show_bug.cgi?id=57723
+        // https://github.com/apache/tomcat70/commit/5fb6d8fd68d0aa2a
+        ctx.setPath(contextPath);
+        ctx.setDocBase(docBase);
+
+        ctx.addLifecycleListener(new DefaultWebXmlListener());
+        ctx.setConfigFile(getWebappConfigFile(docBase, contextPath));
+
+        ContextConfig ctxCfg = new ContextConfig();
+        ctx.addLifecycleListener(ctxCfg);
+
+        // prevent it from looking ( if it finds one - it'll have dup error )
+        ctxCfg.setDefaultWebXml(noDefaultWebXmlPath());
+
+        if (host == null) {
+            getHost().addChild(ctx);
+        } else {
+            host.addChild(ctx);
+        }
+
+        return ctx;
     }
 
     public Context addContext(Host host, String contextPath, String contextName,
