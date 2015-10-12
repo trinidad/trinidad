@@ -535,12 +535,12 @@ describe Trinidad::WebApp do
     FileUtils.touch env_web_xml = "#{MOCK_WEB_APP_DIR}/config/env.web.xml"
     begin
       create_config_file env_web_xml, '' <<
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<web-app>' +
-        '  <context-param>' +
-        '    <param-name>rack.env</param-name>' +
-        '    <param-value>production2</param-value>' +
-        '  </context-param>' +
+        '<?xml version="1.0" encoding="UTF-8"?>' <<
+        '<web-app>' <<
+        '  <context-param>' <<
+        '    <param-name>rack.env</param-name>' <<
+        '    <param-value>production2</param-value>' <<
+        '  </context-param>' <<
         '</web-app>'
       app = Trinidad::WebApp.create({
         :context_path => '/',
