@@ -781,7 +781,8 @@ EOF
     expect( app.threadsafe? ).to be true
   end
 
-  @@__eager_load_false_rails4x = <<-EOF
+=begin
+@@__eager_load_false_rails4x = <<-EOF
 MyAPI::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -801,28 +802,28 @@ MyAPI::Application.configure do
 
   # ...
 end
-EOF
-
-  it "detects non-threadsafe Rails 4.x" do
-    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
-    # FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
-
-    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'production')
-    expect( app.threadsafe? ).to be false
-
-    app.jruby_min_runtimes.should == 5
-    app.jruby_max_runtimes.should == 5
-  end
-
-  it "defaults min_runtimes to 1 in non-threadsafe mode (Rails 4.x)" do
-    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
-
-    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'development')
-    expect( app.threadsafe? ).to be false
-
-    app.jruby_min_runtimes.should == 1
-    app.jruby_max_runtimes.should == 5
-  end
+=end
+#
+#  it "detects non-threadsafe Rails 4.x" do
+#    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
+#    # FileUtils.rm_r 'WEB-INF' if File.exists?('WEB-INF')
+#
+#    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'production')
+#    expect( app.threadsafe? ).to be false
+#
+#    app.jruby_min_runtimes.should == 5
+#    app.jruby_max_runtimes.should == 5
+#  end
+#
+#  it "defaults min_runtimes to 1 in non-threadsafe mode (Rails 4.x)" do
+#    create_config_file "config/environments/production.rb", @@__eager_load_false_rails4x
+#
+#    app = Trinidad::WebApp.create(:root_dir => Dir.pwd, :environment => 'development')
+#    expect( app.threadsafe? ).to be false
+#
+#    app.jruby_min_runtimes.should == 1
+#    app.jruby_max_runtimes.should == 5
+#  end
 
   it "detects app as threadsafe in development when production set for thread-safe (Rails 4.x)" do
     create_config_file "config/environment.rb", <<-EOF
@@ -945,14 +946,12 @@ EOF
     app.threadsafe?.should be false
   end
 
-  it "does not set threadsafe when the option is not enabled" do
+  it "starts threadsafe by default" do
     create_rails_environment_non_threadsafe
 
-    app = Trinidad::WebApp.create({
-      :root_dir => Dir.pwd
-    })
+    app = Trinidad::WebApp.create({ :root_dir => Dir.pwd })
 
-    app.threadsafe?.should be false
+    expect( app.threadsafe? ).to be true
   end
 
   it "changes to threadsafe mode when option provided" do
@@ -1029,7 +1028,7 @@ EOF
   end
 
   it "does look for jruby context param values from system properties" do
-    app = Trinidad::WebApp.create({})
+    app = Trinidad::WebApp.create({ :threadsafe => false })
     begin
       java.lang.System.setProperty('jruby.compat.version', '1_9')
       java.lang.System.setProperty('jruby.runtime.acquire.timeout', '4.2')
@@ -1038,10 +1037,10 @@ EOF
       app.context_params['jruby.compat.version'].should == '1_9'
       app.context_params['jruby.runtime.acquire.timeout'].should == '4.2'
 
-      app2 = Trinidad::WebApp.create({ :jruby_runtime_acquire_timeout => 9.5 })
+      app2 = Trinidad::WebApp.create({ :jruby_runtime_acquire_timeout => 9.5 }, { :threadsafe => false })
       app2.context_params['jruby.runtime.acquire.timeout'].should == '9.5'
 
-      app3 = Trinidad::WebApp.create({}, { :jruby_runtime_acquire_timeout => 1.25 })
+      app3 = Trinidad::WebApp.create({}, { :jruby_runtime_acquire_timeout => 1.25, :threadsafe => false })
       app3.context_params['jruby.runtime.acquire.timeout'].should == '1.25'
     ensure
       java.lang.System.clearProperty('jruby.compat.version')

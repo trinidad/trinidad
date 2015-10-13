@@ -428,7 +428,7 @@ module Trinidad
 
       return if key?(:jruby_max_runtimes) || key?(:jruby_min_runtimes)
 
-      if ( ! key?(:threadsafe) && ! detect_threadsafe? ) || self[:threadsafe] == false
+      if key?(:threadsafe) && self[:threadsafe] == false
         max_runtimes = config[:jruby_max_runtimes] = guess_max_runtimes
         if environment == 'development' || environment == 'test'
           config[:jruby_min_runtimes] = 1
@@ -440,6 +440,7 @@ module Trinidad
       end
     end
 
+    # @deprecated no longer used
     def detect_threadsafe?(environment = self.environment); true end
 
     def guess_max_runtimes; 5 end
@@ -677,6 +678,7 @@ module Trinidad
     # NOTE: maybe we can guess these based on connector maxThreads?
     # def guess_max_runtimes; 5 end
 
+    # @deprecated no longer used
     def detect_threadsafe?(environment = self.environment)
       if environment == 'development' || environment == 'test'
         # NOTE: it's best for development/test to use the same setup as in
