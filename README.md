@@ -398,7 +398,7 @@ You can find further information on how to write extensions in the [wiki][5].
 
 ## Copyright
 
-Copyright (c) 2014 [Team Trinidad](https://github.com/trinidad).
+Copyright (c) 2016 [Team Trinidad](https://github.com/trinidad).
 See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
 
 [0]: http://kares.org
