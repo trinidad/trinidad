@@ -38,6 +38,7 @@ module Trinidad
       :public => 'public',
       :java_lib => 'lib/java',
       :default_web_xml => 'config/web.xml',
+      :async_supported => true,
       :trap => true
     }
 
@@ -73,16 +74,41 @@ module Trinidad
       end
     end
 
-    %w{ port address environment context_path
-        java_lib java_classes default_web_xml
-        jruby_min_runtimes jruby_max_runtimes jruby_compat_version
-        rackup servlet rack_servlet default_servlet public hosts
-        http ajp ssl https extensions
-        apps_base web_apps web_app_dir
-        monitor reload_strategy log trap }.each do |method|
-      class_eval "def #{method}; self[:'#{method}']; end"
-      class_eval "def #{method}=(value); self[:'#{method}'] = value; end"
+    KEYS = Hash.[]( # { :port => nil, :address => nil, ... }
+    [ :port, :address, :environment, :context_path,
+      :java_lib, :java_classes, :default_web_xml,
+      :jruby_min_runtimes, :jruby_max_runtimes, :jruby_compat_version,
+      :rackup, :servlet, :rack_servlet, :default_servlet,
+      :public, :hosts,
+      :http, :ajp, :ssl, :https, :extensions,
+      :apps_base, :web_apps, :web_app_dir,
+      :monitor, :reload_strategy, :log, :trap ].each_slice(1).to_a)
+    private_constant :KEYS rescue nil
+
+    def public; self[:public] end
+    def public=(value); self[:public] = value end
+
+    def trap; self[:trap] end
+    def trap=(value); self[:trap] = value end
+
+    def method_missing(method, *args, &block)
+      if method[-1].eql? '='
+        if KEYS.key?(method = method[0...-1].to_sym)
+          if args.size != 1
+            raise ArgumentError, "wrong number of arguments (given #{args.size}, expected 1)"
+          end
+          return self[method] = args[0]
+        end
+      else
+        return self[method] if KEYS.key?(method)
+      end
+      super
     end
+
+    def respond_to_missing?(method, include_private = false)
+      KEYS.key?(method) || super
+    end
+
     # TODO deprecate servlet
 
     # @private
