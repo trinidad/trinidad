@@ -190,9 +190,8 @@ module Trinidad
     def init_params; context_params; end
 
     def add_context_param(param_name, param_value)
-      @context_params ||= {}
       if ! param_value.nil? && ! web_xml_context_param(param_name)
-        @context_params[param_name] = param_value.to_s
+        (@context_params ||= {})[param_name] = param_value.to_s
       end
     end
 
