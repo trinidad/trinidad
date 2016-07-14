@@ -26,11 +26,8 @@ task :clean_jars => :clear_jars
 
 ['trinidad', 'trinidad_jars'].each do |name|
   gem_helper = Bundler::GemHelper.new(Dir.pwd, name)
-  def gem_helper.version_tag
-    "#{name}-#{version}" # override "v#{version}"
-  end
-  version = gem_helper.send(:version)
-  version_tag = gem_helper.version_tag
+  def gem_helper.version_tag; "#{name}-#{version}" end
+  version = gem_helper.send(:version); version_tag = gem_helper.version_tag
   namespace name do
     desc "Build #{name}-#{version}.gem into the pkg directory"
     task('build') { gem_helper.build_gem }
@@ -40,6 +37,18 @@ task :clean_jars => :clear_jars
 
     desc "Create tag #{version_tag} and build and push #{name}-#{version}.gem to Rubygems"
     task('release') { gem_helper.release_gem }
+  end
+end
+unless Bundler::GemHelper.method_defined?(:release_gem)
+  Bundler::GemHelper.send :define_method, :release_gem do
+    guard_clean
+    tag_version unless already_tagged?
+    built_gem_path = build_gem
+    rubygem_push(built_gem_path) if gem_push?
+  end
+  Bundler::GemHelper.send :define_method, :install_gem do
+    built_gem_path = build_gem
+    install_gem(built_gem_path)
   end
 end
 
@@ -52,9 +61,9 @@ module TrinidadRakeHelpers
     source = '1.6'; target = '1.6' # java-compiler settings
     FileUtils.mkdir target_dir unless File.exist?(target_dir)
     class_path = class_path.join(':') unless class_path.is_a?(String)
-    sh "javac -Xlint:deprecation -Xlint:unchecked " <<
-       " -g -source #{source} -target #{target} " <<
-       " -classpath #{class_path} -d #{target_dir} " <<
+    sh "javac -Xlint:deprecation -Xlint:unchecked " +
+       " -g -source #{source} -target #{target} " +
+       " -classpath #{class_path} -d #{target_dir} " +
        Dir["#{source_dir}/**/*.java"].join(" ")
   end
 
