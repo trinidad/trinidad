@@ -307,9 +307,37 @@ public class DefaultLoader extends WebappLoader {
 
     @SuppressWarnings("unchecked")
     private void performPostgreSQLDriverCleanup(final Collection<JRubyClassLoader> appLoaders) {
+        final String className = "org.postgresql.Driver"; boolean oldCleanup = false;
+        for ( ClassLoader appLoader : appLoaders ) {
+            try { // will be loaded by JRuby if `require 'jdbc/postgres'
+                Class driverClass = getClassLoadedBy(className, appLoader, true);
+                if ( driverClass != null ) {
+                    boolean getSharedTimer = false;
+                    try { // org.postgresql.util.SharedTimer sharedTimer;
+                        Object sharedTimer = driverClass.getMethod("getSharedTimer").invoke(null);
+                        getSharedTimer = true;
+                        sharedTimer.getClass().getMethod("releaseTimer").invoke(sharedTimer);
+                    }
+                    catch (NoSuchMethodException e) {
+                        if ( ! getSharedTimer ) { oldCleanup = true; break; }
+                    }
+                }
+            }
+            catch (IllegalAccessException e) {
+                log.info("PostgreSQL driver shared timer release failed: " + e);
+            }
+            catch (InvocationTargetException e) {
+                log.info("PostgreSQL driver shared timer release failed", e.getTargetException());
+            }
+        }
+        if ( oldCleanup ) performOldPostgreSQLDriverCleanup(className, appLoaders);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void performOldPostgreSQLDriverCleanup(final String className,
+        final Collection<JRubyClassLoader> appLoaders) {
         // cleanup started java.util.Timer-s which is fixed on some of 9.3 :
         // https://github.com/pgjdbc/pgjdbc/commit/ac0949542e898da884f7cc213103983a856cab83
-        final String className = "org.postgresql.Driver";
         for ( ClassLoader appLoader : appLoaders ) {
             try { // will be loaded by JRuby if `require 'jdbc/postgres'
                 Class driverClass = getClassLoadedBy(className, appLoader, true);
