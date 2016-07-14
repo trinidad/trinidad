@@ -78,8 +78,7 @@ module Trinidad
     [ :port, :address, :environment, :context_path,
       :java_lib, :java_classes, :default_web_xml,
       :jruby_min_runtimes, :jruby_max_runtimes, :jruby_compat_version,
-      :rackup, :servlet, :rack_servlet, :default_servlet,
-      :public, :hosts,
+      :rackup, :public, :hosts, :rack_servlet, :default_servlet, :jsp_servlet,
       :http, :ajp, :ssl, :https, :extensions,
       :apps_base, :web_apps, :web_app_dir,
       :monitor, :reload_strategy, :log, :trap ].each_slice(1).to_a)
@@ -109,7 +108,17 @@ module Trinidad
       KEYS.key?(method) || super
     end
 
-    # TODO deprecate servlet
+    # @deprecated
+    def servlet
+      Helpers.deprecated('configuration option :servlet, use :rack_servlet')
+      self[:servlet]
+    end
+
+    # @deprecated
+    def servlet=(value)
+      Helpers.deprecated('configuration option :servlet, use :rack_servlet')
+      self[:servlet] = value
+    end
 
     # @private
     def self.symbolize_options(options)
