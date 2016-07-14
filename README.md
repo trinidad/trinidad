@@ -25,9 +25,10 @@ Trinidad's goals with bringing Tomcat into JRuby land are mostly the following :
 $ jruby -S gem install trinidad
 ```
 
-**NOTE:** consider testing out Trinidad **1.5.0.B1** `gem install trinidad --pre`
+**NOTE:** please use **1.5.0.B2** `gem install trinidad --pre`, esp. on JRuby 9K,
+as Trinidad 1.4 will no longer receive Tomcat (7.0.x) security updates.
 
-Trinidad requires (and supports) JRuby 1.6.8 or later (latest 1.7.x recommended).
+Trinidad 1.4 requires (and supports) JRuby 1.6.8 or later (latest 1.7.x recommended).
 
 ## Quick Start
 
@@ -49,9 +50,9 @@ and than run `trinidad` - keep in mind a server is not an application dependency
 
 ### Rails
 
-Trinidad supports the same Rails version as the JRuby-Rack it founds (or is
-specified/locked in your *Gemfile*), which is **2.3**, **3.x** as well as
-**4.0** for JRuby-Rack 1.1.x (and the coming 1.2). Merb is not supported.
+Trinidad supports the same Rails version as the JRuby-Rack it founds on (or is
+specified/locked in your *Gemfile*), which are **4.x**, **3.x** and even **2.3**
+for JRuby-Rack 1.1.x (and the up coming 1.2). Merb is not supported.
 
 ```
 $ trinidad
@@ -83,7 +84,7 @@ configure do
 end
 ```
 
-### Rackup
+### Rack
 
 Trinidad auto-detects a plain-old Rack application (if there's a *config.ru*) :
 
@@ -109,16 +110,17 @@ the same way as JRuby-Rack (since it boots all applications), that is :
 - otherwise the rack (gem) version might be specified using a magic comment in
   *config.ru* as `# rack.version: ~>1.4.0` (or the latest installed gem is used)
 
-**NOTE:** We do recommend to use the plain `trinidad` mode for running apps
+**NOTE:** We recommend to use the plain `trinidad` mode for running apps
 (in production), since it supports runtime pooling while the "rackup" mode does
 not, it also provides you with better Java integration possibilities.
 
 Also note that Trinidad does not mimic JRuby-Rack's (1.1.x) backwards compatible
 behavior of starting a pool for Rails but booting a thread-safe runtime for
-plain Rack applications by default. Currently, runtime pooling is the default
-with Trinidad and stays the same no matter the type of the application.
-We expect this default to (most likely) change in a future version of Trinidad
-as thread-safe gets more adopted by (stable) releases of Rails 4.0.
+plain Rack applications by default. Runtime pooling is the default with Trinidad
+**1.4** and stays the same no matter the type of the application. This has
+**changed in Trinidad 1.5** and it assumes thread-safe applications by default.
+
+All major rack versions (< 2.0) are expected to be working fine with Trinidad.
 
 ## Configuration
 
@@ -390,7 +392,6 @@ You can find further information on how to write extensions in the [wiki][5].
 
 ## Support
 
-* contact [kares][0] if your team needs JRuby or Trinidad help and support
 * ask us for help on [gitter][2] or use [SO][3] ... we shall get notified
 * we're also on the JRuby mailing List: http://wiki.jruby.org/MailingLists
 * and the #jruby IRC [channel](http://webchat.freenode.net/?channels=jruby)
@@ -401,7 +402,6 @@ You can find further information on how to write extensions in the [wiki][5].
 Copyright (c) 2016 [Team Trinidad](https://github.com/trinidad).
 See LICENSE (http://en.wikipedia.org/wiki/MIT_License) for details.
 
-[0]: http://kares.org
 [1]: https://gemnasium.com/trinidad/trinidad
 [2]: https://gitter.im/trinidad
 [3]: http://stackoverflow.com/questions/tagged/jruby
