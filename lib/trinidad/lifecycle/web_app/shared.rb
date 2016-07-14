@@ -8,6 +8,7 @@ module Trinidad
       else
         JRubyJars.jruby_rack_jar_path
       end
+      private_constant :JRUBY_RACK_JAR_PATH rescue nil
 
       # Shared web application lifecycle hook,
       # does #configure before the context starts.
