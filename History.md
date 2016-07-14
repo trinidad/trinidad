@@ -1,10 +1,23 @@
-## trinidad 1.5.0.B2 (pend-in-gg)
+## trinidad 1.5.0.B2 (2016-07-14)
 
+* default to async_supported: true style servlet configuration
+* assume thread-safe by default and avoid config.threadsafe! detection in Rails
+* improve JRuby 9K compatibility - avoid setting jruby.compat.version parameter
 * fixes for rolling reload when context has been destroyed (see #133)
 * support setting `:keystore_type` (for SSL)
 * handle auto-loading of `Trinidad::CommandLineParser` constant for init service's
   Trinidad::Daemon backwards-compatibility (see https://github.com/trinidad/trinidad_init_services/issues/41)
 * support for running fully on Java 8 (class sun.security.tools.KeyTool seems gone)
+
+## trinidad_jars 1.5.1 (2016-07-14)
+
+* adjust (timer) cleanup for newer pg-jdbc driver versions
+
+* Tomcat 7.0.64 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
+
+## trinidad_jars 1.5.0 (2016-07-13)
+
+* Tomcat 7.0.59 http://tomcat.apache.org/tomcat-7.0-doc/changelog.html
 
 ## trinidad_jars 1.4.2 (2015-10-09)
 
