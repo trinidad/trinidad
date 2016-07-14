@@ -745,6 +745,20 @@ describe Trinidad::Server do
     expect( app_holder.web_app.context_path ).to eql '/'
   end
 
+#  it "creates default web app (keeps current working-directory)" do
+#    web_apps = nil
+#    Dir.chdir(MOCK_WEB_APP_DIR) do
+#      server = configured_server :web_apps => { :default => { 'extensions' => {} } }
+#      web_apps = server.send(:create_web_apps)
+#    end
+#
+#    expect( web_apps.size ).to eql 1
+#
+#    app_holder = web_apps.shift
+#    expect( app_holder.web_app.root_dir ).to eql MOCK_WEB_APP_DIR
+#    expect( app_holder.web_app.context_name ).to eql 'default'
+#  end
+
   it "resolves apps relative to host base (for relative/missing root)" do
     FileUtils.mkdir_p APP_STUBS_DIR + '/local/foo'
     FileUtils.mkdir_p APP_STUBS_DIR + '/server/foo'
