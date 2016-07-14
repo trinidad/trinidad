@@ -605,7 +605,9 @@ describe Trinidad::Lifecycle::WebApp::Default do
   end
 
   def web_app_context(web_app)
-    tomcat.addWebapp(web_app.context_path || '', web_app.root_dir)
+    # avoid warnings since TC 7.0.61 (~ as on server.add_web_app)
+    path = web_app.context_path; path = '' if path == '/'
+    tomcat.addWebapp(path || '', web_app.root_dir)
   end
 
   def new_context_loader(listener, context = nil)
